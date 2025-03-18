@@ -1,0 +1,1 @@
+pupillotonia* OR adie* pupil OR ( ( abnormal OR absent OR decreased OR palmo mental OR asymmetric OR pendular OR hoffman* ) adj3 reflex* ) OR hyperreflexia* OR hyporeflexia OR petit mal status OR dysacusis OR parac usis OR distorted hearing OR ( hearing adj2 loss* )

@@ -1,0 +1,1 @@
+( ( sweating OR hyperhidros s ) adj2 gustatory ) OR ( vigil* adj2 coma ) OR ( akinetic adj2 ( mutism* OR autism* ) ) OR amblyopia* OR lazy eye* OR ( transient adj2 global adj2 amnesia* ) OR auditory inattention* OR central hearing loss OR cortical deafness OR lenticulostriate vasculopath*

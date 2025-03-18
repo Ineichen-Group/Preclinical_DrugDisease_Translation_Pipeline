@@ -1,0 +1,1 @@
+skew deviation OR lateral scleros s OR als OR ( muscular adj2 atroph* ) OR spinal amyotroph* OR hereditary motor neuronopath* OR ( ( bulbospinal OR bulbo spinal OR bulbar OR spinobulbar OR optic ) adj2 ( neuronopath* OR atrophy* ) ) OR pneumorrhachi* OR hematomyelia* OR anterior spinal artery dissection

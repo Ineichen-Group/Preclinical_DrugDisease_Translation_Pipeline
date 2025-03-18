@@ -1,0 +1,1 @@
+schizencephal* OR lissencephal* OR agyria pachygyria band OR subcortical band heterotopia OR cobblestone dysplasia* OR agyria* OR pachygyria* OR macrogyria* OR ( ( periventricular OR familial ) adj2 heterotopia* ) OR ( neural tube adj2 defect* )

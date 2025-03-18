@@ -1,0 +1,1 @@
+amentia* OR ( ( primary progressive OR progressive nonfluent ) adj2 aphasia* ) OR diffuse neurofibrillary tangles with calcification OR frontotemporal lobar degeneration* OR ftld* OR ftdp17 OR ddpac OR ftd grn OR ftd pgrn OR hddd1

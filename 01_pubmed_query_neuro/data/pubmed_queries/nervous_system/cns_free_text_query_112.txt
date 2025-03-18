@@ -1,0 +1,1 @@
+corneal scar OR eye burn* OR eye foreign bod* OR eye foreign object* OR ( ( jaw OR mandibular OR maxillary OR orbital OR blow out OR zygomatic OR skull ) adj2 fracture* )

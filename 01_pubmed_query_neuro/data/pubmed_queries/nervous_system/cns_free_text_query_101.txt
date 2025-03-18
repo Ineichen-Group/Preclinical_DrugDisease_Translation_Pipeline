@@ -1,0 +1,1 @@
+visual impairment* OR micropsia* OR hemeralopia* OR metamorphopsia* OR blindness OR amauros s OR monochromatopsia OR ( colo r adj2 vision adj2 ( defect* OR deficienc* ) ) OR ( ( protan OR deutan OR tritan ) adj2 defect ) diplopia* OR double vision

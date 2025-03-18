@@ -1,0 +1,1 @@
+( ( intracranial OR cerebral OR brain OR sinus ) adj2 ( embol* OR thromb* OR phlebitis ) ) OR leu omalacia* OR stroke* OR apoplexy OR cerebrovascular accident* OR brain vascular accident* OR retinocochleocerebral vasculopath* OR vascular headache* OR vascular cephalgia* OR ( ( intracranial OR cerebral OR cerebrovascular ) adj2 ( vasospasm* OR angiospasm* ) )

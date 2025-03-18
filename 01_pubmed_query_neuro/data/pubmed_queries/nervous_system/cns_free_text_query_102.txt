@@ -1,0 +1,1 @@
+polyopsia* OR hemianop* OR quadrantanop* OR photophobia* OR scotoma* OR ( neurogen* adj3 bladder ) OR spinning sensation OR aphonia* OR absence of voice OR voice absence

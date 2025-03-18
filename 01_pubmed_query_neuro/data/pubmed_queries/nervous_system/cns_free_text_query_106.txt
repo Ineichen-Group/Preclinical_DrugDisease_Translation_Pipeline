@@ -1,0 +1,1 @@
+nerve pain* OR morton* metatarsalgia OR polyneuriti* OR ( congenital adj2 pain adj2 ( insensitivity OR indifference ) ) OR congenital analgesia OR polyneuropathy* OR analphalipoproteinemia* OR cholesterol thesaurismos s OR hdldt1 OR radiculopath*

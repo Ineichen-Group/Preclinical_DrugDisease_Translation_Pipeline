@@ -1,0 +1,1 @@
+cln4a OR cln4b OR paraneoplastic autonomic dysfunction* OR tauopath* OR tdp43 proteinopath* OR bilateral vestibul* OR vestibular areflexia* OR ( ( cerebrospinal OR csf ) adj2 fluid adj2 ( leak* OR drainage* OR otorrhea* OR rhinorrhea* ) ) OR ( ( decerebrate OR decorticate ) adj2 ( state* OR rigidit* OR posturing* ) ) OR coordination impairment*

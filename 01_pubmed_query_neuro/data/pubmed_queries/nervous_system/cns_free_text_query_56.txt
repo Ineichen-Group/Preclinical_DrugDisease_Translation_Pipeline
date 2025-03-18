@@ -1,0 +1,1 @@
+( ( cerebellar* OR spinocerebellar OR corticostriatal spinal OR hereditary OR friedrich* ) adj3 ( incoordination* OR hemiataxia OR degeneration* OR dyssynergia* ) ) OR dysmetria* OR adiadochokines s OR spino* atroph* OR opca with retinal degeneration OR menzel type opca OR schut haymaker type OR ataxia* OR ataxy OR dandy walker*

@@ -1,0 +1,1 @@
+( optic disk adj3 edema* ) OR choked disk* OR retinal edema* OR ( ( vocal cord OR vocal fold OR bulbar ) adj2 ( paralys s OR pals* OR pares s ) ) OR neuroniti* OR neurolabyrinthiti* OR vestibular nerve inflammation* OR vestibulopath* OR vertigo* OR demyelination*

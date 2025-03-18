@@ -1,0 +1,1 @@
+hypertoni* OR hypermyotonia* OR ( ( musc* OR cogwheel OR nuchal OR extrapyramidal OR extensor OR catatonic ) adj2 rigidit* ) OR gegenhalten* OR muscle spasticity OR clasp knife spasticity OR hypoton* OR flaccid muscle tone OR decreased muscle tone OR muscular flaccidit*
