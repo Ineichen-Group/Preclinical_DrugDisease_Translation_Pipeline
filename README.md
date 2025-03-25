@@ -77,6 +77,9 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 ### Finetuning 
 
 ### Inference 
+The animal studies were prepared for NER inference by splitting them into chunks of PMID and Text.
+The inference code to run on the server over those chunks in parallel is [./03_ner/run_ner_inference_animal.sh](./03_ner/run_ner_inference_animal.sh). This calls [./03_ner/inference_ner_annotations.py](./03_ner/inference_ner_annotations.py), which in turn works with an NERModel from [./03_ner/core/models.py](./03_ner/core/models.py).
+
 
 ### Post-processing 
 Post processing of the obtained NER predictions happens in [./03_ner/process_ner_predictions.py](./03_ner/process_ner_predictions.py). This includes:
