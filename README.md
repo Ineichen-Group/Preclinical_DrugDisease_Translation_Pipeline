@@ -58,8 +58,12 @@ However, there was always an incomplete set of returned results. Therefore after
 ## Animal Studies Classification
 The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_enriched_dataset_2696.csv](./02_animal_study_classification/data/full_enriched_dataset_2696.csv).
 
+### Finetuning
 1. Prep data for fine tuning. We split it into 90-10% for training and validation using the script [./02_animal_study_classification/generate_stratified_splits.py](./02_animal_study_classification/generate_stratified_splits.py).
 2. Fine tune a binary classifier. The we use this split to fine-tune a binary SciBERT classifier, see [./02_animal_study_classification/run_finetune.sh](./02_animal_study_classification/run_finetune.sh).
+
+### Inference 
+
 3. Perform inference over the fetched PubMed abstracts. In the script [./02_animal_study_classification/run_parallel_inference.sh](./02_animal_study_classification/run_parallel_inference.sh), we point to the folder where the PubMed contents are stored from the previous step. Those are different chunks from the parallel fetching of PubMed contents. We parallelize the inference to predict the study type (animal vs other) for each publication. The predictions are stored to [./02_animal_study_classification/model_predictions/](./02_animal_study_classification/model_predictions/).
 4. To quickly extract the PMIDs only of animal studies we used the command below, resulting in ./[02_animal_study_classification/model_predictions/all_animal_studies.txt](02_animal_study_classification/model_predictions/all_animal_studies.txt):
    ```
@@ -69,6 +73,26 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 6. In the same script the animal studies are also split into chunks that will be used for inference for NER.
 
 ## NER 
+
+### Finetuning 
+
+### Inference 
+
+### Post-processing 
+
+## Validation with existing systematic reviews 
+
+We took the following systematic reviews:
+- [./04_syst_reviews_validation/data/Hyperoside.pdf](./04_syst_reviews_validation/data/Hyperoside.pdf)
+- [./04_syst_reviews_validation/data/Lithium.pdf](./04_syst_reviews_validation/data/Lithium.pdf)
+- [./04_syst_reviews_validation/data/Masitinib.pdf](./04_syst_reviews_validation/data/Masitinib.pdf)
+
+And identified the expected animal article PMIDs saved in [./04_syst_reviews_validation/data/PMID.xlsx](./04_syst_reviews_validation/data/PMID.xlsx).
+
+We check those target PMIDs are present in our dataset with the same drug and disease mentions. The code for that is in [./04_syst_reviews_validation/sys_review_validation.py](./04_syst_reviews_validation/sys_review_validation.py). 
+This results in three files from the courpus filtered for the PMIDs of each systematic reviews and showing the unique extracted entities. 
+
+
 
 
 
