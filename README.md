@@ -79,6 +79,36 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 ### Inference 
 
 ### Post-processing 
+Post processing of the obtained NER predictions happens in [./03_ner/process_ner_predictions.py](./03_ner/process_ner_predictions.py). This includes:
+1. Load NER Predictions  
+   Reads NER model outputs (predicted entities) and excludes the articles have no predictions at all.
+
+2. Abbreviation Expansion  
+   For each article, if not already cached, the script extracts abbreviation-definition pairs from the full text to aid in resolving entity meanings. Save in [./03_ner/data/abbreviations_expansion/pmid_abbreviations.csv](./03_ner/data/abbreviations_expansion/pmid_abbreviations.csv).
+
+3. Merge Predictions with Abbreviations  
+   Joins abbreviation data with NER predictions by article (PMID).
+
+4. Extract Unique Entities  
+   For each article, extracts a unique list of predicted conditions and interventions, using both the NER predictions and abbreviation expansions.
+
+5. Filter Articles  
+   Keeps only those articles that mention at least one condition and one intervention.
+
+6. Save Filtered Data  
+   Saves in [./03_ner/data/animal_studies_with_drug_disease/](./03_ner/data/animal_studies_with_drug_disease/):
+   - All qualifying articles with both entity types.
+   - The corresponding PMIDs.
+   - A subset of articles mentioning “sclerosis”, for focused study.
+
+**Outputs:**
+
+All saved files are written to the `03_ner/data/animal_studies_with_drug_disease/` directory and include:
+
+- Filtered articles with both condition and intervention mentions.
+- PMIDs of those articles.
+- Sclerosis-specific subset.
+
 
 ## Validation with existing systematic reviews 
 
