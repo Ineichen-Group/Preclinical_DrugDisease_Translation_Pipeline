@@ -25,7 +25,7 @@ preclinical_df['disease<>drug'] = (
 plot_top_entities_side_by_side(preclinical_df, id_column='PMID', condition_column='linkbert_mapped_conditions', drug_column='linkbert_mapped_drugs', color_code='#56B4E9')
 
 # --- Load Clinical Data ---
-clinical_df = pd.read_csv("data/clinical/aggregated_ner_annotations_basic_dict_mapped_19632.csv")
+clinical_df = pd.read_csv("06_preclin_clinic_join/data/clinical/aggregated_ner_annotations_basic_dict_mapped_19632.csv")
 
 def combine_unique_entities_bert_aact(col1, col2):
     col1 = str(col1) if not pd.isna(col1) else ""
@@ -60,7 +60,7 @@ clinical_df['disease<>drug'] = (
 plot_top_entities_side_by_side(clinical_df, id_column='nct_id', condition_column='linkbert_aact_mapped_conditions', drug_column='linkbert_aact_mapped_drugs',viz_name_suffix='clinical')
 
 # Load and merge clinical metadata (phase + status)
-metadata_df = pd.read_csv("data/clinical/clinical_nct_docs_metadata_20240313.csv")[['nct_id', 'phase', 'overall_status']]
+metadata_df = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv")[['nct_id', 'phase', 'overall_status']]
 metadata_df = metadata_df.drop_duplicates()
 
 clinical_df = clinical_df.merge(metadata_df, on='nct_id', how='left')
@@ -181,7 +181,7 @@ print(f"Percentage with Phase 3: {pct_phase3:.2f}%")
 print(f"Percentage with Phase 4: {pct_phase4:.2f}%")
 
 # Export for manual review
-output_path = f"data/manual_data_checks/condition_clinical_and_preclinical_{total}.csv"
+output_path = f"06_preclin_clinic_join/data/manual_data_checks/condition_clinical_and_preclinical_{total}.csv"
 filtered_df.to_csv(output_path, index=False)
 
 # ------------------------- #
