@@ -26,6 +26,9 @@ plot_top_entities_side_by_side(preclinical_df, id_column='PMID', condition_colum
 
 # --- Load Clinical Data ---
 clinical_df = pd.read_csv("06_preclin_clinic_join/data/clinical/aggregated_ner_annotations_basic_dict_mapped_19632.csv")
+included_nctids = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_inlcuded_18609_nctids.csv")
+
+clinical_df = clinical_df[clinical_df['nct_id'].isin(included_nctids['nct_id'])]
 
 def combine_unique_entities_bert_aact(col1, col2):
     col1 = str(col1) if not pd.isna(col1) else ""
@@ -146,6 +149,40 @@ def sort_by_study_counts_remove_empty(df):
 
     return filtered_df
 
+
+# Print unique disease-drug pairs from clinical and preclinical
+# Print unique disease-drug pairs from clinical and preclinical
+# Preclinical Stats
+print("----- Preclinical Stats: -----")
+print("Unique pmid in preclinical data:")
+print(preclinical_df['PMID'].nunique())
+print("Unique disease-drug pairs in preclinical data:")
+preclinical_unique_pairs = preclinical_df['disease<>drug'].value_counts().reset_index()
+preclinical_unique_pairs.columns = ['disease<>drug', 'count']
+print(preclinical_unique_pairs.shape)
+
+print("Unique disease-drug pairs with count larger than 1 in preclinical data:")
+preclinical_unique_pairs_count = preclinical_unique_pairs[preclinical_unique_pairs['count'] > 1]
+print(preclinical_unique_pairs_count.shape)
+
+# Save unique pairs to CSV
+preclinical_unique_pairs.to_csv('06_preclin_clinic_join/data/manual_data_checks/preclinical_unique_pairs.csv', index=False)
+
+# Clinical Stats
+print("----- Clinical Stats: -----")
+print("Unique nct_id in clinical data:")
+print(clinical_df['nct_id'].nunique())
+print("Unique disease-drug pairs in clinical data:")
+clinical_unique_pairs = clinical_df['disease<>drug'].value_counts().reset_index()
+clinical_unique_pairs.columns = ['disease<>drug', 'count']
+print(clinical_unique_pairs.shape)
+
+print("Unique disease-drug pairs with count larger than 1 in clinical data:")
+clinical_unique_pairs_count = clinical_unique_pairs[clinical_unique_pairs['count'] > 1]
+print(clinical_unique_pairs_count.shape)
+
+# Save unique pairs to CSV
+clinical_unique_pairs.to_csv('06_preclin_clinic_join/data/manual_data_checks/clinical_unique_pairs.csv', index=False)
 
 # Apply aggregation + filtering
 merged_df = aggregate_and_merge(

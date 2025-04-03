@@ -33,7 +33,7 @@ def plot_top_entities_side_by_side(df, id_column, condition_column, drug_column,
     # Plot conditions
     axes[0].barh(condition_counts[condition_column], condition_counts['Count'], color=color_code, zorder=2)
     axes[0].set_title(f'Top {top_n} Conditions by {id_column} Count')
-    axes[0].set_xlabel('Studies Count', fontsize=14)
+    axes[0].set_xlabel('Studies Count', fontsize=16)
     #axes[0].set_ylabel('Conditions')
     axes[0].invert_yaxis()
     for i, v in enumerate(condition_counts['Count']):
@@ -45,7 +45,7 @@ def plot_top_entities_side_by_side(df, id_column, condition_column, drug_column,
     # Plot drugs
     axes[1].barh(drug_counts[drug_column], drug_counts['Count'], color=color_code, zorder=2)
     axes[1].set_title(f'Top {top_n} Drugs by {id_column} Count')
-    axes[1].set_xlabel('Studies Count', fontsize=14)
+    axes[1].set_xlabel('Studies Count', fontsize=16)
     #axes[1].set_ylabel('Drugs')
     axes[1].invert_yaxis()
     for i, v in enumerate(drug_counts['Count']):
@@ -102,18 +102,18 @@ def viz_joined_preclin_clinical(filtered_df, normalized_key="normalized_conditio
 
     # Add labels and optional symbol to each bar
     for i in range(len(conditions)):
-        plt.text(preclinical_counts.iloc[i], y_positions[i] - bar_width / 2, f'{preclinical_counts.iloc[i]:.0f}', va='center',fontsize=12)
+        plt.text(preclinical_counts.iloc[i], y_positions[i] - bar_width / 2, f'{preclinical_counts.iloc[i]:.0f}', va='center',fontsize=16)
         
         clinical_text = f'{clinical_counts.iloc[i]:.0f}'
         if translation_column and top_n_df[translation_column].iloc[i]:
             clinical_text += " ♦"  # Add diamond symbol
-        plt.text(clinical_counts.iloc[i], y_positions[i] + bar_width / 2, clinical_text, va='center', fontsize=12)
+        plt.text(clinical_counts.iloc[i], y_positions[i] + bar_width / 2, clinical_text, va='center', fontsize=16)
 
     # Adding labels and legend
     plt.yticks(y_positions, conditions)
-    plt.xlabel('Study Count', fontsize=14)
+    plt.xlabel('Study Count', fontsize=15)
     #plt.ylabel('Normalized Condition')
-    plt.title(f'Top {top_n} Normalized Conditions by {title_str}', fontsize=14)
+    plt.title(f'Top {top_n} Disease-Drug Pairs by {title_str}', fontsize=18)
     
     # Update legend to include diamond explanation if translation_column is provided
     if translation_column:
@@ -121,14 +121,29 @@ def viz_joined_preclin_clinical(filtered_df, normalized_key="normalized_conditio
             plt.Line2D([0], [0], color="#56B4E9", lw=4, label='Preclinical Count'),
             plt.Line2D([0], [0], color="#E69F00", lw=4, label='Clinical Count'),
             plt.Line2D([0], [0], color="black", marker="D", linestyle='', label='At least one Phase 4 trial')
-        ], loc='lower right', fontsize=12)
+        ], loc='lower right', fontsize=16)
     else:
-        plt.legend(title="Legend", loc='lower right')
-    plt.tick_params(axis='both', labelsize=13)
+        plt.legend(title="Legend", loc='lower right', fontsize=16)
+    plt.tick_params(axis='both', labelsize=18)
     # Adjust layout
     plt.gca().invert_yaxis()  # Reverse the order to display from largest to smallest
     plt.grid(axis='x', linestyle='--', alpha=0.4, color='gray', zorder=0)
 
     plt.tight_layout()
-    plt.savefig(f'06_preclin_clinic_join/viz/top{top_n}_preclin_clin{fig_name_suffix}.png')
+    plt.savefig(f'06_preclin_clinic_join/viz/top{top_n}_preclin_clin{fig_name_suffix}.pdf')
     plt.show()
+    
+output_path = f"06_preclin_clinic_join/data/manual_data_checks/condition_clinical_and_preclinical_13607.csv"
+filtered_df = pd.read_csv(output_path)
+
+# ------------------------- #
+#         VISUALIZE         #
+# ------------------------- #
+
+viz_joined_preclin_clinical(
+    filtered_df,
+    "normalized_key",
+    translation_column='at_least_one_phase4',
+    top_n=15,
+    fig_name_suffix='_disease_drug'
+)
