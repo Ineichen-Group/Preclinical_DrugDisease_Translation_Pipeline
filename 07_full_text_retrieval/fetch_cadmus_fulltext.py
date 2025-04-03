@@ -17,7 +17,7 @@ print(f"Will be fetching {len(pmid_list)} PMIDs.")
 
 bioscraping(pmid_list,
             "donevasimona@gmail.com", #You need to insert your email address here
-            "c73019fe6b2bfac722029994bf58e17a6d08", #You need to insert your NCBI_API_KEY here
+            "XXX-XXX-XXX", #You need to insert your NCBI_API_KEY here
             wiley_api_key = "XXX-XXX-XXX", #This is an optional parameter.
             #You can insert your WILEY_API_KEY here
             elsevier_api_key = "XXX-XXX-XXX", #This is an optional parameter.
