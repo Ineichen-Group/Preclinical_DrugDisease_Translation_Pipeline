@@ -6,7 +6,10 @@ import json
 import pandas as pd
 import random 
 
-pmid_list = pd.read_csv("filtered_df_non_empty_sclerosis_10043_PMIDs.csv")['PMID'].astype(str).tolist()
+#pmid_list = pd.read_csv("filtered_df_non_empty_sclerosis_10043_PMIDs.csv")['PMID'].astype(str).tolist()
+with open("failed_pmc_pmids.txt", "r") as f:
+    pmid_list = [line.strip() for line in f if line.strip()]
+
 random.seed(42)  # Set a seed value for the random number generator
 pmid_list = random.sample(pmid_list, k=300)
     
@@ -15,8 +18,8 @@ print(f"Will be fetching {len(pmid_list)} PMIDs.")
 bioscraping(pmid_list,
             "donevasimona@gmail.com", #You need to insert your email address here
             "c73019fe6b2bfac722029994bf58e17a6d08", #You need to insert your NCBI_API_KEY here
-            wiley_api_key = "f11ecc1a-4b5e-4316-bd73-926423703485", #This is an optional parameter.
+            wiley_api_key = "XXX-XXX-XXX", #This is an optional parameter.
             #You can insert your WILEY_API_KEY here
-            elsevier_api_key = "034e0b4ff44a1f96f08bf85559dc9eaa", #This is an optional parameter.
+            elsevier_api_key = "XXX-XXX-XXX", #This is an optional parameter.
             #You can insert your ELSEVIER_API_KEY here
             )
