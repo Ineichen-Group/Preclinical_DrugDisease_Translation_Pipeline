@@ -48,7 +48,9 @@ clinical_df['linkbert_aact_mapped_drugs'] = clinical_df.apply(
 )
 
 # Keep relevant columns and explode for 1-to-1 condition-drug mapping
-clinical_df = clinical_df[['nct_id', 'linkbert_aact_mapped_conditions', 'linkbert_aact_mapped_drugs']]
+clinical_df = clinical_df[['nct_id', 'linkbert_aact_mapped_conditions', 'linkbert_aact_mapped_drugs', 'Disease Class']]
+clinical_df.to_csv("06_preclin_clinic_join/data/clinical/clinical_combined_annotations.csv", index=False)
+
 clinical_df['linkbert_aact_mapped_conditions'] = clinical_df['linkbert_aact_mapped_conditions'].str.split("|")
 clinical_df = clinical_df.explode("linkbert_aact_mapped_conditions", ignore_index=True)
 
@@ -94,12 +96,16 @@ def aggregate_and_merge(clinical_df, preclinical_df,
 
     # Preclinical aggregation
     preclinical_agg = preclinical_df.groupby(preclinical_key_col).agg({
-        preclinical_doc_id_col: list
+        preclinical_doc_id_col: list,
+        'linkbert_mapped_conditions': 'first',
+        'linkbert_mapped_drugs': 'first'
     }).reset_index()
-
+    
     preclinical_agg.rename(columns={
         preclinical_key_col: 'normalized_key',
-        preclinical_doc_id_col: 'preclinical_doc_ids'
+        preclinical_doc_id_col: 'preclinical_doc_ids',
+        'linkbert_mapped_conditions': 'disease',
+        'linkbert_mapped_drugs': 'drug'
     }, inplace=True)
 
     preclinical_agg['preclinical_count'] = preclinical_agg['preclinical_doc_ids'].apply(len)
@@ -166,7 +172,7 @@ preclinical_unique_pairs_count = preclinical_unique_pairs[preclinical_unique_pai
 print(preclinical_unique_pairs_count.shape)
 
 # Save unique pairs to CSV
-preclinical_unique_pairs.to_csv('06_preclin_clinic_join/data/manual_data_checks/preclinical_unique_pairs.csv', index=False)
+preclinical_unique_pairs.to_csv('06_preclin_clinic_join/data/joined_data/preclinical_unique_pairs.csv', index=False)
 
 # Clinical Stats
 print("----- Clinical Stats: -----")
@@ -182,7 +188,7 @@ clinical_unique_pairs_count = clinical_unique_pairs[clinical_unique_pairs['count
 print(clinical_unique_pairs_count.shape)
 
 # Save unique pairs to CSV
-clinical_unique_pairs.to_csv('06_preclin_clinic_join/data/manual_data_checks/clinical_unique_pairs.csv', index=False)
+clinical_unique_pairs.to_csv('06_preclin_clinic_join/data/joined_data/clinical_unique_pairs.csv', index=False)
 
 # Apply aggregation + filtering
 merged_df = aggregate_and_merge(
@@ -199,6 +205,30 @@ filtered_df = sort_by_study_counts_remove_empty(merged_df)
 # ------------------------- #
 #   ADD INSIGHTS / EXPORT   #
 # ------------------------- #
+
+phase_order = {
+    'Early Phase 1': 0,
+    'Phase 1': 1,
+    'Phase 1/Phase 2': 1.5,
+    'Phase 2': 2,
+    'Phase 2/Phase 3': 2.5,
+    'Phase 3': 3,
+    'Phase 4': 4,
+    'Not Applicable': -1  # Lowest value to ignore in max comparison
+}
+
+# Get max phase for each row
+def get_max_phase(phases):
+    max_val = -1
+    max_phase = 'Not Applicable'
+    for phase in phases:
+        val = phase_order.get(phase, -1)
+        if val > max_val:
+            max_val = val
+            max_phase = phase
+    return max_phase
+
+filtered_df['max_phase'] = filtered_df['phase'].apply(get_max_phase)
 
 # Identify studies with Phase 3 or 4 trials
 filtered_df['at_least_one_phase3'] = filtered_df['phase'].apply(
@@ -218,7 +248,7 @@ print(f"Percentage with Phase 3: {pct_phase3:.2f}%")
 print(f"Percentage with Phase 4: {pct_phase4:.2f}%")
 
 # Export for manual review
-output_path = f"06_preclin_clinic_join/data/manual_data_checks/condition_clinical_and_preclinical_{total}.csv"
+output_path = f"06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_{total}.csv"
 filtered_df.to_csv(output_path, index=False)
 
 # ------------------------- #
