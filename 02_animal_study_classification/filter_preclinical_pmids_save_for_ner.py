@@ -66,7 +66,7 @@ def load_pubmed_raw_filter_animal_save_for_ner(pubmed_content_path, output_path,
     separator = '|||'
     
     data_folders = [
-        'round_1', 'round_2', 'round_3', 'round_4',
+        'missing_chunks_data', 'round_1', 'round_2', 'round_3', 'round_4',
         'round_5', 'round_6', 'round_7', 'round_8'
     ]
 
@@ -85,10 +85,11 @@ def load_pubmed_raw_filter_animal_save_for_ner(pubmed_content_path, output_path,
         print(f'Processing {folder_path}')
         count_chunk = 0 
         for df_chunk in load_folder_files(folder_path, headers, separator, target_pmids):
+            #print(f'chunk size {df_chunk.shape}')
             df_chunk.drop_duplicates(subset="PMID", inplace=True)
             
             # Save METADATA
-            df_metadata = df_chunk.copy()[['PMID', 'year', 'journal_name','publication_type']]
+            df_metadata = df_chunk.copy()[['PMID', 'year', 'journal_name','publication_type', 'title']]
             df_metadata.to_csv(f'{output_file_base}_metadata.csv', mode='w' if first_write else 'a', header=first_write, index=False)
             
             # Save in format for NER
@@ -123,22 +124,23 @@ def load_and_clean_study_type_teller_animal(file_path, output_file):
     
         
 def split_ner_data_to_chunks(saved_file_name_ner, output_dir_ner_chunks):
+    print(f"Splitting animal studies for NER inference from: {saved_file_name_ner}")
     input_file = saved_file_name_ner  # Original large file
     chunk_size = 10_000  # Number of rows per chunk
     output_dir = output_dir_ner_chunks # Directory to store split files
 
     # Read and save in chunks
     for i, chunk in enumerate(pd.read_csv(input_file, chunksize=chunk_size)):
-        output_chunk_file = os.path.join(output_dir, f'pubmed_filtered_animal_5524202_for_NER_chunk_{i+1}.csv')
+        output_chunk_file = os.path.join(output_dir, f'pubmed_filtered_animal_for_NER_chunk_{i+1}.csv')
         chunk.to_csv(output_chunk_file, index=False)  # Save each chunk as a new file
 
     print(f"All chunks saved successfully to {output_dir_ner_chunks}.")
     
 def main():
     # Clean Animal studies classificatin output
-    file_path = "./02_animal_study_classification/model_predictions/all_animal_studies.txt"
-    output_file_animal_studies = "./02_animal_study_classification/model_predictions/all_animal_studies_clean.csv"
-    load_and_clean_study_type_teller_animal(file_path, output_file_animal_studies)
+    file_path = "./02_animal_study_classification/model_predictions/all_animal_studies_complete.txt"
+    output_file_animal_studies = "./02_animal_study_classification/model_predictions/all_animal_studies_clean_complete.csv"
+    #load_and_clean_study_type_teller_animal(file_path, output_file_animal_studies)
     
     # Filter the fetched PMID contents for the Animal studies
     animal_studies = pd.read_csv(output_file_animal_studies)[['PMID']]
@@ -148,7 +150,7 @@ def main():
     saved_file_name_ner = load_pubmed_raw_filter_animal_save_for_ner(pubmed_content_path, filtered_output_path, animal_pmids)
     
     output_dir_ner_chunks = "02_animal_study_classification/data/animal_studies_for_ner"
-    split_ner_data_to_chunks(saved_file_name_ner, output_dir_ner_chunks)
+    #split_ner_data_to_chunks(saved_file_name_ner, output_dir_ner_chunks)
 
 if __name__ == "__main__":
     main()
