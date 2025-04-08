@@ -72,7 +72,7 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 5. In a next step the full corpus of publications is filtered for the animal studies. This happens in [./02_animal_study_classification/filter_preclinical_pmids_save_for_ner.py](./02_animal_study_classification/filter_preclinical_pmids_save_for_ner.py). 
 6. In the same script the animal studies are also split into chunks that will be used for inference for NER.
 
-## NER 
+## Named entity recognition (NER) 
 
 ### Finetuning 
 
@@ -112,6 +112,59 @@ All saved files are written to the `03_ner/data/animal_studies_with_drug_disease
 - PMIDs of those articles.
 - Sclerosis-specific subset.
 
+## Named entity normalization (NEN) 
+We first have a basic dictionary based mapping to map terms to a more standardized form. However this has very low coverage, and is sensitive to terms who diverge too much from the spelling in the dictionary. Code for this is in [./04_normalization/dictionary_based_nen.py](./04_normalization/dictionary_based_nen.py).
+
+To further normalize the extracted entities we use two target sources:
+1. Disease terms are mapped to MONDO, downloaded from [https://mondo.monarchinitiative.org/pages/download/](https://mondo.monarchinitiative.org/pages/download/).
+2. Drug terms are mapped to UMLS. The "2024AB Full UMLS Release Files" was downloaded from [https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html). It is filtered for levels 0 (public) and 9 (SNOMED), as well as selected biomedical DBs. Further it is filtered for the semantic types "Organic Chemical", "Clinical Drug", "Biologically Active Substance", "Amino Acid, Peptide, or Protein", "Enzyme", "Immunologic Factor", "Nucleic Acid, Nucleoside, or Nucleotide", "Inorganic Chemical", "Antibiotic", "Biomedical or Dental Material", "Hormone", "Element, Ion, or Isotope", "Drug Delivery Device", "Vitamin", "Chemical Viewed Structurally", "Chemical".
+
+### MONDO/UMLS embedding via SapBERT
+The script [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py) generates vector embeddings for the ontology terms from MONDO and UMLS using the SapBERT model. 
+
+The process involves:
+- Loading ontology terms (from MONDO .owl files or UMLS .csv exports)
+- Embedding term names using SapBERT
+- Saving the resulting embeddings and term metadata for later use in normalization
+
+**Files and Outputs**
+MONDO:
+- Input: mondo.owl
+- Output: 
+    - JSON file of (term name, MONDO ID) pairs
+    - .npy files containing embeddings of MONDO terms
+
+UMLS:
+- Input: CSV file of filtered MRCONSO terms (e.g. drug/chemical concepts)
+- Output:
+    - JSON file of (term name, CUI) pairs
+    - .npy files containing embeddings of UMLS terms
+
+### Normalization Script
+The script [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py) performs entity normalization by mapping raw condition mentions (from NER output) to standardized MONDO/UMLS ontology terms. It uses the precomputed embeddings (from SapBERT) to match input terms to the closest ontology concept.
+
+The normalization process:
+- Loads MONDO/ UMLS embeddings and term metadata
+- Uses a pretrained SapBERT model to embed query terms
+- Computes similarity between query embeddings and ontology embeddings
+- Maps terms to MONDO/UMLS if similarity is above a defined threshold, otherwise keeps the original NER output
+- Logs normalization statistics and saves normalized results
+
+**Files and Outputs**
+Input:
+- A CSV file containing annotated mentions (e.g., from NER)
+- Column with mapped via dictionary condition/ drug strings (e.g. `linkbert_mapped_conditions`)
+- MONDO/ UMLS embeddings (.npy files) and term metadata (.json)
+
+Output:
+- A new CSV with normalized MONDO/ UML mappings per row
+- A summary stats log file with mapping performance
+- Normalized fields include e.g.:
+    - `linkbert_mondo_conditions`: MONDO concept names
+    - `mondo_termid`: MONDO concept IDs
+    - `mondo_term_norm`: Canonical forms
+    - `mondo_closest_3`: Top 3 closest MONDO concepts
+    - `mondo_cdist`: Embedding distance to closest concept
 
 ## Validation with existing systematic reviews 
 
