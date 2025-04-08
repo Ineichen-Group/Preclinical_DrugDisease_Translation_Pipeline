@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
 
-def load_mondo_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
+def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
     # List all files in the directory that match the pattern
     files = [f for f in os.listdir(directory_path_embeddings) if f.startswith(f'{batch_name_prefix}_batch_') and f.endswith('.npy')]
     # Sort files to maintain the order, especially important if the batch index is used in processing
@@ -190,42 +190,79 @@ def process_row_annotations(
 def get_unique_terms(column):
     return set(term.strip() for row in column.dropna() for term in str(row).split('|') if term.strip())
 
-def generate_mapping_stats_condition(df, disease_col_to_map, log_file):
+def generate_mapping_stats(df, col_to_map, log_dir, terminology="mondo"):
     # Count total and successfully mapped terms
     total_terms = 0
     successfully_mapped = 0
+    entity_type = col_to_map.split("_")[-1]
+    unmapped_rows = []
+    mapped_rows = []
+    if entity_type == "drugs":
+        original_col = 'unique_interventions_linkbert_predictions'
+    else:
+        original_col = f'unique_{entity_type}_linkbert_predictions'
 
-    for ids in df['mondo_termid'].dropna():
-        id_list = [id_.strip() for id_ in str(ids).split('|') if id_.strip()]
+    for idx, row in df.iterrows():
+        mentions_raw = row.get(original_col, "")
+        ids_raw = row.get(f"{terminology}_termid", "")
+        candidates_raw = row.get(f"{terminology}_closest_3", "")
+        distances_raw = row.get(f"{terminology}_cdist", "")
+        
+        if pd.isna(ids_raw):
+            ids_raw = ""
+
+        id_list = [id_.strip() for id_ in str(ids_raw).split('|') if id_.strip()]
+        mention_list = [m.strip() for m in str(mentions_raw).split('|') if m.strip()]
+        candidates_list = [c.strip() for c in str(candidates_raw).split('|')]
+        distance_list = [d.strip() for d in str(distances_raw).split('|')]
+        
         total_terms += len(id_list)
-        successfully_mapped += sum(1 for id_ in id_list if id_ != "-1")
+        successful = sum(1 for id_ in id_list if id_ != "-1")
+        successfully_mapped += successful
 
-    print(f"Total condition mentions: {total_terms}")
-    print(f"Successfully mapped to MONDO (term_id != -1): {successfully_mapped}")
+        # Collect any individual failures (where id == "-1")
+        for mention, id_, candidate, dist in zip(mention_list, id_list, candidates_list, distance_list):
+            if id_ == "-1":
+                unmapped_rows.append({
+                    "mention": mention,
+                    f"{terminology}_termid": id_,
+                    f"{terminology}_closest_3": candidate,
+                    f"{terminology}_cdist": dist
+                })
+            else:
+                mapped_rows.append({
+                    "mention": mention,
+                    f"{terminology}_termid": id_,
+                    f"{terminology}_closest_3": candidate,
+                    f"{terminology}_cdist": dist
+                })
+
+    print(f"Total {entity_type} mentions: {total_terms}")
+    print(f"Successfully mapped to {terminology} (term_id != -1): {successfully_mapped}")
     print(f"Mapping success rate: {successfully_mapped / total_terms * 100:.2f}%")
 
     # Get unique terms before and after mapping
-    unique_before = get_unique_terms(df['unique_conditions_linkbert_predictions'])
-    unique_after = get_unique_terms(df['linkbert_mapped_conditions'])
-    unique_after_mondo = get_unique_terms(df['linkbert_mondo_conditions'])
+    unique_before = get_unique_terms(df[original_col])
+    unique_after = get_unique_terms(df[f'linkbert_mapped_{entity_type}'])
+    unique_after_neural_map = get_unique_terms(df[f'linkbert_{terminology}_{entity_type}'])
 
     # Get counts
     count_before = len(unique_before)
     count_after = len(unique_after)
-    count_after_mondo = len(unique_after_mondo)
+    count_after_mondo = len(unique_after_neural_map)
 
-    print(f"Unique conditions before mapping: {count_before}")
-    print(f"Unique conditions after mapping to dict: {count_after}")
-    print(f"Unique conditions after mapping to MONDO: {count_after_mondo}")
+    print(f"Unique {entity_type} before mapping: {count_before}")
+    print(f"Unique {entity_type} after mapping to dict: {count_after}")
+    print(f"Unique {entity_type} after mapping to {terminology}: {count_after_mondo}")
     
     # Save all print outputs to a log dictionary
     log_data = {
-        "source_col_mapped": disease_col_to_map,
+        "source_col_mapped": col_to_map,
         "unique_before_any_mapping": count_before,
         "unique_after_dict": count_after,
-        "unique_after_mondo": count_after_mondo,
+        f"unique_after_{terminology}": count_after_mondo,
         "total_condition_mentions_for_mapping": total_terms,
-        "successfully_mapped_mondo": successfully_mapped,
+        f"successfully_mapped_{terminology}": successfully_mapped,
         "mapping_success_rate_percent": round(successfully_mapped / total_terms * 100, 2),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -234,22 +271,27 @@ def generate_mapping_stats_condition(df, disease_col_to_map, log_file):
     log_df = pd.DataFrame([log_data])
 
     # Append to CSV
-    log_df.to_csv(log_file, index=False)
-
-def map_condition(df, disease_col_to_map, tokenizer, model):
-    directory_path_embeddings="04_normalization/data/mondo/embeddings"
-    batch_name_prefix="MONDO_emb"
-    directory_path_terms_ids_json="04_normalization/data/mondo/mondo_term_id_pairs.json"
-    all_reps_emb_full, term_id_pairs = load_mondo_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
+    log_df.to_csv(log_dir + f"{entity_type}_{terminology}_mapping_stats.csv", index=False)
     
-    tqdm.pandas(desc="Mapping disease NER to MONDO")
+    pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
+    pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
+
+def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo"):
+    directory_path_embeddings=f"04_normalization/data/{terminology}/embeddings"
+    batch_name_prefix=f"{terminology.upper()}_emb"
+    directory_path_terms_ids_json=f"04_normalization/data/{terminology}/{terminology}_term_id_pairs.json"
+    all_reps_emb_full, term_id_pairs = load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
+    
+    tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
+    
+    entity_type = col_to_map.split("_")[-1]
     
     # Apply normalization function to the condition column, ignoring the last 2 dictionary outputs
-    df[['linkbert_mondo_conditions', 
-        'mondo_termid', 
-        'mondo_term_norm', 
-        'mondo_closest_3', 
-        'mondo_cdist']] = df[disease_col_to_map].progress_apply(
+    df[[f'linkbert_{terminology}_{entity_type}', 
+        f'{terminology}_termid', 
+        f'{terminology}_term_norm', 
+        f'{terminology}_closest_3', 
+        f'{terminology}_cdist']] = df[col_to_map].progress_apply(
         lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, None)[:5])
     )    
     return df
@@ -259,12 +301,15 @@ if __name__ == "__main__":
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
 
     df = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv")
-    df = df.head(50)
+    df = df.head(20)
     disease_col_to_map = "linkbert_mapped_conditions"
     drug_col_to_map = "linkbert_mapped_drugs"
     
-    df_mapped_cond = map_condition(df, disease_col_to_map, tokenizer, model)
-    generate_mapping_stats_condition(df_mapped_cond, disease_col_to_map, "04_normalization/nen_stats/condition_mondo_mapped.csv")
+    df_mapped_cond = normalize_ner_columns(df, disease_col_to_map, tokenizer, model)
+    generate_mapping_stats(df_mapped_cond, disease_col_to_map, log_dir="04_normalization/nen_stats/")
     df_mapped_cond.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df_mapped_cond)}.csv", index=False)
     
+    df_mapped_drug = normalize_ner_columns(df_mapped_cond, drug_col_to_map, tokenizer, model, terminology="umls")
+    generate_mapping_stats(df_mapped_drug, drug_col_to_map, log_dir="04_normalization/nen_stats/", terminology="umls")
+    df_mapped_drug.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df_mapped_drug)}.csv", index=False)
     
