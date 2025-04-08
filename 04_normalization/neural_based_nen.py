@@ -9,6 +9,8 @@ from scipy.spatial.distance import cdist
 import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
+from datetime import timedelta
+import time
 
 def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
     # List all files in the directory that match the pattern
@@ -190,7 +192,7 @@ def process_row_annotations(
 def get_unique_terms(column):
     return set(term.strip() for row in column.dropna() for term in str(row).split('|') if term.strip())
 
-def generate_mapping_stats(df, col_to_map, log_dir, terminology="mondo"):
+def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mondo"):
     # Count total and successfully mapped terms
     total_terms = 0
     successfully_mapped = 0
@@ -264,7 +266,8 @@ def generate_mapping_stats(df, col_to_map, log_dir, terminology="mondo"):
         "total_condition_mentions_for_mapping": total_terms,
         f"successfully_mapped_{terminology}": successfully_mapped,
         "mapping_success_rate_percent": round(successfully_mapped / total_terms * 100, 2),
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "time_taken_for_NEN": time_taken
     }
 
     # Convert to single-row DataFrame
@@ -305,11 +308,23 @@ if __name__ == "__main__":
     disease_col_to_map = "linkbert_mapped_conditions"
     drug_col_to_map = "linkbert_mapped_drugs"
     
+    #### DISEASE
+    start_time = time.time()
     df_mapped_cond = normalize_ner_columns(df, disease_col_to_map, tokenizer, model)
-    generate_mapping_stats(df_mapped_cond, disease_col_to_map, log_dir="04_normalization/nen_stats/")
+    elapsed = time.time() - start_time
+    time_taken = str(timedelta(seconds=int(elapsed)))
+    print(f"🕒 Normalization time for '{disease_col_to_map}': {time_taken}")
+    
+    generate_mapping_stats(df_mapped_cond, disease_col_to_map, time_taken, log_dir="04_normalization/nen_stats/")
     df_mapped_cond.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df_mapped_cond)}.csv", index=False)
     
+    #### DRUG
+    start_time = time.time()
     df_mapped_drug = normalize_ner_columns(df_mapped_cond, drug_col_to_map, tokenizer, model, terminology="umls")
-    generate_mapping_stats(df_mapped_drug, drug_col_to_map, log_dir="04_normalization/nen_stats/", terminology="umls")
+    elapsed = time.time() - start_time
+    time_taken = str(timedelta(seconds=int(elapsed)))
+    print(f"🕒 Normalization time for '{drug_col_to_map}': {time_taken}")
+    
+    generate_mapping_stats(df_mapped_drug, drug_col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology='umls')
     df_mapped_drug.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df_mapped_drug)}.csv", index=False)
     
