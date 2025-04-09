@@ -128,7 +128,9 @@ def process_row_annotations(
     model: Any, 
     all_reps_emb_full: Any, 
     ontology_sf_id_pairs: Dict[str, str], 
-    canonical_mapping_dict: Dict[str, str]
+    canonical_mapping_dict: Dict[str, str],
+    dist_threshold=10, 
+    n_entities=3
 ) -> Tuple[str, str, str, str, str, Dict[str, List[str]], Dict[str, str]]:
     """
     Processes a row of annotations, mapping terms to ontology CT concepts and returning the results.
@@ -140,6 +142,8 @@ def process_row_annotations(
     - all_reps_emb_full (Any): The embeddings used for mapping terms.
     - ontology_sf_id_pairs (Dict[str, str]): Dictionary of ontology ID and term pairs.
     - canonical_mapping_dict (Dict[str, str]): Dictionary mapping terms to their canonical forms.
+    - dist_threshold (float): Similarity distance threshold for deciding whether to map the query.
+    - n_entities (int): The number of nearest entities to retrieve.
 
     Returns:
     - Tuple[str, str, str, str, str, Dict[str, List[str]], Dict[str, str]]:
@@ -168,7 +172,7 @@ def process_row_annotations(
     term_to_norm = {}   # Each term from the row and the ontology norm to which it was mapped
 
     for term in terms:
-        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(term, tokenizer, model, all_reps_emb_full, ontology_sf_id_pairs, canonical_mapping_dict=None, dist_threshold=10, n_entities=3)
+        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(term, tokenizer, model, all_reps_emb_full, ontology_sf_id_pairs, canonical_mapping_dict=None, dist_threshold=dist_threshold, n_entities=n_entities)
         ontology_terms.append(predicted_label)
         ontology_terms_canonical.append(canonical_form)
         ontology_termids.append(predicted_id)
@@ -189,6 +193,27 @@ def process_row_annotations(
         norm_to_terms[key] = list(set(norm_to_terms[key]))
 
     return '|'.join(ontology_terms), '|'.join(map(str, ontology_termids)), '|'.join(ontology_terms_canonical), '|'.join([str(ents) for ents in closest_3_entites]), '|'.join([str(dist) for dist in min_distances]),  norm_to_terms, term_to_norm
+
+
+def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo", dist_threshold=10, n_entities=3):
+    directory_path_embeddings=f"04_normalization/data/{terminology}/embeddings"
+    batch_name_prefix=f"{terminology.upper()}_emb"
+    directory_path_terms_ids_json=f"04_normalization/data/{terminology}/{terminology}_term_id_pairs.json"
+    all_reps_emb_full, term_id_pairs = load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
+    
+    tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
+    
+    entity_type = col_to_map.split("_")[-1]
+    
+    # Apply normalization function to the condition column, ignoring the last 2 dictionary outputs
+    df[[f'linkbert_{terminology}_{entity_type}', 
+        f'{terminology}_termid', 
+        f'{terminology}_term_norm', 
+        f'{terminology}_closest_3', 
+        f'{terminology}_cdist']] = df[col_to_map].progress_apply(
+        lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, None, dist_threshold, n_entities)[:5])
+    )    
+    return df
 
 def get_unique_terms(column):
     return set(term.strip() for row in column.dropna() for term in str(row).split('|') if term.strip())
@@ -282,26 +307,6 @@ def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mon
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo"):
-    directory_path_embeddings=f"04_normalization/data/{terminology}/embeddings"
-    batch_name_prefix=f"{terminology.upper()}_emb"
-    directory_path_terms_ids_json=f"04_normalization/data/{terminology}/{terminology}_term_id_pairs.json"
-    all_reps_emb_full, term_id_pairs = load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
-    
-    tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
-    
-    entity_type = col_to_map.split("_")[-1]
-    
-    # Apply normalization function to the condition column, ignoring the last 2 dictionary outputs
-    df[[f'linkbert_{terminology}_{entity_type}', 
-        f'{terminology}_termid', 
-        f'{terminology}_term_norm', 
-        f'{terminology}_closest_3', 
-        f'{terminology}_cdist']] = df[col_to_map].progress_apply(
-        lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, None)[:5])
-    )    
-    return df
-
 def main(mapping_type, input_file):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
@@ -314,23 +319,25 @@ def main(mapping_type, input_file):
 
     # Load data
     df = pd.read_csv(input_file)
-
+    df = df.head(10)
     # Columns and output path
     disease_col = "linkbert_mapped_conditions"
     drug_col = "linkbert_mapped_drugs"
-
+    n_entities=3
     if mapping_type == "disease":
         col_to_map = disease_col
         terminology = "mondo"
         output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df)}.csv"
+        dist_threshold=10
     else:
         col_to_map = drug_col
         terminology = "umls"
         output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df)}.csv"
+        dist_threshold=10
 
     # Normalize and time
     start_time = time.time()
-    df_mapped = normalize_ner_columns(df, col_to_map, tokenizer, model, terminology=terminology)
+    df_mapped = normalize_ner_columns(df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities)
     elapsed = time.time() - start_time
     time_taken = str(timedelta(seconds=int(elapsed)))
 
@@ -344,8 +351,20 @@ def main(mapping_type, input_file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Normalize NER columns for diseases or drugs.")
-    parser.add_argument('--type', type=str, choices=["disease", "drug"], required=True, help="Which type to normalize")
-    parser.add_argument('--input', type=str, required=True, help="Path to the input CSV file")
+    parser.add_argument(
+        '--type',
+        type=str,
+        choices=["disease", "drug"],
+        default="disease",  
+        help="Which type to normalize (default: disease)"
+    )
+
+    parser.add_argument(
+        '--input',
+        type=str,
+        default="04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv", 
+        help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
+    )
 
     args = parser.parse_args()
     main(args.type, args.input)
