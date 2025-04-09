@@ -11,6 +11,7 @@ from tqdm import tqdm
 from datetime import datetime
 from datetime import timedelta
 import time
+import argparse
 
 def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
     # List all files in the directory that match the pattern
@@ -229,14 +230,16 @@ def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mon
                     "mention": mention,
                     f"{terminology}_termid": id_,
                     f"{terminology}_closest_3": candidate,
-                    f"{terminology}_cdist": dist
+                    f"{terminology}_cdist": dist,
+                    f"{terminology}_cdist_list": distance_list
                 })
             else:
                 mapped_rows.append({
                     "mention": mention,
                     f"{terminology}_termid": id_,
                     f"{terminology}_closest_3": candidate,
-                    f"{terminology}_cdist": dist
+                    f"{terminology}_cdist": dist,
+                    f"{terminology}_cdist_list": distance_list
                 })
 
     print(f"Total {entity_type} mentions: {total_terms}")
@@ -299,32 +302,50 @@ def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo")
     )    
     return df
 
-if __name__ == "__main__":
+def main(mapping_type, input_file):
+    assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
+
+    print(f"Starting normalization for: {mapping_type.upper()}")
+    print(f"Input file: {input_file}")
+
+    # Load model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
 
-    df = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv")
-    df = df.head(20)
-    disease_col_to_map = "linkbert_mapped_conditions"
-    drug_col_to_map = "linkbert_mapped_drugs"
-    
-    #### DISEASE
+    # Load data
+    df = pd.read_csv(input_file)
+
+    # Columns and output path
+    disease_col = "linkbert_mapped_conditions"
+    drug_col = "linkbert_mapped_drugs"
+
+    if mapping_type == "disease":
+        col_to_map = disease_col
+        terminology = "mondo"
+        output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df)}.csv"
+    else:
+        col_to_map = drug_col
+        terminology = "umls"
+        output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df)}.csv"
+
+    # Normalize and time
     start_time = time.time()
-    df_mapped_cond = normalize_ner_columns(df, disease_col_to_map, tokenizer, model)
+    df_mapped = normalize_ner_columns(df, col_to_map, tokenizer, model, terminology=terminology)
     elapsed = time.time() - start_time
     time_taken = str(timedelta(seconds=int(elapsed)))
-    print(f"🕒 Normalization time for '{disease_col_to_map}': {time_taken}")
-    
-    generate_mapping_stats(df_mapped_cond, disease_col_to_map, time_taken, log_dir="04_normalization/nen_stats/")
-    df_mapped_cond.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df_mapped_cond)}.csv", index=False)
-    
-    #### DRUG
-    start_time = time.time()
-    df_mapped_drug = normalize_ner_columns(df_mapped_cond, drug_col_to_map, tokenizer, model, terminology="umls")
-    elapsed = time.time() - start_time
-    time_taken = str(timedelta(seconds=int(elapsed)))
-    print(f"🕒 Normalization time for '{drug_col_to_map}': {time_taken}")
-    
-    generate_mapping_stats(df_mapped_drug, drug_col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology='umls')
-    df_mapped_drug.to_csv(f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df_mapped_drug)}.csv", index=False)
-    
+
+    print(f"Normalization time for '{col_to_map}': {time_taken}")
+
+    # Stats and output
+    generate_mapping_stats(df_mapped, col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology=terminology)
+    df_mapped.to_csv(output_file, index=False)
+    print(f"Output saved to: {output_file}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Normalize NER columns for diseases or drugs.")
+    parser.add_argument('--type', type=str, choices=["disease", "drug"], required=True, help="Which type to normalize")
+    parser.add_argument('--input', type=str, required=True, help="Path to the input CSV file")
+
+    args = parser.parse_args()
+    main(args.type, args.input)
