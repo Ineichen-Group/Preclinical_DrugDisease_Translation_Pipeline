@@ -15,8 +15,10 @@ def load_mondo_ontology(path_to_owl):
     ontology = pronto.Ontology(path_to_owl)
     mondo_terms = (t for t in ontology.terms() if t.id.startswith("MONDO:"))
 
-    term_id_pairs = set()    # Set of unique (name, id) pairs
-    all_names = set()       # Unique names only
+    term_id_pairs = []
+    seen_names = set()       # for checking uniqueness
+    all_names = []
+    seen_name_set = set()
     all_ids = []             # IDs (can repeat)
     id_to_term_name = {}     # ID → canonical name
     skipped = 0
@@ -30,26 +32,26 @@ def load_mondo_ontology(path_to_owl):
         canonical_name = term.name.strip()
         term_id = term.id.strip()
 
-        if canonical_name in all_names:
-            continue
-        # Add canonical name
-        term_id_pairs.add((canonical_name, term_id))
-        all_names.add(canonical_name)
-        all_ids.append(term_id)
+        if canonical_name not in seen_names:
+            term_id_pairs.append((canonical_name, term_id))
+            seen_names.add(canonical_name)
+            all_names.append(canonical_name)
+            all_ids.append(term_id)
 
         # Add synonyms
         for syn in term.synonyms:
             synonym_name = syn.description.strip()
-            if synonym_name not in all_names:
-                term_id_pairs.add((synonym_name, term_id))
-                all_names.add(synonym_name)
+            if synonym_name not in seen_names:
+                term_id_pairs.append((synonym_name, term_id))
+                seen_names.add(synonym_name)
+                all_names.append(synonym_name)
                 all_ids.append(term_id)
 
         # Map ID to canonical name
         id_to_term_name[term_id] = canonical_name
 
     print(f"Loaded {len(term_id_pairs)} ({len(all_names)}, {len(all_ids)}) names (including synonyms). Skipped {skipped} terms.")
-    return list(term_id_pairs), list(all_names), all_ids, id_to_term_name
+    return term_id_pairs, all_names, all_ids, id_to_term_name
 
 def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, save_emb_path, batch_name_prefix):
     """
