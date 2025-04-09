@@ -172,7 +172,7 @@ def process_row_annotations(
     term_to_norm = {}   # Each term from the row and the ontology norm to which it was mapped
 
     for term in terms:
-        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(term, tokenizer, model, all_reps_emb_full, ontology_sf_id_pairs, canonical_mapping_dict=None, dist_threshold=dist_threshold, n_entities=n_entities)
+        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(term, tokenizer, model, all_reps_emb_full, ontology_sf_id_pairs, canonical_mapping_dict=canonical_mapping_dict, dist_threshold=dist_threshold, n_entities=n_entities)
         ontology_terms.append(predicted_label)
         ontology_terms_canonical.append(canonical_form)
         ontology_termids.append(predicted_id)
@@ -205,13 +205,20 @@ def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo",
     
     entity_type = col_to_map.split("_")[-1]
     
+    if entity_type == "diseases":
+        directory_path_id_to_term_json=f"04_normalization/data/{terminology}/{terminology}_id_to_term_map.json"
+        with open(directory_path_id_to_term_json, "r", encoding="utf-8") as f:
+            canonical_mapping_dict = json.load(f)
+    else:
+        canonical_mapping_dict = None
+    
     # Apply normalization function to the condition column, ignoring the last 2 dictionary outputs
     df[[f'linkbert_{terminology}_{entity_type}', 
         f'{terminology}_termid', 
         f'{terminology}_term_norm', 
         f'{terminology}_closest_3', 
         f'{terminology}_cdist']] = df[col_to_map].progress_apply(
-        lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, None, dist_threshold, n_entities)[:5])
+        lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, canonical_mapping_dict, dist_threshold, n_entities)[:5])
     )    
     return df
 
@@ -319,7 +326,7 @@ def main(mapping_type, input_file):
 
     # Load data
     df = pd.read_csv(input_file)
-    df = df.head(10)
+    #df = df.head(10)
     # Columns and output path
     disease_col = "linkbert_mapped_conditions"
     drug_col = "linkbert_mapped_drugs"

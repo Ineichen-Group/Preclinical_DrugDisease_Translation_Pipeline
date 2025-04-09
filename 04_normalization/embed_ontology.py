@@ -11,12 +11,14 @@ import warnings
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 def load_mondo_ontology(path_to_owl):
+    print("Loading MONDO")
     ontology = pronto.Ontology(path_to_owl)
     mondo_terms = (t for t in ontology.terms() if t.id.startswith("MONDO:"))
-    term_id_pairs = []
-    all_names = []
-    all_ids = []
-    id_to_term = {}
+
+    term_id_pairs = set()    # Set of unique (name, id) pairs
+    all_names = set()       # Unique names only
+    all_ids = []             # IDs (can repeat)
+    id_to_term_name = {}     # ID → canonical name
     skipped = 0
 
     for term in tqdm(mondo_terms, desc="Filtering MONDO terms"):
@@ -25,13 +27,29 @@ def load_mondo_ontology(path_to_owl):
             skipped += 1
             continue
 
-        all_names.append(term.name)
-        all_ids.append(term.id)
-        term_id_pairs.append((term.name, term.id))
-        id_to_term[term.id] = term  # Add mapping from ID to term object
+        canonical_name = term.name.strip()
+        term_id = term.id.strip()
 
-    print(f"Loaded {len(term_id_pairs)}. Skipped {skipped} terms.")
-    return term_id_pairs, all_names, all_ids, id_to_term
+        if canonical_name in all_names:
+            continue
+        # Add canonical name
+        term_id_pairs.add((canonical_name, term_id))
+        all_names.add(canonical_name)
+        all_ids.append(term_id)
+
+        # Add synonyms
+        for syn in term.synonyms:
+            synonym_name = syn.description.strip()
+            if synonym_name not in all_names:
+                term_id_pairs.add((synonym_name, term_id))
+                all_names.add(synonym_name)
+                all_ids.append(term_id)
+
+        # Map ID to canonical name
+        id_to_term_name[term_id] = canonical_name
+
+    print(f"Loaded {len(term_id_pairs)} ({len(all_names)}, {len(all_ids)}) names (including synonyms). Skipped {skipped} terms.")
+    return list(term_id_pairs), list(all_names), all_ids, id_to_term_name
 
 def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, save_emb_path, batch_name_prefix):
     """
@@ -114,10 +132,12 @@ def embed_terms_sapbert(
             batch_name_prefix=batch_name_prefix
         )
         
-def load_embed_mondo(onthology_owl_path, paht_to_save_term_id_json, path_to_save_embeddings):
+def load_embed_mondo(onthology_owl_path, path_to_save_term_id_json, path_to_save_id_to_term_json, path_to_save_embeddings):
     term_id_pairs, all_names, all_ids, id_to_term = load_mondo_ontology(onthology_owl_path)
-    with open(paht_to_save_term_id_json, "w") as f:
+    with open(path_to_save_term_id_json, "w") as f:
         json.dump(term_id_pairs, f)
+    with open(path_to_save_id_to_term_json, "w") as f:
+        json.dump(id_to_term, f)
         
     embed_terms_sapbert(
         all_names=all_names,
@@ -127,16 +147,56 @@ def load_embed_mondo(onthology_owl_path, paht_to_save_term_id_json, path_to_save
         save_emb_path=path_to_save_embeddings
     )
     
-def load_embed_umls():
-    print("TODO")
+def load_umls_terms(umls_mrconso_path):
+    print("Loading UMLS")
+    unique_cui_umls = pd.read_csv(umls_mrconso_path)
+    unique_cui_umls['str'] = unique_cui_umls['str'].str.strip()
+    unique_cui_umls['cui'] = unique_cui_umls['cui'].str.strip()
+
+    # Extract cleaned values as lists
+    all_names = unique_cui_umls['str'].values.tolist()
+    all_ids = unique_cui_umls['cui'].values.tolist()
+    
+    term_id_pairs = []
+    #term_id_pairs_with_sty = []
+
+    for term_name, term_id in zip(all_names, all_ids):
+        #term_sty = cui_sty_dict[term_id]
+        #term_name_sty = str(term_name) + f" ({term_sty})"
+        term_id_pairs.append((term_name, term_id))
+        #term_id_pairs_with_sty.append((term_name_sty, term_id))
+    print(f"Loaded {len(term_id_pairs)}")
+    return term_id_pairs, all_names, all_ids
+    
+    
+def load_embed_umls(umls_mrconso_path, paht_to_save_term_id_json, path_to_save_embeddings):
+    term_id_pairs, all_names, all_ids = load_umls_terms(umls_mrconso_path)
+    with open(paht_to_save_term_id_json, "w") as f:
+        json.dump(term_id_pairs, f)
+    embed_terms_sapbert(
+        all_names=all_names,
+        bs=64,
+        large_batch_size=100000,
+        batch_name_prefix="UMLS_emb",
+        save_emb_path=path_to_save_embeddings
+    )
     
 
-def main():
-    onthology_owl_path = "04_normalization/data/mondo/mondo.owl"
-    paht_to_save_term_id_json = "04_normalization/data/mondo/mondo_term_id_pairs.json"
-    path_to_save_embeddings = "04_normalization/data/mondo/embeddings"
+def main(load_mondo=False, load_umls=True):
+    if load_mondo:
+        onthology_owl_path = "04_normalization/data/mondo/mondo.owl"
+        paht_to_save_term_id_json = "04_normalization/data/mondo/mondo_term_id_pairs.json"
+        path_to_save_id_to_term_json =  "04_normalization/data/mondo/mondo_id_to_term_map.json"
+        path_to_save_embeddings = "04_normalization/data/mondo/embeddings"
+        
+        load_embed_mondo(onthology_owl_path, paht_to_save_term_id_json, path_to_save_id_to_term_json, path_to_save_embeddings)
+    if load_umls:
+        umls_mrconso_path = "04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv"
+        paht_to_save_term_id_json_umls = "04_normalization/data/umls/umls_term_id_pairs.json"
+        path_to_save_embeddings_umls = "04_normalization/data/umls/embeddings"
+        
+        load_embed_umls(umls_mrconso_path, paht_to_save_term_id_json_umls, path_to_save_embeddings_umls)
     
-    load_embed_mondo(onthology_owl_path, paht_to_save_term_id_json, path_to_save_embeddings)
     
 if __name__ == "__main__":
-    main()
+    main(load_mondo=True, load_umls=False)
