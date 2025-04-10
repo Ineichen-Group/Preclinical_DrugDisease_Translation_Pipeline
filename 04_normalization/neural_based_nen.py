@@ -201,11 +201,12 @@ def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo",
     directory_path_terms_ids_json=f"04_normalization/data/{terminology}/{terminology}_term_id_pairs.json"
     all_reps_emb_full, term_id_pairs = load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
     
+    print(f"Loaded embeddings {all_reps_emb_full.shape}, term_id_pais {len(term_id_pairs)}")
     tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
     
     entity_type = col_to_map.split("_")[-1]
     
-    if entity_type == "diseases":
+    if entity_type == "conditions":
         directory_path_id_to_term_json=f"04_normalization/data/{terminology}/{terminology}_id_to_term_map.json"
         with open(directory_path_id_to_term_json, "r", encoding="utf-8") as f:
             canonical_mapping_dict = json.load(f)
@@ -314,7 +315,7 @@ def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mon
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def main(mapping_type, input_file):
+def main(mapping_type, input_file, output_file, save_stats=False):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
     print(f"Starting normalization for: {mapping_type.upper()}")
@@ -326,7 +327,7 @@ def main(mapping_type, input_file):
 
     # Load data
     df = pd.read_csv(input_file)
-    #df = df.head(10)
+    #df = df.head(15)
     # Columns and output path
     disease_col = "linkbert_mapped_conditions"
     drug_col = "linkbert_mapped_drugs"
@@ -334,12 +335,12 @@ def main(mapping_type, input_file):
     if mapping_type == "disease":
         col_to_map = disease_col
         terminology = "mondo"
-        output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_mapped_{len(df)}.csv"
+        output_file = output_file
         dist_threshold=10
     else:
         col_to_map = drug_col
         terminology = "umls"
-        output_file = f"04_normalization/data/mapped_to_embeddings_ontologies/aggregated_ner_mondo_umls_mapped_{len(df)}.csv"
+        output_file = output_file 
         dist_threshold=10
 
     # Normalize and time
@@ -351,7 +352,8 @@ def main(mapping_type, input_file):
     print(f"Normalization time for '{col_to_map}': {time_taken}")
 
     # Stats and output
-    generate_mapping_stats(df_mapped, col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology=terminology)
+    if save_stats:
+        generate_mapping_stats(df_mapped, col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology=terminology)
     df_mapped.to_csv(output_file, index=False)
     print(f"Output saved to: {output_file}")
 
@@ -365,13 +367,17 @@ if __name__ == "__main__":
         default="disease",  
         help="Which type to normalize (default: disease)"
     )
-
     parser.add_argument(
         '--input',
         type=str,
-        default="04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv", 
+        default="04_normalization/data/ner_samples/sampled_conditions_manual_map.csv", 
         help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
     )
-
+    parser.add_argument(
+        '--output',
+        type=str,
+        default="04_normalization/data/mapped_to_embeddings_ontologies/sampled_conditions_manual_map_mondo_pred.csv", 
+        help="Path to the output CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
+    )
     args = parser.parse_args()
-    main(args.type, args.input)
+    main(args.type, args.input, args.output)

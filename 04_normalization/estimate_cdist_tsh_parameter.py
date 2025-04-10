@@ -65,14 +65,20 @@ def clean_and_convert(ids):
     return pd.to_numeric(ids, errors='coerce').fillna(0).astype(int)
 
 def calculate_linking_precision_recall_f1(correct_entity_ids, predicted_entity_ids):
-    # Exclude positions where predicted_entity_ids == 0
-    correctly_linked = sum(1 for correct, predicted in zip(correct_entity_ids, predicted_entity_ids) if predicted != 0 and correct == predicted)
-    
-    # Count all correct_entity_ids which are not 0
-    mentions_should_be_linked = sum(1 for correct in correct_entity_ids if correct != 0)
-    
-    # Count all predicted_entity_ids which are not 0
-    mentions_linked_by_system_total = sum(1 for predicted in predicted_entity_ids if predicted != 0)
+    correctly_linked = 0
+    mentions_should_be_linked = 0
+    mentions_linked_by_system_total = 0
+    wrong_predictions = []
+
+    for correct, predicted in zip(correct_entity_ids, predicted_entity_ids):
+        if correct != '0':
+            mentions_should_be_linked += 1
+        if predicted != '0':
+            mentions_linked_by_system_total += 1
+            if predicted == correct:
+                correctly_linked += 1
+            else:
+                wrong_predictions.append((correct, predicted))
     
     # Calculate Precision
     precision = correctly_linked / mentions_linked_by_system_total if mentions_linked_by_system_total > 0 else 0
@@ -89,7 +95,7 @@ def calculate_linking_precision_recall_f1(correct_entity_ids, predicted_entity_i
         'f1_score': f1_score
     }
     
-    return performance_dict
+    return performance_dict, wrong_predictions
 
 def find_best_threshold(df: pd.DataFrame, target_id_col: str, predicted_id_col: str, predicted_cdist_col: str, thresholds: np.ndarray) -> Tuple[float, Dict[str, Any]]:
     """
@@ -111,6 +117,7 @@ def find_best_threshold(df: pd.DataFrame, target_id_col: str, predicted_id_col: 
     accuracies = []
     precisions = []
     recalls = []
+    wrong_predictions_at_best = []
 
     conf_matrices = []
 
@@ -125,7 +132,7 @@ def find_best_threshold(df: pd.DataFrame, target_id_col: str, predicted_id_col: 
         y_pred_mapped = np.array([0 if val == 'n.a.' else val for val in updated_y_pred])
 
         # Evaluate and store the metrics
-        performance = calculate_linking_precision_recall_f1(y_true_mapped, y_pred_mapped) #calculate_precision_recall_f1(y_true_mapped, y_pred_mapped)
+        performance, wrong_predictions = calculate_linking_precision_recall_f1(y_true_mapped, y_pred_mapped) #calculate_precision_recall_f1(y_true_mapped, y_pred_mapped)
         f1_scores.append(performance['f1_score'])
         precisions.append(performance['precision'])
         recalls.append(performance['recall'])
@@ -134,6 +141,7 @@ def find_best_threshold(df: pd.DataFrame, target_id_col: str, predicted_id_col: 
         if performance['f1_score'] > best_f1_score:
             best_f1_score = performance['f1_score']
             best_threshold = threshold
+            wrong_predictions_at_best = wrong_predictions
 
     # Return the best threshold and corresponding metrics
     best_performance = {
@@ -144,7 +152,7 @@ def find_best_threshold(df: pd.DataFrame, target_id_col: str, predicted_id_col: 
         #'confusion_matrix': conf_matrices[f1_scores.index(best_f1_score)]
     }
 
-    return best_threshold, best_performance, f1_scores, precisions, recalls
+    return best_threshold, best_performance, f1_scores, precisions, recalls, wrong_predictions_at_best
 
 if __name__ == "__main__":
     df_disease = pd.read_csv("04_normalization/data/mapped_to_embeddings_ontologies/sampled_conditions_manual_map_mondo_pred.csv")
@@ -154,5 +162,8 @@ if __name__ == "__main__":
     predicted_cdist_col = "mondo_cdist"
     thresholds = np.linspace(0, 15, 100)
     print(len(thresholds))
-    best_threshold, best_performance, f1_scores, precisions, recalls = find_best_threshold(df_disease, target_id_col, predicted_id_col, predicted_cdist_col, thresholds)
+    best_threshold, best_performance, f1_scores, precisions, recalls, wrong_predictions_at_best = find_best_threshold(df_disease, target_id_col, predicted_id_col, predicted_cdist_col, thresholds)
+    wrong_preds_df = pd.DataFrame(wrong_predictions_at_best, columns=["true_id", "predicted_id"])
+    wrong_preds_df.to_csv(f"04_normalization/nen_stats/disease_cdist_{round(best_threshold,2)}_errors.csv", index=False)
+
     plot_metrics_vs_threshold(entity_type, thresholds, f1_scores, precisions, recalls)
