@@ -14,34 +14,58 @@ def find_methods_section(soup, doc_id):
         r"\bmethods\b",
     ]
 
+    section = None
+
+    # 1. Try <section data-title="Materials and methods">
     section = soup.find("section", {"data-title": re.compile(r"materials\s*(and|&)?\s*methods", re.IGNORECASE)})
+
+    # 2. Try <section> or <div> with an appropriate heading inside
     if not section:
         for block in soup.find_all(["section", "div"], recursive=True):
-            header = block.find(["h2", "h3", "h1"])
-            if header:
-                text = header.get_text(strip=True).lower()
-                if any(re.search(pattern, text) for pattern in MATERIALS_METHODS_TITLES):
+            heading = block.find(["h1", "h2", "h3"], recursive=False)
+            if heading:
+                heading_text = heading.get_text(strip=True).lower()
+                if any(re.search(p, heading_text) for p in MATERIALS_METHODS_TITLES):
                     section = block
                     break
 
+    # 3. Fallback: <section class="article-section__content"><h2 class="article-section__title">
+    if not section:
+        for sec in soup.find_all("section", class_="article-section__content"):
+            h2 = sec.find("h2", class_="article-section__title")
+            if h2:
+                h2_text = h2.get_text(strip=True).lower()
+                if any(re.search(p, h2_text) for p in MATERIALS_METHODS_TITLES):
+                    section = sec
+                    break
+
+    # If we couldn't find the section, return None
     if not section:
         return None
 
+    # Process the section content
     rows = []
     current_subtitle = "Materials and methods"
 
-    for tag in section.find_all(["h3", "p"], recursive=True):
-        if tag.name == "h3" and "c-article__sub-heading" in tag.get("class", []):
-            current_subtitle = tag.get_text(strip=True)
-        elif tag.name == "p":
-            text = tag.get_text(strip=True)
-            if text:
-                rows.append({
-                    "doc_id": doc_id,
-                    "subtitle": current_subtitle,
-                    "paragraph": text
-                })
+    for tag in section.find_all(["h2", "h3", "h4", "p"], recursive=True):
+        tag_class = tag.get("class", [])
+        tag_text = tag.get_text(strip=True)
+
+        if tag.name in {"h2", "h3", "h4"} and (
+            "c-article__sub-heading" in tag_class or
+            "article-section__sub-title" in tag_class or
+            not tag_class  # fallback to semantic level if no class
+        ):
+            current_subtitle = tag_text.rstrip(".:")
+        elif tag.name == "p" and tag_text:
+            rows.append({
+                "doc_id": doc_id,
+                "subtitle": current_subtitle,
+                "paragraph": tag_text
+            })
+
     return rows if rows else None
+
 
 def fallback_extract_methods(soup, doc_id):
     fallback_section = None
