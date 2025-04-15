@@ -75,6 +75,10 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 ## Named entity recognition (NER) 
 
 ### Finetuning 
+The datasets for fine-tuning are prepared in [./03_IE_tasks/Prep_NER_data.ipynb](./03_IE_tasks/Prep_NER_data.ipynb). 
+
+The fine-tuning code is in [./03_ner/train_bert_ner.py](./03_ner/train_bert_ner.py) and the script to run in parallel on the server for k-fold cross-validation is in
+ [./03_ner/run_k_fold_parallel_experiment.sh](./03_ner/run_k_fold_parallel_experiment.sh).
 
 ### Inference 
 The animal studies were prepared for NER inference by splitting them into chunks of PMID and Text.
@@ -139,6 +143,11 @@ UMLS:
 - Output:
     - JSON file of (term name, CUI) pairs
     - .npy files containing embeddings of UMLS terms
+  
+### Selection of Best cdist Parameter
+We manually annotated 100 randomly sampled disease and drug NER entities (see folder [./04_normalization/data/ner_samples/](./04_normalization/data/ner_samples/)). Each entity was then mapped to its closest SapBERT embedding from the relevant ontologies, and the embedding distance was recorded.
+
+Using these distances, we estimated precision and recall at various cosine distance (cdist) thresholds. Entities with a distance above the selected threshold were not mapped and instead returned as the original NER text. For implementation details, see [./04_normalization/estimate_cdist_tsh_parameter.py](./04_normalization/estimate_cdist_tsh_parameter.py).
 
 ### Normalization Script
 The script [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py) performs entity normalization by mapping raw condition mentions (from NER output) to standardized MONDO/UMLS ontology terms. It uses the precomputed embeddings (from SapBERT) to match input terms to the closest ontology concept.
@@ -158,13 +167,19 @@ Input:
 
 Output:
 - A new CSV with normalized MONDO/ UML mappings per row
-- A summary stats log file with mapping performance
+- A summary stats log file with mapping performance.
+- Logs of successfully and failed mapping entities.
 - Normalized fields include e.g.:
     - `linkbert_mondo_conditions`: MONDO concept names
     - `mondo_termid`: MONDO concept IDs
     - `mondo_term_norm`: Canonical forms
     - `mondo_closest_3`: Top 3 closest MONDO concepts
     - `mondo_cdist`: Embedding distance to closest concept
+
+To run this script on the server with data parallelism for drug/disease see [./04_normalization/run_normalize_parallel.sh](./04_normalization/run_normalize_parallel.sh):
+```
+sbatch run_normalize_parallel.sh disease
+```
 
 ## Validation with existing systematic reviews 
 

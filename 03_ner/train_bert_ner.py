@@ -119,7 +119,8 @@ def compute_metrics(p, label_list):
             "accuracy": results["overall_accuracy"],
         }
 
-def main():
+def setup_logging():
+    """Configure the logger."""
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
@@ -127,199 +128,147 @@ def main():
     )
     logger.setLevel(logging.INFO)
 
-    parser = argparse.ArgumentParser(description="Train and evaluate model.")
+
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Train and evaluate a NER model.")
     parser.add_argument("--n_epochs", type=int, default=20, help="Number of training epochs")
-    parser.add_argument("--percentage", type=int, default=100, help="Percentage value")
-    parser.add_argument("--i", type=int, default=1, help="Iteration value")
-    parser.add_argument("--train_data_path", default=None, type=str, help="Path to the train data file")
-    parser.add_argument("--val_data_path", default=None, type=str, help="Path to the validation data file")
-    parser.add_argument("--test_data_path", default=None, type=str, help="Path to the test data file")
-    parser.add_argument("--output_path", default=None, type=str, help="Path for the output.")
-    parser.add_argument("--model_name_or_path", default='michiyasunaga/BioLinkBERT-base', type=str,
-                        help="HuggingFace Model.")
+    parser.add_argument("--percentage", type=int, default=100, help="Training data percentage to use")
+    parser.add_argument("--i", type=int, default=1, help="Iteration number")
+    parser.add_argument("--train_data_path", type=str, required=True, help="Path to the training dataset")
+    parser.add_argument("--val_data_path", type=str, help="Path to the validation dataset")
+    parser.add_argument("--test_data_path", type=str, required=True, help="Path to the test dataset")
+    parser.add_argument("--output_path", type=str, required=True, help="Directory to save outputs")
+    parser.add_argument("--model_name_or_path", type=str, default='michiyasunaga/BioLinkBERT-base', help="HuggingFace model path or name")
+    return parser.parse_args()
 
-    args = parser.parse_args()
-    n_epochs = args.n_epochs
-    percentage = args.percentage
-    i = args.i
-    ds_path_train = args.train_data_path
-    ds_path_test = args.test_data_path
-    ds_path_val = args.val_data_path
-    model_name_or_path = args.model_name_or_path
-    model_name_str = model_name_or_path.replace("/", "_")
-    output_folder_path = args.output_path
 
-    # If no validation set is provided, limit the number of epochs to 10
-    if ds_path_val is None:
-        logger.info("No validation dataset provided.")
+def prepare_dataset(tokenizer, raw_datasets, label_to_id, max_length=512, label_all_tokens=True, padding=True):
+    """Tokenize and align labels across datasets."""
+    map_args = {
+        "tokenizer": tokenizer,
+        "text_column_name": "tokens",
+        "label_column_name": "ner_tags",
+        "label_to_id": label_to_id,
+        "label_all_tokens": label_all_tokens,
+        "padding": padding,
+        "max_length": max_length,
+    }
 
-    ## DATA LOAD AND PREPARATION
-    logger.info("*** PREPARE DATA ***")
-    logger.info(f"Train dataset path: {ds_path_train}")
-    text_column_name = "tokens"
-    label_column_name = "ner_tags"
-    label_all_tokens = True
-    padding = True
-    max_length = 512
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, cache_dir="data/huggingface_cache")
-
-    data_files = {"train": ds_path_train, "test": ds_path_test}
-    if ds_path_val is not None:
-        data_files["validation"] = ds_path_val
-
-    raw_datasets = load_dataset("json", data_files=data_files)
-    label_list = get_label_list(raw_datasets["train"][label_column_name])
-    label_to_id = {l: i for i, l in enumerate(label_list)}
-    id_to_label = {i: l for i, l in enumerate(label_list)}
-
-    train_dataset = raw_datasets["train"]
-    train_dataset = train_dataset.map(
-        tokenize_and_align_labels,
-        batched=True,
-        desc="Running tokenizer on train dataset",
-        fn_kwargs={
-            "tokenizer": tokenizer,
-            "text_column_name": text_column_name,
-            "label_column_name": label_column_name,
-            "label_to_id": label_to_id,
-            "label_all_tokens": label_all_tokens,
-            "padding": padding,
-            "max_length": max_length
-        }
-    )
-
-    if ds_path_val is not None:
-        valid_dataset = raw_datasets["validation"]
-        valid_dataset = valid_dataset.map(
+    datasets = {}
+    for split in raw_datasets:
+        datasets[split] = raw_datasets[split].map(
             tokenize_and_align_labels,
             batched=True,
-            desc="Running tokenizer on validation dataset",
-            fn_kwargs={
-                "tokenizer": tokenizer,
-                "text_column_name": text_column_name,
-                "label_column_name": label_column_name,
-                "label_to_id": label_to_id,
-                "label_all_tokens": label_all_tokens,
-                "padding": padding,
-                "max_length": max_length
-            }
+            desc=f"Tokenizing {split} dataset",
+            fn_kwargs=map_args,
         )
+    return datasets
 
-    predict_dataset = raw_datasets["test"]
-    predict_dataset = predict_dataset.map(
-        tokenize_and_align_labels,
-        batched=True,
-        desc="Running tokenizer on prediction dataset",
-        fn_kwargs={
-            "tokenizer": tokenizer,
-            "text_column_name": text_column_name,
-            "label_column_name": label_column_name,
-            "label_to_id": label_to_id,
-            "label_all_tokens": label_all_tokens,
-            "padding": padding,
-            "max_length": max_length
-        }
-    )
 
-    suffix = f"epochs_{n_epochs}_data_size_{percentage}_iter_{i}"
-    run_name = "{}_{}".format(model_name_or_path, suffix)  # Different run_name for each iteration
-    num_labels = len(label_list)
+def main():
+    setup_logging()
+    args = parse_args()
 
-    logger.info("*** CONFIGURE AND LOAD MODEL ***")
+    logger.info("Starting run with arguments: %s", vars(args))
 
-    # Configure your model's architecture
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, cache_dir="data/huggingface_cache")
+
+    # Load datasets
+    data_files = {"train": args.train_data_path, "test": args.test_data_path}
+    if args.val_data_path:
+        data_files["validation"] = args.val_data_path
+
+    raw_datasets = load_dataset("json", data_files=data_files)
+    label_list = get_label_list(raw_datasets["train"]["ner_tags"])
+    label_to_id = {label: i for i, label in enumerate(label_list)}
+    id_to_label = {i: label for label, i in label_to_id.items()}
+
+    # Tokenize and preprocess
+    datasets = prepare_dataset(tokenizer, raw_datasets, label_to_id)
+    train_dataset = datasets["train"]
+    valid_dataset = datasets.get("validation")
+    test_dataset = datasets["test"]
+
+    # Sample training data
+    num_samples = int(len(train_dataset) * args.percentage / 100)
+    np.random.seed()
+    sampled_subset = train_dataset.select(np.random.choice(len(train_dataset), size=num_samples, replace=False))
+    logger.info(f"Using {len(sampled_subset)} samples from training set")
+
+    # Build model
     config = AutoConfig.from_pretrained(
-        model_name_or_path,
-        num_labels=num_labels,
+        args.model_name_or_path,
+        num_labels=len(label_list),
         label2id=label_to_id,
-        id2label={i: l for l, i in label_to_id.items()},
+        id2label=id_to_label,
         cache_dir="data/huggingface_cache"
     )
 
     model = AutoModelForTokenClassification.from_pretrained(
-        model_name_or_path,
+        args.model_name_or_path,
         config=config,
         cache_dir="data/huggingface_cache"
     )
 
-    # SAMPLE TRAIN SET
-    logger.info("*** Sample from the training set based on the given percentage. ***")
-    # Calculate the number of samples based on the percentage
-    num_samples = int(len(train_dataset) * percentage / 100)
-    # Reseed the random number generator
-    np.random.seed()  # This will use a different seed every time
-    # Sample the dataset based on the calculated number of samples
-    sampled_indices = np.random.choice(len(train_dataset), size=num_samples, replace=False)
-    sampled_subset = train_dataset.select(sampled_indices)
-    print("Training with train size: ", len(sampled_subset))
-
-    logger.info("*** CONFIGURE AND LOAD TRAINER ***")
+    # Configure training
+    suffix = f"epochs_{args.n_epochs}_data_size_{args.percentage}_iter_{args.i}"
+    model_name_str = args.model_name_or_path.replace("/", "_")
+    run_name = f"{model_name_str}_{suffix}"
 
     training_args = TrainingArguments(
-        output_dir=output_folder_path + '/results/' + model_name_str + "/" + suffix,  # output directory
-        num_train_epochs=n_epochs,  # total number of training epochs
-        per_device_train_batch_size=8,  # batch size per device during training
-        per_device_eval_batch_size=32,  # batch size for evaluation
+        output_dir=f"{args.output_path}/results/{model_name_str}/{suffix}",
+        num_train_epochs=args.n_epochs,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=32,
         warmup_ratio=0.1,
-        weight_decay=0.01,  # strength of weight decay
-        logging_dir=output_folder_path + '/logs/' + suffix,  # directory for storing logs
+        weight_decay=0.01,
+        logging_dir=f"{args.output_path}/logs/{suffix}",
         logging_strategy="epoch",
-        evaluation_strategy="epoch" if ds_path_val is not None else "no",  # Only evaluate if validation dataset is provided
+        evaluation_strategy="epoch" if valid_dataset else "no",
         save_strategy="epoch",
-        load_best_model_at_end=True if ds_path_val is not None else False,  # Only load best model if validation is available
-        metric_for_best_model="eval_loss" if ds_path_val is not None else None,
+        load_best_model_at_end=bool(valid_dataset),
+        metric_for_best_model="eval_loss" if valid_dataset else None,
         greater_is_better=False,
         save_total_limit=2,
         report_to="wandb",
-        run_name=run_name)
-
-    # Initialize WandB
-    wandb.init(
-        project="preclinical-ner",
-        group="strain",
-        name=run_name,
-        config=training_args
+        run_name=run_name,
     )
 
+    # Initialize WandB
+    wandb.init(project="preclinical-ner", group="strain", name=run_name, config=training_args)
+
     trainer = Trainer(
-        model=model,  # the instantiated 🤗 Transformers model to be trained
-        args=training_args,  # training arguments, defined above
-        train_dataset=sampled_subset,  # training dataset
-        eval_dataset=valid_dataset if ds_path_val is not None else None,  # evaluation dataset only if provided
+        model=model,
+        args=training_args,
+        train_dataset=sampled_subset,
+        eval_dataset=valid_dataset,
         tokenizer=tokenizer,
         compute_metrics=lambda p: compute_metrics(p, label_list)
     )
 
-    ### TRAIN
-    logger.info("*** TRAIN ***")
+    logger.info("Starting training...")
     train_result = trainer.train()
-    metrics = train_result.metrics
-    trainer.log_metrics("train", metrics)
-    trainer.save_metrics("train", metrics)
-    trainer.log(metrics)
-    trainer.save_model()  # will save the best model since load_best_model_at_end=True if validation is provided
+    trainer.save_model()
+    trainer.log_metrics("train", train_result.metrics)
+    trainer.save_metrics("train", train_result.metrics)
 
-    # If no validation dataset is provided, skip evaluation and move to prediction
-    if ds_path_val is not None:
-        ### EVAL
-        logger.info("*** EVALUATE ***")
-        metrics = trainer.evaluate()
-        metrics["eval_samples"] = len(valid_dataset)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+    if valid_dataset:
+        logger.info("Evaluating model...")
+        eval_metrics = trainer.evaluate()
+        eval_metrics["eval_samples"] = len(valid_dataset)
+        trainer.log_metrics("eval", eval_metrics)
+        trainer.save_metrics("eval", eval_metrics)
 
-    ### TEST
-    logger.info("*** TEST ***")
-    results = trainer.predict(predict_dataset, metric_key_prefix="test")
-    predictions = results.predictions
-    metrics = results.metrics
-    metrics["test_samples"] = len(predict_dataset)
-    trainer.log_metrics("test", metrics)
-    trainer.save_metrics("test", metrics)
-    trainer.log(metrics)
+    logger.info("Running prediction...")
+    test_results = trainer.predict(test_dataset, metric_key_prefix="test")
+    test_metrics = test_results.metrics
+    test_metrics["test_samples"] = len(test_dataset)
+    trainer.log_metrics("test", test_metrics)
+    trainer.save_metrics("test", test_metrics)
 
-    # Close the WandB session
     wandb.finish()
+    logger.info("Run complete.")
 
 if __name__ == "__main__":
     main()
