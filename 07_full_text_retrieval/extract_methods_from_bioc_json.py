@@ -43,13 +43,12 @@ def extract_methods_subtitles_to_csv(json_path, output_csv, logs_dir):
             elif section_type != "METHODS":
                 continue  # Allow non-METHODS to be skipped without stopping
 
-
     # Save to CSV
     if len(rows) > 0:
         df = pd.DataFrame(rows, columns=["pmid", "subtitle", "paragraph"])
         df.to_csv(output_csv, index=False)
         unique_subtitles = df["subtitle"].nunique()
-        print(f"✅ Saved {len(rows)} rows to {output_csv} with {unique_subtitles} unique subtitles")
+        print(f"Saved {len(rows)} rows to {output_csv} with {unique_subtitles} unique subtitles")
         return True, unique_subtitles
     else:
         print(f"Skipped {len(rows)}")
@@ -79,7 +78,7 @@ def process_each_json_in_dir(json_dir, output_dir, logs_dir):
     success_rate = (success / total) * 100 if total else 0
     avg_subtitles = sum(subtitle_counts) / len(subtitle_counts) if subtitle_counts else 0
 
-    print("\n📊 Summary Statistics:")
+    print("\nSummary Statistics:")
     print(f"  Total PMIDs processed    : {total}")
     print(f"  Successful methods extractions   : {success}")
     print(f"  Success rate             : {success_rate:.2f}%")
@@ -88,15 +87,19 @@ def process_each_json_in_dir(json_dir, output_dir, logs_dir):
     # Save summary stats
     summary_path = os.path.join(logs_dir, "summary_stats_pmc_methods.txt")
     with open(summary_path, "w") as f:
-        f.write("Summary Statistics:\n")
+        f.write("\nSummary Statistics:\n")
         f.write(f"Total PMIDs processed  : {total}\n")
         f.write(f"Successful methods extractions : {success}\n")
         f.write(f"Success rate           : {success_rate:.2f}%\n")
         f.write(f"Avg. unique subtitles  : {avg_subtitles:.2f}")
 
-# Example usage
-process_each_json_in_dir(
-    json_dir="07_full_text_retrieval/pmc_fulltext/MS_fulltext/",
-    output_dir="07_full_text_retrieval/out_materials_methods/from_pmc_json/MS_methods/",
-    logs_dir="07_full_text_retrieval/out_materials_methods/logs/"
-)
+
+def main():
+    process_each_json_in_dir(
+        json_dir="07_full_text_retrieval/pmc_fulltext/MS_fulltext/",
+        output_dir="07_full_text_retrieval/materials_methods/from_pmc_json/MS_methods/",
+        logs_dir="07_full_text_retrieval/materials_methods/logs/"
+        )
+
+if __name__ == "__main__":
+    main()
