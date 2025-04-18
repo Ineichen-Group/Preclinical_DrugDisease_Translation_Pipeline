@@ -6,7 +6,7 @@ import re
 import csv
 import os
 import glob
-from plot_ner import plot_entity_distributions
+from plot_ner import plot_drug_disease_distribution
 from abbreviations import schwartz_hearst
 
 # Function to remove spaces around ' and -
@@ -134,7 +134,7 @@ def get_emtpy_ner_stats(df_pred):
 
 def main():
     df_pred, df_empty = process_ner_predictions("03_ner/model_predictions")
-    #plot_entity_distributions(df_pred, save_drug_disease_counts_to="03_ner/ner_stats")
+    #plot_drug_disease_distribution(df_pred, save_drug_disease_counts_to="03_ner/ner_stats")
     pmid_set = set(df_pred["PMID"])
     
     # Load full text of identified PMIDs
@@ -172,10 +172,11 @@ def main():
     # save sclerosis related articles
     filtered_df_sclerosis= filtered_df_non_empty[filtered_df_non_empty["unique_conditions_linkbert_predictions"].str.contains("sclerosis", case=False, na=False)]
     filtered_df_sclerosis[["PMID", "unique_conditions_linkbert_predictions", "unique_interventions_linkbert_predictions"]].to_csv(f'{save_dir}/animal_studies_with_drug_disease/filtered_df_non_empty_sclerosis_{len(filtered_df_sclerosis)}.csv')
-    filtered_df_non_empty[["PMID"]].to_csv(
-        f"{save_dir}/animal_studies_with_drug_disease/filtered_df_non_empty_sclerosis_{len(filtered_df_non_empty)}_PMIDs.csv",
+    filtered_df_sclerosis[["PMID"]].to_csv(
+        f"{save_dir}/animal_studies_with_drug_disease/filtered_df_non_empty_sclerosis_{len(filtered_df_sclerosis)}_PMIDs.csv",
         index=False
     )
+
  
 if __name__ == "__main__":
     main()
