@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=sapbert_norm
-#SBATCH --time=20:00:00
+#SBATCH --time=15:00:00
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=4
 #SBATCH --output=logs/job_%x_%j_%a.out
@@ -15,13 +15,16 @@ if [[ "$ENTITY_TYPE" != "disease" && "$ENTITY_TYPE" != "drug" ]]; then
 fi
 
 CHUNK_ID=$SLURM_ARRAY_TASK_ID
-INPUT_FILE="chunks/dict_mapped_ner_chunk_${CHUNK_ID}.csv"
+DATA_DIR="data/"
+INPUT_FILE="mapped_to_dict/chunks/dict_mapped_ner_chunk_${CHUNK_ID}.csv"
+OUTPUT_FILE="mapped_to_embeddings_ontologies/${ENTITY_TYPE}_mapped_ner_chunk_${CHUNK_ID}.csv"
+LINKING_STATS_DIR="nen_stats/${CHUNK_ID}_"
 
 # Timing start
 START_TIME=$(date +%s)
 
 echo "Starting normalization for $ENTITY_TYPE (chunk $CHUNK_ID)"
-python neural_based_nen.py --type "$ENTITY_TYPE" --input "$INPUT_FILE"
+python neural_based_nen.py --type "$ENTITY_TYPE" --data_dir "$DATA_DIR" --input "$INPUT_FILE" --output "$OUTPUT_FILE" --stats_dir "$LINKING_STATS_DIR"
 
 # Timing end
 END_TIME=$(date +%s)

@@ -62,12 +62,6 @@ def map_query_to_terminology(query: str,
     - Tuple[int, str, str, List[Tuple[str, int]], float]: The predicted ontology concept ID or 0 for no mapping,
       label, its canonical form or original query, a list of the nearest entities, and the minimum distance.
     """
-    # Move embeddings to GPU if available
-    if torch.cuda.is_available():
-        all_reps_emb_full= torch.tensor(all_reps_emb_full).to('cuda')
-
-    if torch.cuda.is_available():
-        model = model.to('cuda')
         
     # Encode the query
     query_toks = tokenizer.batch_encode_plus([query], 
@@ -195,38 +189,114 @@ def process_row_annotations(
     return '|'.join(ontology_terms), '|'.join(map(str, ontology_termids)), '|'.join(ontology_terms_canonical), '|'.join([str(ents) for ents in closest_3_entites]), '|'.join([str(dist) for dist in min_distances]),  norm_to_terms, term_to_norm
 
 
-def normalize_ner_columns(df, col_to_map, tokenizer, model, terminology="mondo", dist_threshold=10, n_entities=3):
-    directory_path_embeddings=f"04_normalization/data/{terminology}/embeddings"
-    batch_name_prefix=f"{terminology.upper()}_emb"
-    directory_path_terms_ids_json=f"04_normalization/data/{terminology}/{terminology}_term_id_pairs.json"
-    all_reps_emb_full, term_id_pairs = load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json)
-    
-    print(f"Loaded embeddings {all_reps_emb_full.shape}, term_id_pais {len(term_id_pairs)}")
+def normalize_ner_columns(
+    data_dir,
+    df,
+    col_to_map,
+    tokenizer,
+    model,
+    terminology="mondo",
+    dist_threshold=10,
+    n_entities=3
+):
+    """
+    Normalize named entity recognition (NER) columns in a DataFrame using a pretrained embedding model
+    and a controlled vocabulary (terminology).
+
+    Parameters:
+    ----------
+    data_dir : str
+        Base directory where embeddings and mapping files are stored.
+    df : pandas.DataFrame
+        Input DataFrame containing the column with NER strings to normalize.
+    col_to_map : str
+        Column name in `df` containing NER entities to be normalized.
+    tokenizer : transformers.PreTrainedTokenizer
+        Tokenizer used for encoding the input strings.
+    model : transformers.PreTrainedModel
+        Language model used to generate embeddings for input strings.
+    terminology : str, optional (default="mondo")
+        Name of the controlled vocabulary used for normalization (e.g., "mondo", "hpo").
+    dist_threshold : float, optional (default=10)
+        Maximum cosine distance threshold for considering a match valid.
+    n_entities : int, optional (default=3)
+        Number of closest matches to return.
+
+    Returns:
+    -------
+    pandas.DataFrame
+        Original DataFrame with additional columns:
+        - 'linkbert_<terminology>_<entity_type>'
+        - '<terminology>_termid'
+        - '<terminology>_term_norm'
+        - '<terminology>_closest_3'
+        - '<terminology>_cdist'
+
+    Notes:
+    -----
+    Assumes that entity types end with a suffix like "_conditions".
+    Mapping files must be present in the expected directory structure.
+    """
+
+    # Construct paths to embedding and mapping files
+    embedding_dir = f"{data_dir}{terminology}/embeddings"
+    embedding_prefix = f"{terminology.upper()}_emb"
+    term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs.json"
+
+    # Load precomputed embeddings and corresponding term IDs
+    all_reps_emb_full, term_id_pairs = load_embeddings(
+        embedding_dir, embedding_prefix, term_id_path
+    )
+
+    # Move embeddings and model to GPU if available
+    if torch.cuda.is_available():
+        all_reps_emb_full = torch.tensor(all_reps_emb_full).to("cuda")
+        model = model.to("cuda")
+
+    print(f"Loaded embeddings: {all_reps_emb_full.shape}, term_id_pairs: {len(term_id_pairs)}")
     tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
-    
+
+    # Extract entity type from the column name (assumes a suffix pattern)
     entity_type = col_to_map.split("_")[-1]
-    
+
+    # Load ID-to-term mapping if applicable (only for certain entity types)
     if entity_type == "conditions":
-        directory_path_id_to_term_json=f"04_normalization/data/{terminology}/{terminology}_id_to_term_map.json"
-        with open(directory_path_id_to_term_json, "r", encoding="utf-8") as f:
+        id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
+        with open(id_to_term_path, "r", encoding="utf-8") as f:
             canonical_mapping_dict = json.load(f)
     else:
         canonical_mapping_dict = None
-    
-    # Apply normalization function to the condition column, ignoring the last 2 dictionary outputs
-    df[[f'linkbert_{terminology}_{entity_type}', 
-        f'{terminology}_termid', 
-        f'{terminology}_term_norm', 
-        f'{terminology}_closest_3', 
-        f'{terminology}_cdist']] = df[col_to_map].progress_apply(
-        lambda x: pd.Series(process_row_annotations(x, tokenizer, model, all_reps_emb_full, term_id_pairs, canonical_mapping_dict, dist_threshold, n_entities)[:5])
-    )    
+
+    # Normalize each row in the specified column using a helper function
+    df[
+        [
+            f"linkbert_{terminology}_{entity_type}",
+            f"{terminology}_termid",
+            f"{terminology}_term_norm",
+            f"{terminology}_closest_3",
+            f"{terminology}_cdist"
+        ]
+    ] = df[col_to_map].progress_apply(
+        lambda x: pd.Series(
+            process_row_annotations(
+                x,
+                tokenizer,
+                model,
+                all_reps_emb_full,
+                term_id_pairs,
+                canonical_mapping_dict,
+                dist_threshold,
+                n_entities
+            )[:5]
+        )
+    )
+
     return df
 
 def get_unique_terms(column):
     return set(term.strip() for row in column.dropna() for term in str(row).split('|') if term.strip())
 
-def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mondo"):
+def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminology="mondo"):
     # Count total and successfully mapped terms
     total_terms = 0
     successfully_mapped = 0
@@ -315,7 +385,7 @@ def generate_mapping_stats(df, col_to_map, time_taken, log_dir, terminology="mon
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def main(mapping_type, input_file, output_file, save_stats=False):
+def main(mapping_type, data_dir, input_file, output_file, stats_dir, save_stats=True):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
     print(f"Starting normalization for: {mapping_type.upper()}")
@@ -336,7 +406,7 @@ def main(mapping_type, input_file, output_file, save_stats=False):
         col_to_map = disease_col
         terminology = "mondo"
         output_file = output_file
-        dist_threshold=10
+        dist_threshold=9.7
     else:
         col_to_map = drug_col
         terminology = "umls"
@@ -345,7 +415,7 @@ def main(mapping_type, input_file, output_file, save_stats=False):
 
     # Normalize and time
     start_time = time.time()
-    df_mapped = normalize_ner_columns(df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities)
+    df_mapped = normalize_ner_columns(data_dir, df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities)
     elapsed = time.time() - start_time
     time_taken = str(timedelta(seconds=int(elapsed)))
 
@@ -353,7 +423,7 @@ def main(mapping_type, input_file, output_file, save_stats=False):
 
     # Stats and output
     if save_stats:
-        generate_mapping_stats(df_mapped, col_to_map, time_taken, log_dir="04_normalization/nen_stats/", terminology=terminology)
+        generate_mapping_stats(df_mapped, col_to_map, log_dir=stats_dir, time_taken=time_taken, terminology=terminology)
     df_mapped.to_csv(output_file, index=False)
     print(f"Output saved to: {output_file}")
 
@@ -364,20 +434,33 @@ if __name__ == "__main__":
         '--type',
         type=str,
         choices=["disease", "drug"],
-        default="disease",  
+        default="drug",  
         help="Which type to normalize (default: disease)"
+    )
+    parser.add_argument(
+        '--data_dir',
+        type=str,
+        default="04_normalization/data/ner_samples/sampled_drugs_manual_map.csv", 
+        help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
     )
     parser.add_argument(
         '--input',
         type=str,
-        default="04_normalization/data/ner_samples/sampled_conditions_manual_map.csv", 
+        default="04_normalization/data/ner_samples/sampled_drugs_manual_map.csv", 
         help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
     )
     parser.add_argument(
         '--output',
         type=str,
-        default="04_normalization/data/mapped_to_embeddings_ontologies/sampled_conditions_manual_map_mondo_pred.csv", 
+        default="04_normalization/data/mapped_to_embeddings_ontologies/sampled_drugs_manual_map_umls_pred.csv", 
         help="Path to the output CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
     )
+    parser.add_argument(
+        '--stats_dir',
+        type=str,
+        default="04_normalization/nen_stats/", 
+        help="Path to save normalization stats like count of unique entities before and after linking."
+    )
+    
     args = parser.parse_args()
-    main(args.type, args.input, args.output)
+    main(args.type, args.data_dir, args.input, args.output, args.stats_dir)
