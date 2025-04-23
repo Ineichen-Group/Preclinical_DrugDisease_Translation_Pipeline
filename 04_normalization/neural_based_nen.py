@@ -388,7 +388,6 @@ def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminolog
 def main(mapping_type, data_dir, input_file, output_file, stats_dir, save_stats=True):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
-    print(f"Starting normalization for: {mapping_type.upper()}")
     print(f"Input file: {input_file}")
 
     # Load model and tokenizer
@@ -414,6 +413,7 @@ def main(mapping_type, data_dir, input_file, output_file, stats_dir, save_stats=
         dist_threshold=10
 
     # Normalize and time
+    print(f"Starting normalization for: {mapping_type.upper()} with cdist {dist_threshold}")
     start_time = time.time()
     df_mapped = normalize_ner_columns(data_dir, df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities)
     elapsed = time.time() - start_time
