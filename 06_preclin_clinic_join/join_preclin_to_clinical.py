@@ -9,60 +9,40 @@ from viz_data import plot_top_entities_side_by_side
 
 # --- Load Preclinical Data ---
 preclinical_df = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv")
+conditions_col_to_use = "linkbert_mapped_conditions"
+drugs_col_to_use = "linkbert_mapped_drugs"
 
 # Split and explode conditions and drugs
-preclinical_df["linkbert_mapped_conditions"] = preclinical_df["linkbert_mapped_conditions"].str.split("|")
-preclinical_df = preclinical_df.explode("linkbert_mapped_conditions", ignore_index=True)
+preclinical_df[conditions_col_to_use] = preclinical_df[conditions_col_to_use].str.split("|")
+preclinical_df = preclinical_df.explode(conditions_col_to_use, ignore_index=True)
 
-preclinical_df["linkbert_mapped_drugs"] = preclinical_df["linkbert_mapped_drugs"].str.split("|")
-preclinical_df = preclinical_df.explode("linkbert_mapped_drugs", ignore_index=True)
+preclinical_df[drugs_col_to_use] = preclinical_df[drugs_col_to_use].str.split("|")
+preclinical_df = preclinical_df.explode(drugs_col_to_use, ignore_index=True)
 
 # Create disease-drug key
 preclinical_df['disease<>drug'] = (
-    preclinical_df['linkbert_mapped_conditions'] + " <> " + preclinical_df['linkbert_mapped_drugs']
+    preclinical_df[conditions_col_to_use] + " <> " + preclinical_df[drugs_col_to_use]
 )
 
-plot_top_entities_side_by_side(preclinical_df, id_column='PMID', condition_column='linkbert_mapped_conditions', drug_column='linkbert_mapped_drugs', color_code='#56B4E9')
+plot_top_entities_side_by_side(preclinical_df, id_column='PMID', condition_column=conditions_col_to_use, drug_column=drugs_col_to_use, color_code='#56B4E9')
 
 # --- Load Clinical Data ---
-clinical_df = pd.read_csv("06_preclin_clinic_join/data/clinical/aggregated_ner_annotations_basic_dict_mapped_19632.csv")
-included_nctids = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_inlcuded_18609_nctids.csv")
+clinical_df = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_combined_annotations.csv")
+conditions_col_to_use_clinical = "linkbert_aact_mapped_conditions"
+drugs_col_to_use_clinical = "linkbert_aact_mapped_drugs"
 
-clinical_df = clinical_df[clinical_df['nct_id'].isin(included_nctids['nct_id'])]
+clinical_df[conditions_col_to_use_clinical] = clinical_df[conditions_col_to_use_clinical].str.split("|")
+clinical_df = clinical_df.explode(conditions_col_to_use_clinical, ignore_index=True)
 
-def combine_unique_entities_bert_aact(col1, col2):
-    col1 = str(col1) if not pd.isna(col1) else ""
-    col2 = str(col2) if not pd.isna(col2) else ""
-    combined = set(col1.split('|')) | set(col2.split('|'))
-    return '|'.join(sorted(combined))
-
-# Merge canonical and BioLinkBERT-based annotations
-clinical_df['linkbert_aact_mapped_conditions'] = clinical_df.apply(
-    lambda row: combine_unique_entities_bert_aact(row['canonical_BioLinkBERT-base_conditions'], row['canonical_aact_conditions']),
-    axis=1
-)
-
-clinical_df['linkbert_aact_mapped_drugs'] = clinical_df.apply(
-    lambda row: combine_unique_entities_bert_aact(row['canonical_BioLinkBERT-base_interventions'], row['canonical_aact_interventions']),
-    axis=1
-)
-
-# Keep relevant columns and explode for 1-to-1 condition-drug mapping
-clinical_df = clinical_df[['nct_id', 'linkbert_aact_mapped_conditions', 'linkbert_aact_mapped_drugs', 'Disease Class']]
-clinical_df.to_csv("06_preclin_clinic_join/data/clinical/clinical_combined_annotations.csv", index=False)
-
-clinical_df['linkbert_aact_mapped_conditions'] = clinical_df['linkbert_aact_mapped_conditions'].str.split("|")
-clinical_df = clinical_df.explode("linkbert_aact_mapped_conditions", ignore_index=True)
-
-clinical_df['linkbert_aact_mapped_drugs'] = clinical_df['linkbert_aact_mapped_drugs'].str.split("|")
-clinical_df = clinical_df.explode("linkbert_aact_mapped_drugs", ignore_index=True)
+clinical_df[drugs_col_to_use_clinical] = clinical_df[drugs_col_to_use_clinical].str.split("|")
+clinical_df = clinical_df.explode(drugs_col_to_use_clinical, ignore_index=True)
 
 # Create disease-drug key
 clinical_df['disease<>drug'] = (
-    clinical_df['linkbert_aact_mapped_conditions'] + " <> " + clinical_df['linkbert_aact_mapped_drugs']
+    clinical_df[conditions_col_to_use_clinical] + " <> " + clinical_df[drugs_col_to_use_clinical]
 )
 
-plot_top_entities_side_by_side(clinical_df, id_column='nct_id', condition_column='linkbert_aact_mapped_conditions', drug_column='linkbert_aact_mapped_drugs',viz_name_suffix='clinical')
+plot_top_entities_side_by_side(clinical_df, id_column='nct_id', condition_column=conditions_col_to_use_clinical, drug_column=drugs_col_to_use_clinical,viz_name_suffix='clinical')
 
 # Load and merge clinical metadata (phase + status)
 metadata_df = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv")[['nct_id', 'phase', 'overall_status']]
