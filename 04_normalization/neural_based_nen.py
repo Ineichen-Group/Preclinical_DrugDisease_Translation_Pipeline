@@ -385,7 +385,7 @@ def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminolog
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def main(mapping_type, data_dir, input_file, output_file, stats_dir, save_stats=True):
+def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir, save_stats=True):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
     print(f"Input file: {input_file}")
@@ -398,16 +398,13 @@ def main(mapping_type, data_dir, input_file, output_file, stats_dir, save_stats=
     df = pd.read_csv(input_file)
     #df = df.head(15)
     # Columns and output path
-    disease_col = "linkbert_mapped_conditions"
-    drug_col = "linkbert_mapped_drugs"
+
     n_entities=3
     if mapping_type == "disease":
-        col_to_map = disease_col
         terminology = "mondo"
         output_file = output_file
         dist_threshold=9.7
     else:
-        col_to_map = drug_col
         terminology = "umls"
         output_file = output_file 
         dist_threshold=10
@@ -438,6 +435,12 @@ if __name__ == "__main__":
         help="Which type to normalize (default: disease)"
     )
     parser.add_argument(
+        '--col_to_map',
+        type=str,
+        default="linkbert_mapped_conditions", #linkbert_mapped_drugs
+        help="Column that contains the entities for normalization."
+    )
+    parser.add_argument(
         '--data_dir',
         type=str,
         default="04_normalization/data/ner_samples/sampled_drugs_manual_map.csv", 
@@ -463,4 +466,4 @@ if __name__ == "__main__":
     )
     
     args = parser.parse_args()
-    main(args.type, args.data_dir, args.input, args.output, args.stats_dir)
+    main(args.type, args.col_to_map, args.data_dir, args.input, args.output, args.stats_dir)
