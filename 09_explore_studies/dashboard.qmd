@@ -352,3 +352,72 @@ def datagrid_clinical():
         filters=True,
     )
 ```
+
+## Row
+
+### Column {height=50%}
+
+```{python}
+@render_widget  
+def phase_bar_chart():  
+    filtered_df, clinical_df, preclinical_df = filtered_documents()
+
+    phase_order = [
+        'Early Phase 1',
+        'Phase 1',
+        'Phase 1/2',
+        'Phase 2',
+        'Phase 2/3',
+        'Phase 3',
+        'Phase 4',
+        'Not Applicable'
+    ]
+        # Count the occurrences of each phase
+    phase_counts = clinical_df['phase'].value_counts().reindex(phase_order, fill_value=0).reset_index()
+    phase_counts.columns = ['phase', 'count']
+    
+    # Create the bar chart with counts displayed on top of the bars
+    bar_chart = px.bar(
+        phase_counts, 
+        x='phase', 
+        y='count',
+        title="Distribution of Phases",
+        template="plotly_white",
+        category_orders={'phase': phase_order},
+        color_discrete_sequence=px.colors.qualitative.Safe,  # Set a more vibrant color scale
+        text='count'  # Display counts on top of the bars
+    )
+    bar_chart.update_traces(textposition='outside', textfont_size=12)
+
+    return bar_chart 
+```
+
+### Column {height=50%}
+
+
+```{python}
+@render_widget
+def status_bar_chart():
+    filtered_df, clinical_df, preclinical_df = filtered_documents()
+
+    # Count the occurrences of each overall status
+    status_counts = clinical_df['overall_status'].value_counts().reset_index()
+    status_counts.columns = ['overall_status', 'count']
+    status_counts = status_counts.sort_values(by='count', ascending=True)
+
+    # Create the bar chart with the correct x and y axes
+    bar_chart = px.bar(
+        status_counts, 
+        x='count', 
+        y='overall_status',  # Correctly specify the y-axis as the count
+        title="Distribution of Overall Status",
+        template="plotly_white",
+        text='count',  # Display counts on top of the bars
+        color_discrete_sequence=px.colors.qualitative.Safe,
+        orientation='h'
+    )
+
+    bar_chart.update_traces(textposition='outside', textfont_size=12)
+    
+    return bar_chart
+```
