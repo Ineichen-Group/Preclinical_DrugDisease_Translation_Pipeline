@@ -4,6 +4,7 @@ import re
 import ast
 import pandas as pd
 import re
+import time
 
 SPECIES_LABELS = ["mouse", "rat", "rabbit", "monkey", "guinea pig", "species-other", "dog", "cat", "pig"]
 SEX_LABELS = {
@@ -31,26 +32,6 @@ REGEX_DICT = {
         "species-other": []
         }
 }
-
-FALSE_CONTEXT_TERMS = r"\b(?:antibody|antibodies)\b"
-
-def is_in_antibody_context(text, match_start, match_end, context_terms, window=5):
-    """
-    Check if a regex match is within a specified number of words from dangerous context terms.
-    If so, this is likely to be a false positive.
-    """
-    words = text.split()
-    match_word_indices = [i for i, word in enumerate(words) 
-                          if match_start <= text.index(word) < match_end]
-    
-    context_word_indices = [i for i, word in enumerate(words) 
-                            if re.search(context_terms, word, re.IGNORECASE)]
-
-    for match_idx in match_word_indices:
-        for context_idx in context_word_indices:
-            if abs(match_idx - context_idx) <= window:
-                return True
-    return False
 
 def label_to_vector(label, species_labels):
     # Initialize the binary vector with zeros
@@ -85,29 +66,63 @@ def classify_sex(text):
 
     return num, label
 
+FALSE_CONTEXT_TERMS = r"""
+    \b(
+        antibody|antibodies|antiserum|
+        monoclonal|polyclonal|
+        Ig\s*[A-Z]{1,2}|
+        mAb|pAb|HRP|APC|FITC|PE|Cy\d+|
+        ELISA|immunoblot|western blot|immunostaining|
+        conjugated|biotinylated|fluorescent-labeled|
+        GAPDH|tubulin|β-actin|
+        luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
+        serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
+    )\b
+"""
+WINDOW = 10
+
+def is_in_false_context(text, match_start, match_end, context_terms, window=5):
+    # Tokenize with positions
+    tokens = list(re.finditer(r'\b\w+\b', text))
+    
+    # Find token index of species match
+    match_token_indices = [
+        i for i, tok in enumerate(tokens)
+        if match_start <= tok.start() < match_end
+    ]
+
+    if not match_token_indices:
+        return False  # Fallback if match not mapped properly
+
+    # For each species token index, check ±window
+    for idx in match_token_indices:
+        start = max(0, idx - window)
+        end = min(len(tokens), idx + window + 1)
+        context_window = tokens[start:end]
+        for tok in context_window:
+            if re.search(context_terms, tok.group(), re.IGNORECASE | re.VERBOSE):
+                return True  # Found context term nearby
+
+    return False
+
 def classify_species(text):
     matched_labels = []
-    
-    # Create a binary vector for the species labels
     species_vector = [0] * len(SPECIES_LABELS)
-    
-    # Match the text with species patterns
+
     for idx, label in enumerate(SPECIES_LABELS):
         patterns = REGEX_DICT["species"].get(label, [])
         for pattern in patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
-                if not is_in_antibody_context(text, match.start(), match.end(), FALSE_CONTEXT_TERMS):
+                if not is_in_false_context(text, match.start(), match.end(), FALSE_CONTEXT_TERMS):
                     species_vector[idx] = 1
-                    if label not in matched_labels:
-                        matched_labels.append(label)
-                    break
+                    matched_labels.append(label)
+                    break  # one match is enough per label
 
     if not matched_labels:
-        # No matches -> assign species-other
         species_vector[SPECIES_LABELS.index("species-other")] = 1
         matched_labels = ["species-other"]
-    
-    return species_vector, matched_labels
+
+    return species_vector, list(set(matched_labels))
 
 
 def main(df_path, category, text_col, output_dir):
@@ -133,4 +148,12 @@ if __name__=="__main__":
     category = "species"  # "sex" or "species"
     output_dir = f"08_IE_full_text/model_predictions/{category}"
     text_col = "Text"
+    
+    start_time = time.time()
     main(df_path, category, text_col, output_dir)
+    end_time = time.time()
+
+    elapsed = end_time - start_time
+    mins, secs = divmod(elapsed, 60)
+
+    print(f"\nDone in {elapsed:.2f} seconds ({int(mins)}m {secs:.2f}s).")
