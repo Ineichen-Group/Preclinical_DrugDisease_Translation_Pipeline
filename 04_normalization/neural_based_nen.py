@@ -259,13 +259,11 @@ def normalize_ner_columns(
     # Extract entity type from the column name (assumes a suffix pattern)
     entity_type = col_to_map.split("_")[-1]
 
-    # Load ID-to-term mapping if applicable (only for certain entity types)
-    if entity_type == "conditions":
-        id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
-        with open(id_to_term_path, "r", encoding="utf-8") as f:
-            canonical_mapping_dict = json.load(f)
-    else:
-        canonical_mapping_dict = None
+    # Load ID-to-term mapping dictionary, mapping to canonical forms
+    # This file should contain a mapping from term IDs to their canonical forms
+    id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
+    with open(id_to_term_path, "r", encoding="utf-8") as f:
+        canonical_mapping_dict = json.load(f)
 
     # Normalize each row in the specified column using a helper function
     df[
@@ -403,11 +401,11 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
     if mapping_type == "disease":
         terminology = "mondo"
         output_file = output_file
-        dist_threshold=9.7
+        dist_threshold = 9.7
     else:
         terminology = "umls"
         output_file = output_file 
-        dist_threshold=10
+        dist_threshold = 7.8
 
     # Normalize and time
     print(f"Starting normalization for: {mapping_type.upper()} with cdist {dist_threshold}")
