@@ -8,6 +8,8 @@ from tqdm import tqdm
 import json
 from transformers import AutoTokenizer, AutoModel
 import warnings
+import csv
+from collections import defaultdict
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 def load_mondo_ontology(path_to_owl):
@@ -183,8 +185,63 @@ def load_embed_umls(umls_mrconso_path, paht_to_save_term_id_json, path_to_save_e
         save_emb_path=path_to_save_embeddings
     )
     
+def build_cui_to_str_mapping(file1_path, file2_path, save_to_json=None):
+    # === Load strings from file1 ===
+    cui_to_str = {}
+    with open(file1_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        count = 0
+        for row in reader:
+            cui = row['cui'].strip()
+            string = row['str'].strip()
+            cui_to_str[cui] = string
+            count += 1
+    print(f"[INFO] Loaded {count} CUI-to-STR mappings from {file1_path}")
 
-def main(load_mondo=False, load_umls=True):
+    # === Load unique relationships from file2 ===
+    cui1_to_cui2s = defaultdict(set)
+    cui1_child_count = defaultdict(int)
+    seen_relations = set()
+
+    with open(file2_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            cui1 = row['cui1'].strip()
+            cui2 = row['cui2'].strip()
+            relation_key = (cui1, cui2)
+            if relation_key not in seen_relations:
+                seen_relations.add(relation_key)
+                cui1_to_cui2s[cui1].add(cui2)
+                cui1_child_count[cui2] += 1
+
+    print(f"[INFO] Processed {len(seen_relations)} unique relationships")
+    print(f"[INFO] Found {len(cui1_to_cui2s)} unique CUI1 entries")
+
+    # === Build mapping from cui1 to best cui2's str ===
+    result = {}
+    unmapped = []
+
+    for cui1, cui2_set in cui1_to_cui2s.items():
+        best_cui2 = max(cui2_set, key=lambda c: cui1_child_count.get(c, 0))
+        string = cui_to_str.get(best_cui2)
+        if string:
+            result[cui1] = string
+        else:
+            unmapped.append((cui1, best_cui2))
+
+    print(f"[INFO] Created {len(result)} mappings from CUI1 to STR")
+    if unmapped:
+        print(f"[WARN] {len(unmapped)} CUI1 entries could not be mapped due to missing STR in file1")
+
+    # === Optionally save to JSON file ===
+    if save_to_json:
+        with open(save_to_json, 'w', encoding='utf-8') as f:
+            json.dump(result, f, indent=2)
+        print(f"[INFO] Saved mapping to {save_to_json}")
+
+    return result
+
+def main(load_mondo=False, load_umls=True, load_umls_mapping=False):
     if load_mondo:
         onthology_owl_path = "04_normalization/data/mondo/mondo.owl"
         paht_to_save_term_id_json = "04_normalization/data/mondo/mondo_term_id_pairs.json"
@@ -198,7 +255,11 @@ def main(load_mondo=False, load_umls=True):
         path_to_save_embeddings_umls = "04_normalization/data/umls/embeddings"
         
         load_embed_umls(umls_mrconso_path, paht_to_save_term_id_json_umls, path_to_save_embeddings_umls)
-    
+    if load_umls_mapping:
+        umls_mrconso_path = "04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv"
+        umls_relations_path = "04_normalization/data/umls/mrrel_tradenames_labnumbers_20250507.csv"
+        output_json_path = "04_normalization/data/umls/umls_id_to_term_map.json"
+        mapping = build_cui_to_str_mapping(umls_mrconso_path, umls_relations_path, save_to_json=output_json_path)
     
 if __name__ == "__main__":
-    main(load_mondo=True, load_umls=False)
+    main(load_mondo=False, load_umls=False, load_umls_mapping=True)
