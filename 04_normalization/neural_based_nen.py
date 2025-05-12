@@ -110,6 +110,9 @@ def map_query_to_terminology(query: str,
     # Get the canonical form from the dictionary
     if canonical_mapping_dict:
         canonical_form = canonical_mapping_dict.get(predicted_id, "Canonical form not found")
+        if canonical_form == "Canonical form not found":
+            # If the canonical form is not found, use the predicted term
+            canonical_form = predicted_term
     else:
         canonical_form = predicted_term
 
@@ -301,10 +304,8 @@ def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminolog
     entity_type = col_to_map.split("_")[-1]
     unmapped_rows = []
     mapped_rows = []
-    if entity_type == "drugs":
-        original_col = 'unique_interventions_linkbert_predictions'
-    else:
-        original_col = f'unique_{entity_type}_linkbert_predictions'
+    
+    original_col = col_to_map
 
     for idx, row in df.iterrows():
         mentions_raw = row.get(original_col, "")
@@ -415,13 +416,13 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
     time_taken = str(timedelta(seconds=int(elapsed)))
 
     print(f"Normalization time for '{col_to_map}': {time_taken}")
-
+    df_mapped.to_csv(output_file, index=False)
+    print(f"Output saved to: {output_file}")
+    
     # Stats and output
     if save_stats:
         generate_mapping_stats(df_mapped, col_to_map, log_dir=stats_dir, time_taken=time_taken, terminology=terminology)
-    df_mapped.to_csv(output_file, index=False)
-    print(f"Output saved to: {output_file}")
-
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Normalize NER columns for diseases or drugs.")
