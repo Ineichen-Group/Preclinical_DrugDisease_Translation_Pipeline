@@ -7,10 +7,21 @@ from viz_data import plot_top_entities_side_by_side
 #        LOAD DATA         #
 # ------------------------- #
 
+FILE_PRECLINICAL_LINKING = "04_normalization/data/mapped_all/mapped_preclinical_data.csv"
+FILE_CLINICAL_LINKING = "04_normalization/data/mapped_all/mapped_clinical_data.csv"
+FILE_CLINICAL_METADATA = "06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv"
+
+OUTPUT_DIR = "06_preclin_clinic_join/data/joined_data/"
+
+conditions_col_to_use = "disease_term_mondo_norm" # #"linkbert_mapped_conditions" # 
+drugs_col_to_use =  "drug_term_umls_norm" #"linkbert_mapped_drugs" #"drug_term_umls_norm"
+
+conditions_col_to_use_clinical =  "disease_term_mondo_norm"#"linkbert_aact_mapped_conditions" #"disease_term_mondo_norm"
+drugs_col_to_use_clinical =  "drug_term_umls_norm" #"linkbert_aact_mapped_drugs" # "drug_term_umls_norm"
+
 # --- Load Preclinical Data ---
-preclinical_df = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv")
-conditions_col_to_use = "linkbert_mapped_conditions"
-drugs_col_to_use = "linkbert_mapped_drugs"
+preclinical_df = pd.read_csv(FILE_PRECLINICAL_LINKING)
+print(f"Shape of preclinical_df: {preclinical_df.shape}, {preclinical_df.PMID.nunique()} unique PMIDs")
 
 # Split and explode conditions and drugs
 preclinical_df[conditions_col_to_use] = preclinical_df[conditions_col_to_use].str.split("|")
@@ -18,6 +29,12 @@ preclinical_df = preclinical_df.explode(conditions_col_to_use, ignore_index=True
 
 preclinical_df[drugs_col_to_use] = preclinical_df[drugs_col_to_use].str.split("|")
 preclinical_df = preclinical_df.explode(drugs_col_to_use, ignore_index=True)
+
+preclinical_df = preclinical_df.drop_duplicates()
+
+# Strip whitespace and convert to lowercase
+preclinical_df[conditions_col_to_use] = preclinical_df[conditions_col_to_use].str.strip().str.lower()
+preclinical_df[drugs_col_to_use] = preclinical_df[drugs_col_to_use].str.strip().str.lower()
 
 # Create disease-drug key
 preclinical_df['disease<>drug'] = (
@@ -27,9 +44,8 @@ preclinical_df['disease<>drug'] = (
 plot_top_entities_side_by_side(preclinical_df, id_column='PMID', condition_column=conditions_col_to_use, drug_column=drugs_col_to_use, color_code='#56B4E9')
 
 # --- Load Clinical Data ---
-clinical_df = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_combined_annotations.csv")
-conditions_col_to_use_clinical = "linkbert_aact_mapped_conditions"
-drugs_col_to_use_clinical = "linkbert_aact_mapped_drugs"
+clinical_df = pd.read_csv(FILE_CLINICAL_LINKING)
+print(f"Shape of clinical_df: {clinical_df.shape}, {clinical_df.nct_id.nunique()} unique NCTIDs")
 
 clinical_df[conditions_col_to_use_clinical] = clinical_df[conditions_col_to_use_clinical].str.split("|")
 clinical_df = clinical_df.explode(conditions_col_to_use_clinical, ignore_index=True)
@@ -37,15 +53,19 @@ clinical_df = clinical_df.explode(conditions_col_to_use_clinical, ignore_index=T
 clinical_df[drugs_col_to_use_clinical] = clinical_df[drugs_col_to_use_clinical].str.split("|")
 clinical_df = clinical_df.explode(drugs_col_to_use_clinical, ignore_index=True)
 
+# Strip whitespace and convert to lowercase
+clinical_df[conditions_col_to_use_clinical] = clinical_df[conditions_col_to_use_clinical].str.strip().str.lower()
+clinical_df[drugs_col_to_use_clinical] = clinical_df[drugs_col_to_use_clinical].str.strip().str.lower()
+
 # Create disease-drug key
 clinical_df['disease<>drug'] = (
     clinical_df[conditions_col_to_use_clinical] + " <> " + clinical_df[drugs_col_to_use_clinical]
 )
 
-plot_top_entities_side_by_side(clinical_df, id_column='nct_id', condition_column=conditions_col_to_use_clinical, drug_column=drugs_col_to_use_clinical,viz_name_suffix='clinical')
+plot_top_entities_side_by_side(clinical_df, id_column='nct_id', condition_column=conditions_col_to_use_clinical, drug_column=drugs_col_to_use_clinical, viz_name_suffix='clinical')
 
 # Load and merge clinical metadata (phase + status)
-metadata_df = pd.read_csv("06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv")[['nct_id', 'phase', 'overall_status']]
+metadata_df = pd.read_csv(FILE_CLINICAL_METADATA)[['nct_id', 'phase', 'overall_status']]
 metadata_df = metadata_df.drop_duplicates()
 
 clinical_df = clinical_df.merge(metadata_df, on='nct_id', how='left')
@@ -53,71 +73,107 @@ clinical_df = clinical_df.merge(metadata_df, on='nct_id', how='left')
 # ------------------------- #
 #     AGGREGATE & MERGE     #
 # ------------------------- #
-
 def aggregate_and_merge(clinical_df, preclinical_df, 
                         clinical_key_col, clinical_doc_id_col, 
-                        preclinical_key_col, preclinical_doc_id_col):
+                        preclinical_key_col, preclinical_doc_id_col,
+                        preclinical_disease_col, preclinical_drug_col):
     """
-    Aggregates and merges clinical and preclinical data on a shared key.
+    Aggregates and merges clinical and preclinical data on a shared normalized key.
+
+    Parameters:
+    ----------
+    clinical_df : pd.DataFrame
+        DataFrame containing clinical study data, including a merge key and document-level info.
+
+    preclinical_df : pd.DataFrame
+        DataFrame containing preclinical (animal study) data with a similar merge key and document info.
+
+    clinical_key_col : str
+        Column name in the clinical dataframe that holds the disease<>drug key used for merging.
+
+    clinical_doc_id_col : str
+        Column name in the clinical dataframe representing document IDs (e.g., NCT IDs).
+
+    preclinical_key_col : str
+        Column name in the preclinical dataframe that holds the disease<>drug key used for merging.
+
+    preclinical_doc_id_col : str
+        Column name in the preclinical dataframe representing document IDs (e.g., PMIDs).
+
+    preclinical_disease_col : str
+        Column name in the preclinical dataframe containing the mapped disease name(s).
+
+    preclinical_drug_col : str
+        Column name in the preclinical dataframe containing the mapped drug name(s).
+
+    Returns:
+    -------
+    pd.DataFrame
+        A merged DataFrame containing aggregated clinical and preclinical data by normalized key.
+        Includes counts of associated documents and selected metadata like disease, drug, phase, and status.
     """
-    # Clinical aggregation
+
+    # === Aggregate clinical data by key ===
     clinical_agg = clinical_df.groupby(clinical_key_col).agg({
         clinical_doc_id_col: list,
         'phase': list,
         'overall_status': list
     }).reset_index()
 
+    # Rename columns for clarity and consistency
     clinical_agg.rename(columns={
         clinical_key_col: 'normalized_key',
         clinical_doc_id_col: 'clinical_doc_ids'
     }, inplace=True)
 
+    # Add count of clinical documents per key
     clinical_agg['clinical_count'] = clinical_agg['clinical_doc_ids'].apply(len)
 
-    # Preclinical aggregation
+    # === Aggregate preclinical data by key ===
     preclinical_agg = preclinical_df.groupby(preclinical_key_col).agg({
         preclinical_doc_id_col: list,
-        'linkbert_mapped_conditions': 'first',
-        'linkbert_mapped_drugs': 'first'
+        preclinical_disease_col: 'first',
+        preclinical_drug_col: 'first'
     }).reset_index()
-    
+
+    # Rename columns for consistency
     preclinical_agg.rename(columns={
         preclinical_key_col: 'normalized_key',
         preclinical_doc_id_col: 'preclinical_doc_ids',
-        'linkbert_mapped_conditions': 'disease',
-        'linkbert_mapped_drugs': 'drug'
+        preclinical_disease_col: 'disease',
+        preclinical_drug_col: 'drug'
     }, inplace=True)
 
+    # Add count of preclinical documents per key
     preclinical_agg['preclinical_count'] = preclinical_agg['preclinical_doc_ids'].apply(len)
 
-    # Merge both
+    # === Merge clinical and preclinical aggregates on the normalized key ===
     merged_df = pd.merge(clinical_agg, preclinical_agg, on='normalized_key', how='outer')
 
     return merged_df
 
-def sort_by_study_counts_remove_empty(df):
+def clean_and_sort_study_data(df):
     """
-    Sorts a merged clinical/preclinical DataFrame by the number of studies 
-    (clinical and preclinical), and removes any rows missing either count.
+    Cleans and sorts a merged clinical/preclinical DataFrame by removing invalid rows
+    and ordering by study counts.
 
     Specifically:
-    - Sorts the DataFrame in descending order of 'clinical_count' and then 'preclinical_count'.
-    - Filters out rows where either 'clinical_count' or 'preclinical_count' is NaN.
+    - Sorts the DataFrame in descending order of 'clinical_count' and 'preclinical_count'.
+    - Removes rows where either 'clinical_count' or 'preclinical_count' is NaN.
+    - Removes rows where the 'drug' name is missing or has 3 or fewer characters.
     - Prints the shape before and after filtering for transparency.
 
     Parameters:
     ----------
     df : pd.DataFrame
-        A DataFrame containing columns 'clinical_count' and 'preclinical_count'.
+        A DataFrame containing 'clinical_count', 'preclinical_count', and 'drug'.
 
     Returns:
     -------
     pd.DataFrame
-        The sorted and filtered DataFrame, containing only rows with both clinical
-        and preclinical study counts.
+        The cleaned and sorted DataFrame.
     """
-    # Print original DataFrame shape
-    print(f'Input shape: {df.shape}')
+    print(f'Input shape of merged for cleaning: {df.shape}')
 
     # Sort by descending clinical and preclinical study counts
     sorted_df = df.sort_values(
@@ -125,14 +181,15 @@ def sort_by_study_counts_remove_empty(df):
         ascending=[False, False]
     )
 
-    # Remove rows missing either count
-    filtered_df = sorted_df.dropna(
-        subset=['clinical_count', 'preclinical_count']
-    )
+    # Remove rows with missing study counts
+    filtered_df = sorted_df.dropna(subset=['clinical_count', 'preclinical_count'])
 
-    # Print shape after filtering
-    print(f'Filtered shape: {filtered_df.shape}')
+    # Remove rows with invalid or too-short drug names
+    filtered_df = filtered_df[
+        filtered_df['drug'].apply(lambda x: isinstance(x, str) and len(x.strip()) > 3)
+    ]
 
+    print(f'Shape after filtering empty counts and short drugs: {filtered_df.shape}')
     return filtered_df
 
 
@@ -152,7 +209,7 @@ preclinical_unique_pairs_count = preclinical_unique_pairs[preclinical_unique_pai
 print(preclinical_unique_pairs_count.shape)
 
 # Save unique pairs to CSV
-preclinical_unique_pairs.to_csv('06_preclin_clinic_join/data/joined_data/preclinical_unique_pairs.csv', index=False)
+preclinical_unique_pairs.to_csv(f'{OUTPUT_DIR}preclinical_unique_pairs.csv', index=False)
 
 # Clinical Stats
 print("----- Clinical Stats: -----")
@@ -168,7 +225,7 @@ clinical_unique_pairs_count = clinical_unique_pairs[clinical_unique_pairs['count
 print(clinical_unique_pairs_count.shape)
 
 # Save unique pairs to CSV
-clinical_unique_pairs.to_csv('06_preclin_clinic_join/data/joined_data/clinical_unique_pairs.csv', index=False)
+clinical_unique_pairs.to_csv('{OUTPUT_DIR}clinical_unique_pairs.csv', index=False)
 
 # Apply aggregation + filtering
 merged_df = aggregate_and_merge(
@@ -177,10 +234,22 @@ merged_df = aggregate_and_merge(
     clinical_key_col='disease<>drug',
     clinical_doc_id_col='nct_id',
     preclinical_key_col='disease<>drug',
-    preclinical_doc_id_col='PMID'
+    preclinical_doc_id_col='PMID',
+    preclinical_disease_col=conditions_col_to_use, 
+    preclinical_drug_col=drugs_col_to_use
 )
 
-filtered_df = sort_by_study_counts_remove_empty(merged_df)
+filtered_df = clean_and_sort_study_data(merged_df)
+
+print("----- Joined Stats: -----")
+print(f"Filtered shape: {filtered_df.shape}")
+
+# Flatten and count unique clinical and preclinical IDs
+clinical_ids = filtered_df['clinical_doc_ids'].dropna().explode()
+preclinical_ids = filtered_df['preclinical_doc_ids'].dropna().explode()
+
+print(f"Unique clinical doc IDs after merge: {clinical_ids.nunique()}")
+print(f"Unique preclinical doc IDs after merge: {preclinical_ids.nunique()}")
 
 # ------------------------- #
 #   ADD INSIGHTS / EXPORT   #
@@ -228,7 +297,7 @@ print(f"Percentage with Phase 3: {pct_phase3:.2f}%")
 print(f"Percentage with Phase 4: {pct_phase4:.2f}%")
 
 # Export for manual review
-output_path = f"06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_{total}.csv"
+output_path = f"{OUTPUT_DIR}condition_clinical_and_preclinical_{total}.csv"
 filtered_df.to_csv(output_path, index=False)
 
 # ------------------------- #

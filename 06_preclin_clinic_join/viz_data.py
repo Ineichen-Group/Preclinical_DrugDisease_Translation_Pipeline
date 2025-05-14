@@ -3,7 +3,7 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
-def plot_top_entities_side_by_side(df, id_column, condition_column, drug_column, top_n=20, color_code='#E69F00', viz_name_suffix='preclinical'):
+def plot_top_entities_side_by_side(df, id_column, condition_column, drug_column, top_n=20, color_code='#E69F00', viz_name_suffix='preclinical', save_to="png"):
     df = df[(df[condition_column].notna()) & (df[condition_column] != '')]
     df = df[(df[drug_column].notna()) & (df[drug_column] != '')]
     
@@ -56,10 +56,10 @@ def plot_top_entities_side_by_side(df, id_column, condition_column, drug_column,
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig(f"06_preclin_clinic_join/viz/top_{top_n}_drug_disease_distr_{viz_name_suffix}.png")
+    plt.savefig(f"06_preclin_clinic_join/viz/top_{top_n}_drug_disease_distr_{viz_name_suffix}.{save_to}")
     plt.show()
 
-def viz_joined_preclin_clinical(filtered_df, normalized_key="normalized_condition", additional_sort_by="both", translation_column=None, top_n=25, fig_name_suffix=''):
+def viz_joined_preclin_clinical(filtered_df, normalized_key="normalized_condition", additional_sort_by="both", translation_column=None, top_n=25, fig_name_suffix='', save_to="png"):
     """
     Visualizes the top N normalized conditions with preclinical and clinical counts as horizontal bars.
 
@@ -130,20 +130,5 @@ def viz_joined_preclin_clinical(filtered_df, normalized_key="normalized_conditio
     plt.grid(axis='x', linestyle='--', alpha=0.4, color='gray', zorder=0)
 
     plt.tight_layout()
-    plt.savefig(f'06_preclin_clinic_join/viz/top{top_n}_preclin_clin{fig_name_suffix}.pdf')
+    plt.savefig(f'06_preclin_clinic_join/viz/top{top_n}_preclin_clin{fig_name_suffix}.{save_to}')
     plt.show()
-    
-output_path = f"06_preclin_clinic_join/data/manual_data_checks/condition_clinical_and_preclinical_13607.csv"
-filtered_df = pd.read_csv(output_path)
-
-# ------------------------- #
-#         VISUALIZE         #
-# ------------------------- #
-
-viz_joined_preclin_clinical(
-    filtered_df,
-    "normalized_key",
-    translation_column='at_least_one_phase4',
-    top_n=15,
-    fig_name_suffix='_disease_drug'
-)
