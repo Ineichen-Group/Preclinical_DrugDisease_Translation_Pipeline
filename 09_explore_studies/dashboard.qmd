@@ -29,7 +29,7 @@ import plotly.express as px
 #| expandable: false
 
 # Load data
-path_linked = "../06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_13023.csv"
+path_linked = "../06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_13166.csv"
 path_clin_metadata = "../06_preclin_clinic_join/data/joined_data/clinical_metadata_mapped.csv"
 path_preclin_metadata = "../06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped_annotated.csv"
 
@@ -92,18 +92,15 @@ def filtered_documents():
 
     filtered_df = mapped_studies
     if disease != 'Show All (C)':
-        disease_pattern = r"\b({})\b".format(disease)
+        disease_pattern = re.escape(disease)
         filtered_df = filtered_df[
-            filtered_df["disease"]
-            .str.contains(disease_pattern, case=False, na=False, flags=re.IGNORECASE)
+            filtered_df["disease"].str.contains(disease_pattern, case=False, na=False, flags=re.IGNORECASE)
         ]
-    
-    if drug != 'Show All (P)':  # Assuming "Show All (P)" is the label for showing all phases
-        drug_pattern = r"\b({})\b".format(drug)
+
+    if drug != 'Show All (P)':
         filtered_df = filtered_df[
-            filtered_df["drug"]
-            .str.contains(drug_pattern, case=False, na=False, flags=re.IGNORECASE)
-        ]   
+            filtered_df["drug"].str.lower() == drug.lower()
+        ]
 
     # Flatten all clinical_doc_ids (NCTIDs) into a set
     all_nctids = set(nctid for sublist in filtered_df['clinical_doc_ids'] for nctid in sublist)
@@ -115,7 +112,6 @@ def filtered_documents():
 
     # GET PRECLINICAL VIEW
     df_preclinical_metadata_filt = df_preclinical_metadata[df_preclinical_metadata['PMID'].isin(all_pmids)]
-
 
     return filtered_df, df_clinical_metadata_filt, df_preclinical_metadata_filt
 ```
@@ -294,7 +290,7 @@ def study_over_time_chart():
 @render.data_frame
 def datagrid_preclinical():
     filtered_df, clinical_df, preclinical_df = filtered_documents()
-    to_show = preclinical_df[['PMID','title','journal_name','year','publication_type','disease','drug','animal_species', 'animal_sex', 'animal_strain']]
+    to_show = preclinical_df[['PMID','title','journal_name','year','publication_type','linkbert_mapped_conditions','disease','linkbert_mapped_drugs','drug','animal_species', 'animal_sex', 'animal_strain', 'animal_number']]
     return render.DataGrid(
         to_show,
         width="100%",
@@ -306,12 +302,38 @@ def datagrid_preclinical():
 
 ### Column
 ```{python}
+#| title: Animal Number
+@render_widget
+
+def plot_animal_number():
+  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  return category_bar_chart(preclinical_df, "animal_number", "Document Count by Animal Number")
+
+```
+
+### Column
+
+```{python}
 #| title: Animal Species
 @render_widget
 
 def plot_animal_species():
   filtered_df, clinical_df, preclinical_df = filtered_documents()
   return category_bar_chart(preclinical_df, "animal_species", "Document Count by Animal Species")
+
+```
+
+
+## Row
+
+### Column
+```{python}
+#| title: Animal Strain
+@render_widget
+
+def plot_animal_strain():
+  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  return category_bar_chart(preclinical_df, "animal_strain", "Document Count by Animal Strain")
 
 ```
 
@@ -326,16 +348,6 @@ def plot_animal_sex():
 
 ```
 
-### Column
-```{python}
-#| title: Animal Strain
-@render_widget
-
-def plot_animal_strain():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
-  return category_bar_chart(preclinical_df, "animal_strain", "Document Count by Animal Strain")
-
-```
 
 # Clinical
 
