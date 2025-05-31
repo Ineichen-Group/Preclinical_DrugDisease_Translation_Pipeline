@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-extract_sentences_nltk_merged_fixed.py
+extract_sentences.py
 
 A script that:
 1. Reads raw text from a specified column in an input CSV.
@@ -10,7 +10,7 @@ A script that:
 5. Writes out a CSV where each row corresponds to one (possibly merged) sentence.
 
 Usage:
-    python extract_sentences_nltk_merged_fixed.py \
+    python extract_sentences.py \
         --input_csv ./data/your_input_file.csv \
         --text_col Text \
         --output_csv ./data/sentence_split_merged.csv
