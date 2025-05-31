@@ -53,7 +53,7 @@ class SpeciesClassifier:
             mAb|pAb|HRP|APC|FITC|PE|MBP|Cy\d+|myelin\s+basic\s+protein|
             ELISA|immunoblot|western\s+blot|immunostaining|
             conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|emulsified|immunized\s+with|
+            GAPDH|tubulin|β-actin|emulsified|immunized\s+with|emulsion|
             isolated\s+from|purified\s+from|emulsified\s+in|injections?\s+of|activated\s+by|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
