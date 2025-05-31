@@ -48,13 +48,13 @@ class SpeciesClassifier:
     FALSE_CONTEXT_TERMS: str = r"""
         \b(
             antibody|antibodies|antiserum|antigens?|tissues?|
-            monoclonal|polyclonal|wako|Wako|
+            monoclonal|polyclonal|wako|Wako|peptides?|
             Ig\s*[A-Z]{1,2}|
-            mAb|pAb|HRP|APC|FITC|PE|Cy\d+|
+            mAb|pAb|HRP|APC|FITC|PE|MBP|Cy\d+|myelin\s+basic\s+protein|
             ELISA|immunoblot|western\s+blot|immunostaining|
             conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|emulsified|
-            isolated\s+from|purified\s+from|emulsified\s+in|injection\s+of|activated\s+by|
+            GAPDH|tubulin|β-actin|emulsified|immunized\s+with|
+            isolated\s+from|purified\s+from|emulsified\s+in|injections?\s+of|activated\s+by|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
         )\b
