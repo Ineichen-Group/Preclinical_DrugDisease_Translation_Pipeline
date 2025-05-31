@@ -57,7 +57,7 @@ def extract_methods_subtitles_to_csv(json_path, output_csv, logs_dir):
                 f.write(f"{pmid}\n")
         return False, 0
 
-def process_each_json_in_dir(json_dir, output_dir, logs_dir):
+def process_each_json_in_dir(json_dir, output_dir, logs_dir, disease):
     os.makedirs(output_dir, exist_ok=True)
     success = 0
     total = 0
@@ -78,14 +78,14 @@ def process_each_json_in_dir(json_dir, output_dir, logs_dir):
     success_rate = (success / total) * 100 if total else 0
     avg_subtitles = sum(subtitle_counts) / len(subtitle_counts) if subtitle_counts else 0
 
-    print("\nSummary Statistics:")
+    print(f"\nSummary Statistics {disease}:")
     print(f"  Total PMIDs processed    : {total}")
     print(f"  Successful methods extractions   : {success}")
     print(f"  Success rate             : {success_rate:.2f}%")
     print(f"  Avg. unique subtitles    : {avg_subtitles:.2f}")
     
     # Save summary stats
-    summary_path = os.path.join(logs_dir, "summary_stats_pmc_methods.txt")
+    summary_path = os.path.join(logs_dir, f"summary_stats_pmc_methods_{disease}.txt")
     with open(summary_path, "w") as f:
         f.write("\nSummary Statistics:\n")
         f.write(f"Total PMIDs processed  : {total}\n")
@@ -95,10 +95,13 @@ def process_each_json_in_dir(json_dir, output_dir, logs_dir):
 
 
 def main():
+    disease = "epilepsy"  # Change this to "parkinson" or "epilepsy" as needed
+    print(f"Processing {disease} methods extraction from PMC JSON files...")
     process_each_json_in_dir(
-        json_dir="07_full_text_retrieval/pmc_fulltext/MS_fulltext/",
-        output_dir="07_full_text_retrieval/materials_methods/from_pmc_json/MS_methods/",
-        logs_dir="07_full_text_retrieval/materials_methods/logs/"
+        json_dir=f"07_full_text_retrieval/pmc_fulltext/{disease}_fulltext/",
+        output_dir=f"07_full_text_retrieval/materials_methods/from_pmc_json/{disease}_methods/",
+        logs_dir="07_full_text_retrieval/materials_methods/logs/",
+        disease=disease
         )
 
 if __name__ == "__main__":
