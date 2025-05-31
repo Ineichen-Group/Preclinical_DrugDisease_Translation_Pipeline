@@ -1,5 +1,47 @@
 # runner.py
+"""
+runner.py
 
+Description:
+    This script applies one or more regex‐based classifiers (sex, species, welfare,
+    blinding, randomization) to a CSV file of texts. Each classifier processes the
+    specified text column and outputs a new CSV containing encoded predictions and
+    labels. You can run a single category or all categories in sequence.
+
+Usage:
+    # 1) Classify only the "sex" category:
+    python runner.py \
+        --df_path path/to/input.csv \
+        --category sex \
+        --text_col Text \
+        --output_dir predictions/
+
+    # 2) Run all classifiers in one go ("sex", "species", "welfare", "blinding", "randomization"):
+    python runner.py \
+        --df_path path/to/input.csv \
+        --category all \
+        --text_col Text \
+        --output_dir predictions/
+
+
+Output:
+    For each category run, a CSV named "<category>_predictions_MS.csv" will be created
+    in the output directory. Each output CSV has columns:
+        - PMID (if present in the input)
+        - prediction_encoded_num
+        - prediction_encoded_label
+Example:
+    Assuming you have `input.csv` with a column named "Text" (and optional "PMID"),
+    to classify all categories and save outputs under ./predictions/:
+
+        python runner.py \
+            --df_path ./input.csv \
+            --category all \
+            --text_col Text \
+            --output_dir ./predictions/
+
+
+"""
 import argparse
 import os
 import sys
@@ -79,7 +121,10 @@ def run_and_save(
 
     # 3) Decide which columns to write: include "PMID" if present
     if "PMID" in df_copy.columns:
-        subset_cols = ["PMID", "prediction_encoded_num", "prediction_encoded_label"]
+        if "sentence_id" in df_copy.columns:
+            subset_cols = ["PMID", "sentence_id", "prediction_encoded_num", "prediction_encoded_label"]
+        else:
+            subset_cols = ["PMID", "prediction_encoded_num", "prediction_encoded_label"]
     else:
         subset_cols = ["prediction_encoded_num", "prediction_encoded_label"]
         print(
