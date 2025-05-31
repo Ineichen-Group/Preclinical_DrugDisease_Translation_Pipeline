@@ -15,7 +15,6 @@ Usage:
         --text_col Text \
         --output_csv ./data/sentence_split_merged.csv
 """
-
 import argparse
 import re
 import pandas as pd
@@ -155,11 +154,36 @@ def merge_sentences(prelim_sentences):
     return merged
 
 
+def is_valid_sentence(sent_str, sent_tokens):
+    """
+    Return False for:
+      1. Pure numeric‐citation sentences like "245 (1988) 574580."
+      2. Very short fragments (≤ 2 tokens, e.g. "Ther.")
+      3. Reference lines beginning with "[number]" (e.g. "[20] H.S. Panitch…")
+    Otherwise return True.
+    """
+    # 1. Check if stripped text (sans trailing period) is only digits / spaces / parentheses
+    core = sent_str.rstrip(".").strip()
+    if re.fullmatch(r"[\d\s()]+", core):
+        return False
+
+    # 2. If there are 3 tokens or fewer, skip (e.g. ['J.', 'Pharm', '.'] or ['X', '.'])
+    if len(sent_tokens) <= 3:
+        return False
+
+    # 3. If the sentence starts with a bracketed number: e.g. "[20]" or "[ 20 ]"
+    if re.match(r"^\[\s*\d+\s*\]", sent_str):
+        return False
+
+    # If none of the bad patterns matched, keep it
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Tokenize raw text, split into sentences with NLTK, "
                     "merge based on custom rules (including i.p., S.D., etc.), "
-                    "and save to CSV."
+                    "filter out junk sentences, and save to CSV."
     )
     parser.add_argument(
         "--input_csv",
@@ -204,21 +228,25 @@ def main():
         # 2. Merge adjacent sentences based on should_merge logic
         merged = merge_sentences(prelim)
 
-        # 3. For each merged sentence, build a row with doc_id, sentence_id, tokens, sent_txt
+        # 3. For each merged sentence, apply the filter before appending
         for sent_id, (sent_str, sent_tokens) in enumerate(merged):
+            if not is_valid_sentence(sent_str, sent_tokens):
+                # Skip this “junk” sentence
+                continue
+
             new_rows.append({
-                "doc_id": doc_id,
+                "PMID": doc_id,
                 "sentence_id": sent_id,
                 "tokens": sent_tokens,
                 "sent_txt": sent_str
             })
 
-    # Build a DataFrame from the collected sentence‐rows
+    # Build a DataFrame from the collected (filtered) sentence‐rows
     sentence_df = pd.DataFrame(new_rows)
 
     # Write out to the specified output CSV
     sentence_df.to_csv(output_path, index=False)
-    print(f"Sentence‐split (with merging fixed) CSV written to: {output_path}")
+    print(f"Filtered sentence‐split CSV written to: {output_path}")
 
 
 if __name__ == "__main__":
