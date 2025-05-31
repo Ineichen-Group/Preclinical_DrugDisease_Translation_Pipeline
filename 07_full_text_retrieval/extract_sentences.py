@@ -158,8 +158,9 @@ def is_valid_sentence(sent_str, sent_tokens):
     """
     Return False for:
       1. Pure numeric‐citation sentences like "245 (1988) 574580."
-      2. Very short fragments (≤ 2 tokens, e.g. "Ther.")
+      2. Very short fragments (≤ 3 tokens, e.g. "Ther.")
       3. Reference lines beginning with "[number]" (e.g. "[20] H.S. Panitch…")
+      4. Sentences whose first four tokens are all numeric (e.g. ['68','1981','19','25',…])
     Otherwise return True.
     """
     # 1. Check if stripped text (sans trailing period) is only digits / spaces / parentheses
@@ -167,13 +168,21 @@ def is_valid_sentence(sent_str, sent_tokens):
     if re.fullmatch(r"[\d\s()]+", core):
         return False
 
-    # 2. If there are 3 tokens or fewer, skip (e.g. ['J.', 'Pharm', '.'] or ['X', '.'])
+    # 2. If there are 3 tokens or fewer, skip (e.g. ['Ther', '.'] or ['X', '.'])
     if len(sent_tokens) <= 3:
         return False
 
     # 3. If the sentence starts with a bracketed number: e.g. "[20]" or "[ 20 ]"
     if re.match(r"^\[\s*\d+\s*\]", sent_str):
         return False
+
+    # 4. If the first four tokens are all purely numeric, skip -> likely a citation line
+    #    (e.g. ['68', '1981', '19', '25', ...])
+    if len(sent_tokens) >= 4:
+        first_four = sent_tokens[:4]
+        # Check whether each of the first four tokens consists entirely of digits
+        if all(re.fullmatch(r"\d+", tok) for tok in first_four):
+            return False
 
     # If none of the bad patterns matched, keep it
     return True
