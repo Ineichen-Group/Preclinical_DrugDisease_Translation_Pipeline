@@ -30,7 +30,7 @@ class SpeciesClassifier:
         "mouse": [r"\bmouse\b", r"\bmice\b"],
         "cat": [r"\bcats?\b"],
         "dog": [r"\bdogs?\b"],
-        "guinea pig": [r"\bguinea pig\s?\b", r"\bguinea\b"],
+        "guinea pig": [r"\bguinea pig\s?\b"],
         "monkey": [
             r"\bmonkeys?\b",
             r"\bmacaques?\b",
@@ -51,16 +51,17 @@ class SpeciesClassifier:
             monoclonal|polyclonal|wako|Wako|
             Ig\s*[A-Z]{1,2}|
             mAb|pAb|HRP|APC|FITC|PE|Cy\d+|
-            ELISA|immunoblot|western blot|immunostaining|
+            ELISA|immunoblot|western\s+blot|immunostaining|
             conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|isolated from|
+            GAPDH|tubulin|β-actin|
+            isolated\s+from|purified\s+from|emulsified\s+in|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
         )\b
     """
 
     # How many word‐tokens on each side of the matched token to look at
-    WINDOW: int = 10
+    WINDOW: int = 15
 
     def __init__(self):
         # Compile species‐patterns and false‐context pattern once
