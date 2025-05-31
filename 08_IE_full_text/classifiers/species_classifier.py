@@ -48,12 +48,12 @@ class SpeciesClassifier:
     FALSE_CONTEXT_TERMS: str = r"""
         \b(
             antibody|antibodies|antiserum|
-            monoclonal|polyclonal|
+            monoclonal|polyclonal|wako|Wako|
             Ig\s*[A-Z]{1,2}|
             mAb|pAb|HRP|APC|FITC|PE|Cy\d+|
             ELISA|immunoblot|western blot|immunostaining|
             conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|
+            GAPDH|tubulin|β-actin|isolated from|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
         )\b
@@ -100,26 +100,49 @@ class SpeciesClassifier:
         self, text: str, match_start: int, match_end: int, window: int
     ) -> bool:
         """
-        Returns True if any token within +/- window of the matched token
-        matches one of the FALSE_CONTEXT_TERMS. Otherwise False.
+        Returns True if ANY multi‐token or single‐token false‐context pattern
+        (e.g. "isolated from", "antibody", "biotinylated", etc.) appears
+        within +/- window WORD‐tokens of the matched token span [match_start, match_end).
+
+        We do this by:
+          1. Finding all word‐token spans in `text`.
+          2. Locating which token(s) overlap the match range.
+          3. Expanding that to +/- window tokens on each side.
+          4. Extracting the substring of `text` that covers those tokens.
+          5. Searching `self._false_context` against that entire snippet.
+
+        If `self._false_context` matches anywhere in that snippet, return True.
+        Otherwise, return False.
         """
-        # Tokenize entire text into word tokens (match objects)
+        # 1. Tokenize entire text into word tokens (match objects)
         tokens = list(re.finditer(r"\b\w+\b", text))
 
-        # Find token indices overlapping [match_start, match_end)
+        # 2. Find token indices overlapping [match_start, match_end)
         overlapping_indices = [
-            i for i, tok in enumerate(tokens) if match_start <= tok.start() < match_end
+            i
+            for i, tok in enumerate(tokens)
+            if (tok.start() < match_end and tok.end() > match_start)
         ]
         if not overlapping_indices:
             return False
 
-        # For each overlapping token index, look +/- window tokens
+        # We'll check each overlapping token index. If ANY window around it
+        # contains a false-context match, we return True immediately.
         for idx in overlapping_indices:
+            # 3. Compute window boundaries in token space
             start_idx = max(0, idx - window)
             end_idx = min(len(tokens), idx + window + 1)
-            for tok_obj in tokens[start_idx:end_idx]:
-                if self._false_context.search(tok_obj.group()):
-                    return True
+
+            # 4. Get the character‐level span in `text` covering all tokens [start_idx .. end_idx-1]
+            char_start = tokens[start_idx].start()
+            char_end = tokens[end_idx - 1].end()
+
+            snippet = text[char_start:char_end]
+
+            # 5. If any FALSE_CONTEXT_TERMS match anywhere in that snippet, return True
+            if self._false_context.search(snippet):
+                return True
+
         return False
 
     def classify(self, text: str) -> Tuple[List[int], List[str]]:
