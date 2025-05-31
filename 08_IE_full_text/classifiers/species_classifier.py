@@ -47,21 +47,21 @@ class SpeciesClassifier:
     # False context terms that invalidate a species match if found in proximity
     FALSE_CONTEXT_TERMS: str = r"""
         \b(
-            antibody|antibodies|antiserum|
+            antibody|antibodies|antiserum|antigens?|tissues?|
             monoclonal|polyclonal|wako|Wako|
             Ig\s*[A-Z]{1,2}|
             mAb|pAb|HRP|APC|FITC|PE|Cy\d+|
             ELISA|immunoblot|western\s+blot|immunostaining|
             conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|
-            isolated\s+from|purified\s+from|emulsified\s+in|
+            GAPDH|tubulin|β-actin|emulsified|
+            isolated\s+from|purified\s+from|emulsified\s+in|injection\s+of|activated\s+by|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
         )\b
     """
 
     # How many word‐tokens on each side of the matched token to look at
-    WINDOW: int = 15
+    WINDOW: int = 10
 
     def __init__(self):
         # Compile species‐patterns and false‐context pattern once

@@ -47,10 +47,10 @@ class SexClassifier:
 
         # Define a mapping from label strings to numeric codes
         self._label_to_code: Dict[str, int] = {
-            "sex-both": 0,
+            "sex-both": 3,
             "sex-female": 1,
             "sex-male": 2,
-            "sex-not-reported": 3,
+            "sex-not-reported": 0,
         }
 
     def _find_first_match(self, regex_obj: re.Pattern, text: str) -> re.Match:
