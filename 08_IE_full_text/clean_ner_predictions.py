@@ -28,10 +28,10 @@ def is_valid_entity(text: str) -> bool:
     Rules:
         • Not empty or just whitespace.
         • Length > 1 character.
-        • Does NOT start with the literal '##C-'.
+        • Does NOT start with the literal '##'.
     """
     text = text.strip()
-    return bool(text) and len(text) > 1 and not text.startswith("##C-")
+    return bool(text) and len(text) > 1 and not text.startswith("##")
 
 
 def extract_unique_entities(pred_str: str) -> str:
