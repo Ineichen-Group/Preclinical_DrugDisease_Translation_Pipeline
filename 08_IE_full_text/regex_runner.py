@@ -54,6 +54,7 @@ from classifiers.species_classifier import SpeciesClassifier
 from classifiers.welfare_classifier import WelfareClassifier
 from classifiers.blinding_classifier import BlindingClassifier
 from classifiers.randomization_classifier import RandomizationClassifier
+from classifiers.age_classifier import AgeClassifier
 
 from utils.format_utils import format_species_result
 
@@ -70,7 +71,7 @@ def parse_args():
     parser.add_argument(
         "--category",
         required=True,
-        choices=["sex", "species", "welfare", "blinding", "randomization", "all"],
+        choices=["sex", "species", "welfare", "blinding", "randomization", "age", "all"],
         help="Which classifier to run: 'sex', 'species', 'welfare', 'blinding', 'randomization', or 'all'.",
     )
     parser.add_argument(
@@ -172,6 +173,7 @@ def main():
         "welfare": (WelfareClassifier, None),
         "blinding": (BlindingClassifier, None),
         "randomization": (RandomizationClassifier, None),
+        "age": (AgeClassifier, None),
     }
 
     if args.category != "all":
