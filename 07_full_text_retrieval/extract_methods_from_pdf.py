@@ -1,5 +1,4 @@
 from papermage.recipes import CoreRecipe
-import re
 import logging
 import os 
 import time
@@ -7,6 +6,7 @@ import pandas as pd
 from collections import defaultdict
 import zipfile
 import json
+from section_detection_rules import is_start_of_materials_methods, is_end_of_materials_methods
 
 logger = logging.getLogger("materials_methods_logger")
 logger.setLevel(logging.INFO)
@@ -69,28 +69,6 @@ def group_paragraphs_by_section(doc):
 
     return result
 
-def is_start_of_materials_methods(text):
-    MATERIALS_METHODS_TITLES = [
-        r"materials\s*(and|&)?\s*methods",
-        r"materials",
-        r"methodology",
-        r"experimental",
-        r"experimental\s+(procedure[s]?|section[s]?)",
-        r"methods",
-    ]
-
-    pattern = re.compile(
-        r"^\s*(\d+\.?|\b[IVXLCDM]+\b\.?)?\s*.*?\b(" + "|".join(MATERIALS_METHODS_TITLES) + r")\b",
-        re.IGNORECASE
-    )
-
-    return bool(pattern.search(text.strip()))
-
-
-def is_end_of_materials_methods(text):
-    stop_keywords = ["RESULTS", "DISCUSSION", "CONCLUSION", "ACKNOWLEDGMENTS"]
-    upper_text = text.strip().upper()
-    return any(keyword in upper_text for keyword in stop_keywords)
 
 def process_pdf_papermage(recipe, doc_id, doc_path, log_path, csv_text_path, csv_sections_path):
     setup_logger(log_path)
