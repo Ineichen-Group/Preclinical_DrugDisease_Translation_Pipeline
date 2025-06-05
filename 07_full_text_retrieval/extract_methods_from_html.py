@@ -5,139 +5,242 @@ import pandas as pd
 import zipfile
 from io import TextIOWrapper
 import json
+from section_detection_rules import is_start_of_materials_methods, is_end_of_materials_methods
 
-def find_methods_section(soup, doc_id):
-    MATERIALS_METHODS_TITLES = [
-        r"materials\s*(and|&)?\s*methods",
-        r"methodology",
-        r"experimental\s+(procedures|section)",
-        r"\bmethods\b",
-    ]
+def extract_from_standard_sections(soup, doc_id):
+    """
+    Extract paragraphs from sections with headings related to 'Materials and Methods'.
+    
+    This strategy uses:
+        - <section> tags with a data-title attribute
+        - <section> or <div> blocks with a matching top-level heading
+        - <section> tags with class 'article-section__content'
 
-    section = None
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique document identifier.
 
-    # 1. Try <section data-title="Materials and methods">
+    Returns:
+        list[dict] | None: Extracted paragraph data or None if not found.
+    """
+    candidate_blocks = []
+
+    # Strategy 1: Match <section data-title="...">
     section = soup.find("section", {"data-title": re.compile(r"materials\s*(and|&)?\s*methods", re.IGNORECASE)})
+    if section:
+        candidate_blocks.append(section)
 
-    # 2. Try <section> or <div> with an appropriate heading inside
-    if not section:
-        for block in soup.find_all(["section", "div"], recursive=True):
-            heading = block.find(["h1", "h2", "h3"], recursive=False)
-            if heading:
-                heading_text = heading.get_text(strip=True).lower()
-                if any(re.search(p, heading_text) for p in MATERIALS_METHODS_TITLES):
-                    section = block
-                    break
+    # Strategy 2: Match heading text in <section> or <div>
+    for block in soup.find_all(["section", "div"]):
+        heading = block.find(["h1", "h2", "h3"], recursive=False)
+        if heading and is_start_of_materials_methods(heading.get_text(strip=True)):
+            candidate_blocks.append(block)
 
-    # 3. Fallback: <section class="article-section__content"><h2 class="article-section__title">
-    if not section:
-        for sec in soup.find_all("section", class_="article-section__content"):
-            h2 = sec.find("h2", class_="article-section__title")
-            if h2:
-                h2_text = h2.get_text(strip=True).lower()
-                if any(re.search(p, h2_text) for p in MATERIALS_METHODS_TITLES):
-                    section = sec
-                    break
+    # Strategy 3: Match class-based section layout
+    for block in soup.find_all("section", class_="article-section__content"):
+        h2 = block.find("h2", class_="article-section__title")
+        if h2 and is_start_of_materials_methods(h2.get_text(strip=True)):
+            candidate_blocks.append(block)
 
-    # If we couldn't find the section, return None
-    if not section:
+    if not candidate_blocks:
         return None
 
-    # Process the section content
-    rows = []
-    current_subtitle = "Materials and methods"
+    paragraphs = []
+    for section in candidate_blocks:
+        current_subtitle = "Materials and Methods"
 
-    for tag in section.find_all(["h2", "h3", "h4", "p"], recursive=True):
-        tag_class = tag.get("class", [])
-        tag_text = tag.get_text(strip=True)
+        for tag in section.find_all(["h2", "h3", "h4", "p"]):
+            text = tag.get_text(strip=True)
 
-        if tag.name in {"h2", "h3", "h4"} and (
-            "c-article__sub-heading" in tag_class or
-            "article-section__sub-title" in tag_class or
-            not tag_class  # fallback to semantic level if no class
-        ):
-            current_subtitle = tag_text.rstrip(".:")
-        elif tag.name == "p" and tag_text:
-            rows.append({
-                "doc_id": doc_id,
-                "subtitle": current_subtitle,
-                "paragraph": tag_text
-            })
+            if is_end_of_materials_methods(text):
+                break
 
-    return rows if rows else None
+            if tag.name in {"h2", "h3", "h4"}:
+                current_subtitle = text.rstrip(".:")
+            elif tag.name == "p" and text:
+                paragraphs.append({
+                    "doc_id": doc_id,
+                    "subtitle": current_subtitle,
+                    "paragraph": text
+                })
+
+    return paragraphs if paragraphs else None
 
 
-def fallback_extract_methods(soup, doc_id):
-    fallback_section = None
+def extract_from_fallback_divs(soup, doc_id):
+    """
+    Attempts to extract content from fallback <div> elements or anchored sections.
 
-    for id_candidate in ["methods", "section-2"]:
-        fallback_section = soup.find("div", {"id": id_candidate})
-        if fallback_section:
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique document identifier.
+
+    Returns:
+        list[dict] | None: Extracted paragraph data or None if not found.
+    """
+    div_candidates = ["methods", "section-2"]
+    target_div = None
+
+    for div_id in div_candidates:
+        target_div = soup.find("div", {"id": div_id})
+        if target_div:
             break
 
-    if not fallback_section:
-        for a in soup.find_all("a", href=True):
-            text = a.get_text(strip=True).lower()
-            if re.search(r"\bmethods\b", text):
-                section_id = a["href"].lstrip("#")
-                fallback_section = soup.find("div", {"id": section_id})
-                if fallback_section:
+    if not target_div:
+        for anchor in soup.find_all("a", href=True):
+            if is_start_of_materials_methods(anchor.get_text(strip=True)):
+                ref_id = anchor["href"].lstrip("#")
+                target_div = soup.find("div", {"id": ref_id})
+                if target_div:
                     break
 
-    if not fallback_section:
+    if not target_div:
         return None
 
-    rows = []
+    paragraphs = []
     current_subtitle = "Methods"
 
-    for tag in fallback_section.find_all(["p", "span"], recursive=True):
-        if tag.name == "span" and "level-4" in tag.get("class", []):
-            current_subtitle = tag.get_text(strip=True)
-        elif tag.name == "p":
-            text = tag.get_text(strip=True)
-            if text:
-                rows.append({
-                    "doc_id": doc_id,
-                    "subtitle": current_subtitle,
-                    "paragraph": text
-                })
-    return rows if rows else None
-
-def extract_methods_ovid_style(soup, doc_id):
-    MATERIALS_METHODS_TITLES = [
-        r"materials\s*(and|&)?\s*methods",
-        r"methodology",
-        r"experimental\s+(procedures|section)",
-        r"\bmethods\b",
-    ]
-
-    methods_h2 = None
-    for h2 in soup.find_all("h2", class_="ejp-article-outline-heading"):
-        h2_text = h2.get_text(strip=True).lower()
-        if any(re.search(p, h2_text) for p in MATERIALS_METHODS_TITLES):
-            methods_h2 = h2
+    for tag in target_div.find_all(["p", "span"]):
+        text = tag.get_text(strip=True)
+        if is_end_of_materials_methods(text):
             break
 
-    if not methods_h2:
+        if tag.name == "span" and "level-4" in tag.get("class", []):
+            current_subtitle = text
+        elif tag.name == "p" and text:
+            paragraphs.append({
+                "doc_id": doc_id,
+                "subtitle": current_subtitle,
+                "paragraph": text
+            })
+
+    return paragraphs if paragraphs else None
+
+
+def extract_from_ovid_format(soup, doc_id):
+    """
+    Extracts content from OVID-formatted HTML structure.
+
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique document identifier.
+
+    Returns:
+        list[dict] | None: Extracted paragraph data or None if not found.
+    """
+    for h2 in soup.find_all("h2", class_="ejp-article-outline-heading"):
+        if is_start_of_materials_methods(h2.get_text(strip=True)):
+            content_blocks = []
+            sibling = h2.find_next_sibling()
+            while sibling and not (sibling.name == "h2" and "ejp-article-outline-heading" in sibling.get("class", [])):
+                content_blocks.append(sibling)
+                sibling = sibling.find_next_sibling()
+
+            paragraphs = []
+            current_subtitle = "Materials and Methods"
+            for block in content_blocks:
+                if block.name == "p":
+                    text = block.get_text(strip=True)
+                    if is_end_of_materials_methods(text):
+                        break
+
+                    strong_em = block.find("strong")
+                    if strong_em and strong_em.find("em"):
+                        current_subtitle = strong_em.get_text(strip=True).rstrip(":")
+
+                    if text:
+                        paragraphs.append({
+                            "doc_id": doc_id,
+                            "subtitle": current_subtitle,
+                            "paragraph": text
+                        })
+            return paragraphs if paragraphs else None
+
+    return None
+
+
+def extract_by_heading_walk(soup, doc_id):
+    """
+    Fallback strategy: Walks forward from a heading that matches 'Materials and Methods',
+    capturing sibling <h3>/<h4> subtitles and <p> paragraphs.
+
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique document identifier.
+
+    Returns:
+        list[dict] | None: Paragraph rows with subtitles or None if nothing extracted.
+    """
+    # Find the starting heading (usually <h2>) that signals the start of the Methods section
+    methods_heading = None
+    for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
+        if is_start_of_materials_methods(tag.get_text(strip=True)):
+            methods_heading = tag
+            break
+
+    if not methods_heading:
         return None
 
-    # Gather elements until the next h2
-    methods_content = []
-    current = methods_h2.find_next_sibling()
-    while current and (current.name != "h2" or "ejp-article-outline-heading" not in current.get("class", [])):
-        methods_content.append(current)
+    rows = []
+    current_subtitle = "Materials and Methods"
+    current = methods_heading.find_next_sibling()
+
+    while current:
+        # Stop if we've reached another major section heading
+        if current.name in {"h1", "h2"} and is_end_of_materials_methods(current.get_text(strip=True)):
+            break
+
+        if current.name in {"h3", "h4"}:
+            current_subtitle = current.get_text(strip=True).rstrip(":.")
+
+        elif current.name == "p":
+            p_text = current.get_text(strip=True)
+            if p_text and not is_end_of_materials_methods(p_text):
+                rows.append({
+                    "doc_id": doc_id,
+                    "subtitle": current_subtitle,
+                    "paragraph": p_text
+                })
+
         current = current.find_next_sibling()
 
-    rows = []
-    current_subtitle = "Materials and methods"
+    return rows if rows else None
 
-    for el in methods_content:
-        if el.name == "p":
-            strong_em = el.find("strong")
-            if strong_em and strong_em.find("em"):
-                current_subtitle = strong_em.get_text(strip=True).rstrip(":")
-            text = el.get_text(strip=True)
-            if text:
+def extract_from_nlm_structured_divs(soup, doc_id):
+    """
+    Extracts methods section from deeply nested div structures (e.g., NLM_sec).
+    Designed for articles using structured div tags with class-based semantics.
+
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Document ID.
+
+    Returns:
+        list[dict] | None: Extracted paragraphs with subtitles.
+    """
+    # Find the top-level <div> section with an <h2> matching Materials and Methods
+    methods_container = None
+    for section in soup.find_all("div", class_="NLM_sec NLM_sec_level_1"):
+        heading = section.find("h2")
+        if heading and is_start_of_materials_methods(heading.get_text(strip=True)):
+            methods_container = section
+            break
+
+    if not methods_container:
+        return None
+
+    rows = []
+    current_subtitle = "Materials and Methods"
+
+    # Search inside nested NLM_sec_level_2 sections
+    for subsection in methods_container.find_all("div", class_="NLM_sec NLM_sec_level_2", recursive=True):
+        h3 = subsection.find(["h3", "h4"])
+        if h3:
+            current_subtitle = h3.get_text(strip=True).rstrip(":.")
+
+        for para in subsection.find_all("div", class_="NLM_p", recursive=True):
+            text = para.get_text(strip=True)
+            if text and not is_end_of_materials_methods(text):
                 rows.append({
                     "doc_id": doc_id,
                     "subtitle": current_subtitle,
@@ -146,30 +249,83 @@ def extract_methods_ovid_style(soup, doc_id):
 
     return rows if rows else None
 
-def extract_methods_subtitles_from_soup(soup, doc_id, output_csv, logs_dir=None):
-    extractors = [
-        find_methods_section,
-        fallback_extract_methods,
-        extract_methods_ovid_style
+def extract_from_semantic_sections_with_roles(soup, doc_id):
+    """
+    Extracts methods section from semantic <section> blocks using role-based content divs.
+
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique identifier.
+
+    Returns:
+        list[dict] | None: Extracted paragraphs with subtitles or None.
+    """
+    methods_section = soup.find("section", {"data-type": re.compile(r"materials\s*methods", re.IGNORECASE)})
+    if not methods_section:
+        return None
+
+    rows = []
+    current_subtitle = "Materials and Methods"
+
+    # Iterate over all nested sections inside the main methods section
+    for subsec in methods_section.find_all("section", recursive=True):
+        heading = subsec.find(["h3", "h4"])
+        if heading:
+            current_subtitle = heading.get_text(strip=True).rstrip(":.")
+
+        for para_div in subsec.find_all("div", attrs={"role": "paragraph"}):
+            text = para_div.get_text(strip=True)
+            if text and not is_end_of_materials_methods(text):
+                rows.append({
+                    "doc_id": doc_id,
+                    "subtitle": current_subtitle,
+                    "paragraph": text
+                })
+
+    return rows if rows else None
+
+def extract_materials_methods_to_csv(soup, doc_id, output_csv_path, logs_dir=None):
+    """
+    Attempts multiple strategies to extract 'Materials and Methods' content from HTML.
+
+    Parameters:
+        soup (BeautifulSoup): Parsed HTML document.
+        doc_id (str): Unique identifier of the document.
+        output_csv_path (str): Path to output CSV file.
+        logs_dir (str | None): Directory to write failure logs, if provided.
+
+    Returns:
+        tuple[bool, int]: (Success status, Number of unique subtitles extracted)
+    """
+    extraction_strategies = [
+        extract_from_standard_sections,
+        extract_from_semantic_sections_with_roles,
+        extract_from_nlm_structured_divs,
+        extract_from_fallback_divs,
+        extract_from_ovid_format,
+        extract_by_heading_walk
     ]
 
-    rows = None
-    for extractor in extractors:
-        rows = extractor(soup, doc_id)
-        if rows:
+    paragraphs = None
+    for strategy in extraction_strategies:
+        paragraphs = strategy(soup, doc_id)
+        if paragraphs:
+            print(f"[INFO] Extracted using: {strategy.__name__}")
             break
 
-    if not rows:
+    if not paragraphs:
         if logs_dir:
-            with open(os.path.join(logs_dir, "no_methods_docs_html.txt"), "a") as f:
-                f.write(f"{doc_id}\n")
+            os.makedirs(logs_dir, exist_ok=True)
+            with open(os.path.join(logs_dir, "no_methods_docs_html.txt"), "a") as log_file:
+                log_file.write(f"{doc_id}\n")
         return False, 0
-        
-    df = pd.DataFrame(rows, columns=["doc_id", "subtitle", "paragraph"])
+
+    df = pd.DataFrame(paragraphs, columns=["doc_id", "subtitle", "paragraph"])
     df = df.groupby(["doc_id", "subtitle"], as_index=False).agg({
-        "paragraph": lambda paras: "\n\n".join(paras)
+        "paragraph": lambda x: "\n\n".join(x)
     })
-    df.to_csv(output_csv, mode='a', index=False, header=not os.path.exists(output_csv))
+
+    df.to_csv(output_csv_path, mode='a', index=False, header=not os.path.exists(output_csv_path))
     return True, df["subtitle"].nunique()
 
 def process_html_from_zip(zip_path):
@@ -194,7 +350,7 @@ def process_each_html_in_df(metadata_retrieved_df_html, cadmus_outputs_dir, outp
     
         try:
             soup = process_html_from_zip(zip_path)
-            saved, unique_subtitles = extract_methods_subtitles_from_soup(soup, pmid, output_csv=f"{output_dir}/methods_subtitles_{pmid}.csv", logs_dir=logs_dir)
+            saved, unique_subtitles = extract_materials_methods_to_csv(soup, pmid, output_csv_path=f"{output_dir}/methods_subtitles_{pmid}.csv", logs_dir=logs_dir)
             success += 1 if saved else 0
             total += 1
             if saved:
