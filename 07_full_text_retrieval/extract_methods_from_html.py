@@ -7,6 +7,40 @@ from io import TextIOWrapper
 import json
 from section_detection_rules import is_start_of_materials_methods, is_end_of_materials_methods
 
+def extract_paragraphs_from_section(section, doc_id, default_subtitle="Materials and Methods"):
+    """
+    Recursively extracts paragraphs and subheadings from a section element.
+
+    Parameters:
+        section (Tag): A BeautifulSoup section or div containing content.
+        doc_id (str): Document identifier.
+        default_subtitle (str): Initial subtitle heading.
+
+    Returns:
+        list[dict]: Extracted rows with 'doc_id', 'subtitle', and 'paragraph'.
+    """
+    rows = []
+    current_subtitle = default_subtitle
+
+    for el in section.descendants:
+        if el.name in {"h2", "h3", "h4"}:
+            heading_text = el.get_text(strip=True)
+            if is_end_of_materials_methods(heading_text):
+                break
+            current_subtitle = heading_text.rstrip(":.")
+
+        elif el.name in {"p", "div"}:
+            if el.name == "p" or el.get("role") == "paragraph":
+                para_text = el.get_text(strip=True)
+                if para_text and not is_end_of_materials_methods(para_text):
+                    rows.append({
+                        "doc_id": doc_id,
+                        "subtitle": current_subtitle,
+                        "paragraph": para_text
+                    })
+
+    return rows
+
 def extract_from_standard_sections(soup, doc_id):
     """
     Extract paragraphs from sections with headings related to 'Materials and Methods'.
@@ -45,26 +79,13 @@ def extract_from_standard_sections(soup, doc_id):
     if not candidate_blocks:
         return None
 
-    paragraphs = []
+    # Extract paragraph content from all matched sections
+    rows = []
     for section in candidate_blocks:
-        current_subtitle = "Materials and Methods"
+        section_rows = extract_paragraphs_from_section(section, doc_id, default_subtitle="Materials and Methods")
+        rows.extend(section_rows)
 
-        for tag in section.find_all(["h2", "h3", "h4", "p"]):
-            text = tag.get_text(strip=True)
-
-            if is_end_of_materials_methods(text):
-                break
-
-            if tag.name in {"h2", "h3", "h4"}:
-                current_subtitle = text.rstrip(".:")
-            elif tag.name == "p" and text:
-                paragraphs.append({
-                    "doc_id": doc_id,
-                    "subtitle": current_subtitle,
-                    "paragraph": text
-                })
-
-    return paragraphs if paragraphs else None
+    return rows if rows else None
 
 
 def extract_from_fallback_divs(soup, doc_id):
@@ -159,20 +180,14 @@ def extract_from_ovid_format(soup, doc_id):
     return None
 
 
-def extract_by_heading_walk(soup, doc_id):
+def walk_forward_from_methods_heading(soup, doc_id):
     """
-    Fallback strategy: Walks forward from a heading that matches 'Materials and Methods',
-    capturing sibling <h3>/<h4> subtitles and <p> paragraphs.
-
-    Parameters:
-        soup (BeautifulSoup): Parsed HTML document.
-        doc_id (str): Unique document identifier.
-
-    Returns:
-        list[dict] | None: Paragraph rows with subtitles or None if nothing extracted.
+    A fallback parser that walks forward from an <h2> heading matching 'Materials and Methods',
+    capturing all sibling elements including nested subtitles and paragraphs, whether directly
+    in the sibling or nested inside containers like <div>.
     """
-    # Find the starting heading (usually <h2>) that signals the start of the Methods section
     methods_heading = None
+
     for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
         if is_start_of_materials_methods(tag.get_text(strip=True)):
             methods_heading = tag
@@ -186,25 +201,38 @@ def extract_by_heading_walk(soup, doc_id):
     current = methods_heading.find_next_sibling()
 
     while current:
-        # Stop if we've reached another major section heading
-        if current.name in {"h1", "h2"} and is_end_of_materials_methods(current.get_text(strip=True)):
+        text = current.get_text(strip=True)
+        if is_end_of_materials_methods(text):
             break
 
-        if current.name in {"h3", "h4"}:
-            current_subtitle = current.get_text(strip=True).rstrip(":.")
+        # If it's a heading, update subtitle
+        if current.name in ["h2", "h3", "h4"]:
+            current_subtitle = text.rstrip(":.")
 
-        elif current.name == "p":
-            p_text = current.get_text(strip=True)
-            if p_text and not is_end_of_materials_methods(p_text):
+        # Case 1: current tag is a <p>
+        if current.name == "p":
+            if text:
                 rows.append({
                     "doc_id": doc_id,
                     "subtitle": current_subtitle,
-                    "paragraph": p_text
+                    "paragraph": text
                 })
+
+        # Case 2: current tag contains paragraphs
+        else:
+            for p in current.find_all("p", recursive=True):
+                p_text = p.get_text(strip=True)
+                if p_text and not is_end_of_materials_methods(p_text):
+                    rows.append({
+                        "doc_id": doc_id,
+                        "subtitle": current_subtitle,
+                        "paragraph": p_text
+                    })
 
         current = current.find_next_sibling()
 
     return rows if rows else None
+
 
 def extract_from_nlm_structured_divs(soup, doc_id):
     """
@@ -303,7 +331,7 @@ def extract_materials_methods_to_csv(soup, doc_id, output_csv_path, logs_dir=Non
         extract_from_nlm_structured_divs,
         extract_from_fallback_divs,
         extract_from_ovid_format,
-        extract_by_heading_walk
+        walk_forward_from_methods_heading
     ]
 
     paragraphs = None
@@ -387,9 +415,25 @@ def process_cadmus_output(cadmus_outputs_dir="output_UoZ"):
     metadata_retrieved_df = pd.read_json(data, orient='index')
     metadata_retrieved_df.pmid = metadata_retrieved_df.pmid.astype(str)
     metadata_retrieved_df_html = metadata_retrieved_df[metadata_retrieved_df['html']==1][['pmid','html_parse_d']]
+    
+    # Step 1: Load the wrongly classified PubMed study type files
+    wrong_files = [
+        "03_IE_ner/check_study_type/animal_studies_case_report_publications.csv",
+        "03_IE_ner/check_study_type/animal_studies_review_publications.csv",
+        "03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
+    ]
+
+    # Combine all PMIDs from the incorrect study types into a single set
+    wrong_pmids = set()
+    for file in wrong_files:
+        df = pd.read_csv(file)
+        wrong_pmids.update(df['PMID'].astype(str))
+
+    filtered_df = metadata_retrieved_df_html[~metadata_retrieved_df_html['pmid'].astype(str).isin(wrong_pmids)]
+    print(f"Filtered out {len(metadata_retrieved_df_html) - len(filtered_df)} wrong PMIDs, remaining {len(filtered_df)} studies.")
 
     process_each_html_in_df(
-        metadata_retrieved_df_html,
+        filtered_df,
         cadmus_outputs_dir,
         output_dir="07_full_text_retrieval/materials_methods/from_html/MS_methods/",
         logs_dir="07_full_text_retrieval/materials_methods/logs/"
