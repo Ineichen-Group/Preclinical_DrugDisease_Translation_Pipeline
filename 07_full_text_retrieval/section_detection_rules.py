@@ -1,12 +1,11 @@
 import re
 
 MATERIALS_METHODS_TITLES = [
-    r"materials\s*(and|&)?\s*methods",
-    r"materials",
-    r"methodology",
-    #r"experimental",
-    r"experimental\s+(procedure[s]?|section[s]?)",
-    r"methods",
+    r"materials\s*(and|&)?\s*methods",           # matches "Materials and Methods"
+    r"materials",                                # matches just "Materials"
+    r"methodology",                              # matches "Methodology"
+    r"experimental\s+(procedure[s]?|section[s]?)",  # matches "Experimental Procedures" or "Experimental Sections"
+    r"method[s]?",                               # matches "Method" or "Methods"
 ]
 
 STOP_SECTION_TITLES = [
@@ -23,11 +22,11 @@ STOP_SECTION_TITLES = [
 
 
 def is_start_of_materials_methods(text):
-    pattern = re.compile(
-        r"^\s*(\d+\.?|\b[IVXLCDM]+\b\.?)?\s*.*?\b(" + "|".join(MATERIALS_METHODS_TITLES) + r")\b",
-        re.IGNORECASE
-    )
-    return bool(pattern.search(text.strip()))
+    text = text.strip().lower()
+    for pattern in MATERIALS_METHODS_TITLES:
+        if re.search(pattern, text):
+            return True
+    return False
 
 
 def is_end_of_materials_methods(text):
