@@ -132,6 +132,7 @@ The process involves:
 - Saving the resulting embeddings and term metadata for later use in normalization
 
 **Files and Outputs**
+
 MONDO:
 - Input: mondo.owl
 - Output: 
@@ -181,7 +182,9 @@ To run this script on the server with data parallelism for drug/disease see [./0
 sbatch run_normalize_parallel.sh disease
 ```
 
-## Validation with existing systematic reviews 
+## Validation 
+
+### Validation with existing systematic reviews 
 
 We took the following systematic reviews:
 - [./04_syst_reviews_validation/data/Hyperoside.pdf](./04_syst_reviews_validation/data/Hyperoside.pdf)
@@ -193,6 +196,45 @@ And identified the expected animal article PMIDs saved in [./04_syst_reviews_val
 We check those target PMIDs are present in our dataset with the same drug and disease mentions. The code for that is in [./04_syst_reviews_validation/sys_review_validation.py](./04_syst_reviews_validation/sys_review_validation.py). 
 This results in three files from the courpus filtered for the PMIDs of each systematic reviews and showing the unique extracted entities. 
 
+### Validation with MS-SOLES 
+
+
+## Full-text retrieval and methods extraction
+
+### Full-text retrieval
+PMC -> Cadmus
+
+### Methods extraction
+#### From PMC BioC fromat
+The methods extraction from PMC BioC format is done in [./07_full_text_retrieval/extract_methods_from_bioc_json.py](./07_full_text_retrieval/extract_methods_from_bioc_json.py). It uses several strategies to extract the methods section from the full text BioC XML of the publications.
+
+
+#### From Cadmus
+All CADMUS outputs are processed by format-specific parsers in: [./07_full_text_retrieval/cadmus_extractors/](./07_full_text_retrieval/cadmus_extractors/). The parser are develed for:
+- **XML** (`xml_extractor.py`)  
+  Parses XML files, finds the “Materials and Methods” section (or JATS-style `<sec>`), and outputs `methods_subtitles_<PMID>.csv`
+- **HTML** (`html_extractor.py`)  
+Loads HTML ZIPs, applies several strategies (e.g. `<section data-title="…">`, `<div id="methods">`, OVID/NLM layouts, etc.) to locate M&M text, and writes `methods_subtitles_<PMID>.csv`.
+- **PDF** (`pdf_extractor.py`)  
+Uses PaperMage to extract section headings and paragraphs. Looks for the first “Materials and Methods” heading, collects its text and subsections, then writes two CSVs under the output folder:
+- `<PMID>_sections.csv` (one row per subsection)
+- `<PMID>_full_text.csv` (all M&M text in one row)
+- **Plain Text** (`plain_extractor.py`)  
+Reads `.txt` files, uses a regex to locate “Materials and Methods” headings, applies heuristics to skip false positives, and saves `methods_subtitles_<PMID>.csv`.
+
+**Workflow Overview**
+Those parsers are used in the main file [./07_full_text_retrieval/extract_methods_from_cadmus.py](./07_full_text_retrieval/extract_methods_from_cadmus.py). The workflow is as follows:
+1. **Load metadata**  
+ Read `retrieved_df2.json.zip` into a DataFrame of PMIDs and parse paths.
+2. **Filter out unwanted rows** (this is relevant only for the MS studies for which all PMIDs were fetched, but not all were relevant)
+ - Exclude PMIDs in “wrong study type” CSVs.  
+ - Remove any row where `xml = 0 && html = 0 && pdf = 0 && plain = 0`.
+3. **Attempt each parser in order**  
+ For each remaining PMID the parsers are attempted in the following order: XML -> HTML -> PDF -> Plain Text. As soon as one returns success, record its subtitle count and move on.
+1. **Logging & Summaries**  
+ - Each parser writes logs under `materials_methods/logs/<format>/`.  
+ - If no parser succeeds, the PMID is appended to `logs/missing_files.txt`.  
+ - At the end, per-format summary files (`summary_stats_<format>.txt`) and an overall summary (`overall_summary_stats.txt`) are generated.
 
 
 
