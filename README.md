@@ -217,8 +217,8 @@ All CADMUS outputs are processed by format-specific parsers in: [./07_full_text_
 Loads HTML ZIPs, applies several strategies (e.g. `<section data-title="…">`, `<div id="methods">`, OVID/NLM layouts, etc.) to locate M&M text, and writes `methods_subtitles_<PMID>.csv`.
 - **PDF** (`pdf_extractor.py`)  
 Uses PaperMage to extract section headings and paragraphs. Looks for the first “Materials and Methods” heading, collects its text and subsections, then writes two CSVs under the output folder:
-- `<PMID>_sections.csv` (one row per subsection)
-- `<PMID>_full_text.csv` (all M&M text in one row)
+  - `<PMID>_sections.csv` (one row per subsection)
+  - `<PMID>_full_text.csv` (all M&M text in one row)
 - **Plain Text** (`plain_extractor.py`)  
 Reads `.txt` files, uses a regex to locate “Materials and Methods” headings, applies heuristics to skip false positives, and saves `methods_subtitles_<PMID>.csv`.
 
@@ -227,11 +227,11 @@ Those parsers are used in the main file [./07_full_text_retrieval/extract_method
 1. **Load metadata**  
  Read `retrieved_df2.json.zip` into a DataFrame of PMIDs and parse paths.
 2. **Filter out unwanted rows** (this is relevant only for the MS studies for which all PMIDs were fetched, but not all were relevant)
- - Exclude PMIDs in “wrong study type” CSVs.  
- - Remove any row where `xml = 0 && html = 0 && pdf = 0 && plain = 0`.
+    - Exclude PMIDs in “wrong study type” CSVs.  
+    - Remove any row where `xml = 0 && html = 0 && pdf = 0 && plain = 0`.
 3. **Attempt each parser in order**  
  For each remaining PMID the parsers are attempted in the following order: XML -> HTML -> PDF -> Plain Text. As soon as one returns success, record its subtitle count and move on.
-1. **Logging & Summaries**  
+4. **Logging & Summaries**  
  - Each parser writes logs under `materials_methods/logs/<format>/`.  
  - If no parser succeeds, the PMID is appended to `logs/missing_files.txt`.  
  - At the end, per-format summary files (`summary_stats_<format>.txt`) and an overall summary (`overall_summary_stats.txt`) are generated.
