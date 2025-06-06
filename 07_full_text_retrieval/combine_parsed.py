@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from pathlib import Path
 
-###################### TODO: this should happend earlier in the pipeline
+###################### TODO: this should happen earlier in the pipeline
 # List your input files
 files = [
     '03_IE_ner/check_study_type/animal_studies_case_report_publications.csv',
@@ -67,7 +67,7 @@ final_df = final_df.drop_duplicates(subset='PMID')
 print(f"Number of unique articles: {final_df['PMID'].nunique()}")
 
 # Save to CSV
-output_file = base_dir / 'combined/combined_methods.csv'
+output_file = base_dir / 'combined/combined_methods_MS.csv'
 final_df.to_csv(output_file, index=False)
 
 print(f"Combined file saved at: {output_file}")
