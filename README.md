@@ -236,6 +236,14 @@ Those parsers are used in the main file [./07_full_text_retrieval/extract_method
     - If no parser succeeds, the PMID is appended to `logs/missing_files.txt`.  
     - At the end, per-format summary files (`summary_stats_<format>.txt`) and an overall summary (`overall_summary_stats.txt`) are generated.
 
-
+### Sentences extraction
+The sentences extraction from the full text is done in [./07_full_text_retrieval/extract_sentences.py](./07_full_text_retrieval/extract_sentences.py). It uses the `nltk` library to tokenize the text into sentences. The script processes each methods section file and saves the sentences in a structured format for further analysis.
+1. Reads raw text from a specified column in an input CSV.
+2. Splits text into “preliminary” sentences using NLTK’s Punkt tokenizer.
+3. Re-tokenizes each preliminary sentence into word/punctuation tokens -> needed espiecially for scientific texts.
+4. Merges consecutive sentences if they match “no-split” patterns (false positive splits).
+5. Writes out a CSV where each row corresponds to one (possibly merged) sentence.
+   
+## Full-text information extraction
 
 
