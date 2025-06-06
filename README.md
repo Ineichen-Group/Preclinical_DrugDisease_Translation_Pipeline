@@ -232,9 +232,9 @@ Those parsers are used in the main file [./07_full_text_retrieval/extract_method
 3. **Attempt each parser in order**  
  For each remaining PMID the parsers are attempted in the following order: XML -> HTML -> PDF -> Plain Text. As soon as one returns success, record its subtitle count and move on.
 4. **Logging & Summaries**  
- - Each parser writes logs under `materials_methods/logs/<format>/`.  
- - If no parser succeeds, the PMID is appended to `logs/missing_files.txt`.  
- - At the end, per-format summary files (`summary_stats_<format>.txt`) and an overall summary (`overall_summary_stats.txt`) are generated.
+    - Each parser writes logs under `materials_methods/logs/<format>/`.  
+    - If no parser succeeds, the PMID is appended to `logs/missing_files.txt`.  
+    - At the end, per-format summary files (`summary_stats_<format>.txt`) and an overall summary (`overall_summary_stats.txt`) are generated.
 
 
 
