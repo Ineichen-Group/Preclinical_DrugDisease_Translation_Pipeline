@@ -1,0 +1,241 @@
+# cadmus_processor/formats/plain_extractor.py
+
+import os
+import re
+import zipfile
+import logging
+from pathlib import Path
+
+import pandas as pd
+from cadmus_extractors.utils import setup_logger, ensure_dir
+
+
+def can_handle(pmid: str, cadmus_base_dir: Path, metadata_row: pd.Series) -> bool:
+    """
+    Return True if this row indicates a plain-text ZIP is available on disk.
+    We expect metadata_row['plain'] == 1 and metadata_row['plain_parse_d']['file_path'] exists.
+    """
+    if metadata_row.get("plain", 0) != 1:
+        return False
+    parse_info = metadata_row.get("plain_parse_d", {})
+    zip_path = parse_info.get("file_path", "")
+    zip_path = zip_path.replace("output", str(cadmus_base_dir))
+
+    return bool(zip_path and os.path.exists(zip_path))
+
+
+def extract_methods(
+    pmid: str,
+    cadmus_base_dir: Path,
+    parse_info: dict,
+    output_dir: Path,
+    logs_dir: Path,
+    logger: logging.Logger = None
+) -> (bool, int): # type: ignore
+    """
+    Attempt to extract “Materials & Methods” sections from a plain-text ZIP.
+
+    Parameters:
+        pmid (str): Document identifier.
+        parse_info (dict): Should contain {"file_path": "<path to zip>"}.
+        output_dir (Path): Directory where we will write methods_subtitles_{pmid}.csv.
+        logs_dir (Path): Directory where plain-text–specific logs (e.g. no_methods_docs_plain.txt) go.
+        logger (logging.Logger): If None, create a local one.
+
+    Returns:
+        (was_successful: bool, num_unique_subtitles: int)
+    """
+    if logger is None:
+        logger = setup_logger(__name__)
+
+    zip_path = parse_info.get("file_path", "")
+    zip_path = zip_path.replace("output", str(cadmus_base_dir))
+
+    if not zip_path or not os.path.exists(zip_path):
+        logger.warning(f"[PLAIN][can_handle error] File not found for PMID {pmid}: {zip_path}")
+        return False, 0
+
+    ensure_dir(output_dir)
+    ensure_dir(logs_dir)
+
+    # Set up a per-module log file
+    plain_log = logs_dir / "plain_processing.log"
+    setup_logger(str(plain_log))
+
+    subtitle_counts = []
+
+    try:
+        with zipfile.ZipFile(zip_path, "r") as z:
+            txt_files = [f for f in z.namelist() if f.lower().endswith(".txt")]
+            if not txt_files:
+                logger.info(f"[PLAIN] No .txt files in ZIP for PMID {pmid}")
+                _append_to_log(logs_dir / "no_methods_docs_plain.txt", pmid)
+                return False, 0
+
+            # For each .txt inside, attempt extraction
+            for fname in txt_files:
+                with z.open(fname) as fh:
+                    text = fh.read().decode("utf-8")
+                    output_csv_path = output_dir / f"methods_subtitles_{pmid}.csv"
+
+                    was_successful, df = _extract_methods_from_txt(
+                        text=text,
+                        doc_id=pmid,
+                        output_csv=str(output_csv_path),
+                        logs_dir=str(logs_dir)
+                    )
+                    if was_successful and isinstance(df, pd.DataFrame):
+                        count = df["subtitle"].nunique()
+                        subtitle_counts.append(count)
+    except Exception as e:
+        logger.error(f"[PLAIN][ERROR] Failed to unzip/process for PMID {pmid}: {e}")
+        _append_to_log(logs_dir / "processing_errors_plain.txt", f"{pmid}\t{zip_path}\t{e}")
+        return False, 0
+
+    total_subtitles = sum(subtitle_counts)
+    if total_subtitles == 0:
+        # Nothing extracted
+        _append_to_log(logs_dir / "no_methods_docs_plain.txt", pmid)
+        return False, 0
+
+    return True, total_subtitles
+
+
+def _append_to_log(log_path: Path, text: str) -> None:
+    """
+    Append a single line to the given log file.
+    """
+    ensure_dir(log_path.parent)
+    with open(str(log_path), "a") as f:
+        f.write(f"{text}\n")
+
+
+def is_likely_junk_section(text: str) -> bool:
+    """
+    Heuristics to skip “junk” sections (e.g. author roles, addresses, etc.).
+    """
+    if len(re.findall(
+        r'(writing|project administration|review|editing|funding acquisition|methodology|conceptualization)',
+        text, flags=re.IGNORECASE
+    )) > 5:
+        return True
+    if len(re.findall(r'[A-Z][a-z]+ [A-Z]\.', text)) > 5:  # many names
+        return True
+    if len(re.findall(r'institute|university|hospital|address|corresponding author', text.lower())) > 3:
+        return True
+    return False
+
+
+def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str, logs_dir: str = None):
+    """
+    Extracts all 'Materials and Methods'-like sections from a single plain-text string.
+
+    Parameters:
+        text (str): Flat article text.
+        doc_id (str): Document identifier.
+        output_csv (str): Path to CSV for saving extracted content.
+        logs_dir (str, optional): Path to store logs on failures.
+
+    Returns:
+        (bool, pd.DataFrame|False): (True, DataFrame) if found; (False, False) otherwise.
+    """
+    rows = []
+    text_lower = text.lower()
+
+    # Regex to match potential methods-like headers
+    section_header_matches = list(re.finditer(
+        r'(?<!\w)(\d{0,2}\.?\d{0,2}\s*)?'
+        r'(materials\s*(and|&)?\s*methods|experimental\s+(procedures|section)|methodology|methods)\b',
+        text, flags=re.IGNORECASE
+    ))
+
+    # Regex for stop sections
+    stop_section_regex = re.compile(
+        r'(?<!\w)(\d{0,2}\.?\d{0,2}\s*)?(' +
+        '|'.join(re.escape(title) for title in [
+            "results", "discussion", "conclusion", "references",
+            "acknowledgments", "acknowledgment", "bibliography",
+            "supplementary materials", "supporting information"
+        ]) + r')\b',
+        flags=re.IGNORECASE
+    )
+
+    if not section_header_matches:
+        if logs_dir:
+            ensure_dir(Path(logs_dir))
+            with open(os.path.join(logs_dir, "no_methods_docs_plain.txt"), "a") as f:
+                f.write(f"{doc_id}\n")
+        return False, False
+
+    extracted_ranges = []
+    for match in section_header_matches:
+        start_idx = match.start()
+        end_idx_match = match.end()
+
+        # Skip if inside an already‐extracted range
+        if any(prev_start <= start_idx < prev_end for prev_start, prev_end in extracted_ranges):
+            continue
+
+        # 1) Skip if next char is ')' or ','
+        if end_idx_match < len(text) and text[end_idx_match] in [")", ","]:
+            continue
+
+        # 2) Skip if lookahead indicates "was performed" etc.
+        lookahead = text_lower[end_idx_match:end_idx_match + 30]
+        if re.search(r'\b(was|were)\s+(performed|conducted|carried out)', lookahead):
+            continue
+
+        # 3) Skip if next characters are " in" or " for"
+        if re.match(r'\s+(in|for|is|of|by|to)\b', text_lower[end_idx_match:end_idx_match + 10]):
+            continue
+
+        # 4) Skip if "as described in" appears just before
+        context_before = text_lower[max(0, start_idx - 30):start_idx]
+        if "as described in" in context_before:
+            continue
+
+        # 5) Skip if followed by mostly numbers
+        if re.match(r'\s+[\d\s,]{5,}', text[end_idx_match:end_idx_match + 20]):
+            continue
+
+        section_title = match.group().strip()
+        end_idx = None
+
+        # Find the first valid stop section after start_idx
+        next_text = text[start_idx:]
+        for stop_match in stop_section_regex.finditer(next_text):
+            end_candidate_start = start_idx + stop_match.start()
+            context_before_stop = text_lower[max(0, end_candidate_start - 10):end_candidate_start]
+            if not re.search(r'\bthe\s+$', context_before_stop):
+                end_idx = end_candidate_start
+                break
+
+        # Extract from start to valid end (or to end of text)
+        section_text = (text[start_idx:end_idx].strip() if end_idx
+                        else text[start_idx:].strip())
+
+        if is_likely_junk_section(section_text):
+            continue
+
+        extracted_ranges.append((start_idx, end_idx if end_idx else len(text)))
+        rows.append({
+            "doc_id": doc_id,
+            "subtitle": section_title,
+            "paragraph": section_text
+        })
+
+    if not rows:
+        if logs_dir:
+            ensure_dir(Path(logs_dir))
+            with open(os.path.join(logs_dir, "no_methods_docs_plain.txt"), "a") as f:
+                f.write(f"{doc_id}\n")
+        return False, False
+
+    df = pd.DataFrame(rows, columns=["doc_id", "subtitle", "paragraph"]).drop_duplicates()
+
+    # Write to CSV (overwrite or create anew)
+    df.to_csv(output_csv, mode="w", index=False, header=True)
+    return True, df
+
+
+# End of plain_extractor.py
