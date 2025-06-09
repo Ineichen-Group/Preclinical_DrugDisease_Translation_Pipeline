@@ -49,12 +49,12 @@ import time
 
 import pandas as pd
 
-from classifiers.sex_classifier import SexClassifier
-from classifiers.species_classifier import SpeciesClassifier
-from classifiers.welfare_classifier import WelfareClassifier
-from classifiers.blinding_classifier import BlindingClassifier
-from classifiers.randomization_classifier import RandomizationClassifier
-from classifiers.age_classifier import AgeClassifier
+from regex_classifiers.sex_classifier import SexClassifier
+from regex_classifiers.species_classifier import SpeciesClassifier
+from regex_classifiers.welfare_classifier import WelfareClassifier
+from regex_classifiers.blinding_classifier import BlindingClassifier
+from regex_classifiers.randomization_classifier import RandomizationClassifier
+from regex_classifiers.age_classifier import AgeClassifier
 
 from utils.format_utils import format_species_result
 
@@ -117,7 +117,7 @@ def run_and_save(
     )
 
     # 2) Build output filename & path
-    out_filename = f"{category_name}_predictions_MS.csv"
+    out_filename = f"{category_name}_predictions.csv"
     out_path = os.path.join(output_dir, out_filename)
 
     # 3) Decide which columns to write: include "PMID" if present
