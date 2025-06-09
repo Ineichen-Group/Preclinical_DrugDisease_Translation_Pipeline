@@ -247,3 +247,20 @@ The sentences extraction from the full text is done in [./07_full_text_retrieval
 ## Full-text information extraction
 
 
+### Regex-based extraction
+
+This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`, and `age`. You can run a specific classifier or all of them in sequence.
+
+Each classifier processes a specified text column and outputs a CSV file with encoded prediction results. In the current imoplementation, the text column contains the sentences extracted from the methods section of the full text. The regex patterns are defined in a separate file, which is loaded at runtime. They can be found in [./08_IE_full_text/classifiers/](./08_IE_full_text/classifiers/) and are organized by classifier type, and abstracted in the base class [./08_IE_full_text/classifiers/regex_base.py](./08_IE_full_text/classifiers/regex_base.py).
+
+This abstract base class (`RegexClassifier`) defines the structure for all regex-based classifiers used in the project. It ensures a consistent interface and behavior across classifiers.
+
+Each subclass must implement:
+- `compile_patterns(self)`: Compiles the regular expressions needed for classification.
+- `classify(self, text: str)`: Applies classification logic to the input text and returns a prediction.
+
+Helper methods:
+- `_find_first_match(regex_obj, text)`: Returns the first regex match, if any.
+- `_find_all_matches(regex_obj, text)`: Returns all matches as a list.
+
+All regex-based classifiers (e.g., `SexClassifier`, `BlindingClassifier`) inherit from this base class.
