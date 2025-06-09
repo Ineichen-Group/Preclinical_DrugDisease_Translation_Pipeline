@@ -264,3 +264,18 @@ Helper methods:
 - `_find_all_matches(regex_obj, text)`: Returns all matches as a list.
 
 All regex-based classifiers (e.g., `SexClassifier`, `BlindingClassifier`) inherit from this base class.
+
+### Document-Level Aggregation Script
+
+The script [./08_IE_full_text/map_sent_to_doc_level.py](./08_IE_full_text/map_sent_to_doc_level.py) processes sentence-level regex predictions and converts them into document-level outputs. It includes logic for standard categories and special handling for species predictions.
+
+**Main Workflow**
+- Reads sentence-level CSV prediction files (e.g., `sex_predictions.csv`, `blinding_predictions.csv`).
+- Applies `document_level_strict_zero_fallback()` to generate document-level results.
+- Processes `species_predictions.csv` separately using `process_species_exclude_singletons()` for improved logic.
+- Saves all outputs as new CSVs with `_doc_level_predictions.csv` suffix.
+
+Each output includes:
+- `PMID`
+- Final label (`prediction_encoded_label` or `species`)
+- Supporting sentence IDs
