@@ -246,12 +246,11 @@ The sentences extraction from the full text is done in [./07_full_text_retrieval
    
 ## Full-text information extraction
 
-
 ### Regex-based extraction
 
 This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`, and `age`. You can run a specific classifier or all of them in sequence.
 
-Each classifier processes a specified text column and outputs a CSV file with encoded prediction results. In the current imoplementation, the text column contains the sentences extracted from the methods section of the full text. The regex patterns are defined in a separate file, which is loaded at runtime. They can be found in [./08_IE_full_text/classifiers/](./08_IE_full_text/classifiers/) and are organized by classifier type, and abstracted in the base class [./08_IE_full_text/classifiers/regex_base.py](./08_IE_full_text/classifiers/regex_base.py).
+Each classifier processes a specified text column and outputs a CSV file with encoded prediction results. In the current imoplementation, the text column contains the sentences extracted from the methods section of the full text. The regex patterns are defined in a separate file, which is loaded at runtime. They can be found in [./08_IE_full_text/regex_classifiers/](./08_IE_full_text/regex_classifiers/) and are organized by classifier type, and abstracted in the base class [./08_IE_full_text/classifiers/regex_base.py](./08_IE_full_text/classifiers/regex_base.py).
 
 This abstract base class (`RegexClassifier`) defines the structure for all regex-based classifiers used in the project. It ensures a consistent interface and behavior across classifiers.
 
@@ -264,6 +263,54 @@ Helper methods:
 - `_find_all_matches(regex_obj, text)`: Returns all matches as a list.
 
 All regex-based classifiers (e.g., `SexClassifier`, `BlindingClassifier`) inherit from this base class.
+
+#### Special Case: Age Information Extraction (Age IE)
+
+Age classification follows a multi-step pipeline due to the high likelihood of false positives from simple regex matching. The process includes regex filtering, machine learning classification, and LLM-based age value extraction. The scripts for this are located in the [./08_IE_full_text/age_classifier/](./08_IE_full_text/age_classifier/) directory.
+
+---
+
+**1. Sentence Filtering with Regex**
+
+After applying the regex-based age classifier, sentences containing age-related keywords are filtered using:
+
+`./08_IE_full_text/extract_age_sentences.py`  
+→ Extracts only sentences matched by age-related regex patterns.
+
+---
+
+**2. Sentence Classification with Machine Learning**
+
+Due to many false positives, a BERT-based classifier is trained to distinguish between:
+- **True Age Sentences** (actual age info)
+- **False Positives** (irrelevant mentions)
+
+Training:
+`./08_IE_full_text/age_classifier/Age_Sentence_Classifier_Train.ipynb`  
+→ Trained on manually annotated age-labeled data.
+
+Inference:
+`./08_IE_full_text/age_classifier/age_sent_clssifier_bert.py`  
+Run via: `./08_IE_full_text/age_classifier/run_age_sent_classifier_bert.sh`
+
+---
+
+**3. Age Value Extraction with LLM**
+
+To extract the actual age values from true age sentences, a lightweight fine-tuned LLM is used.
+
+Model:
+`./08_IE_full_text/age_classifier/LLM_Unsloth.ipynb`  
+→ A fine-tuned version of Unsloth (optimized for fast inference).
+
+Inference:
+`./08_IE_full_text/age_classifier/LLM_Unsloth_Inference.ipynb`  
+→ Applies the LLM to extract age values from each true age sentence.
+
+---
+
+### NER-based extraction
+
 
 ### Document-Level Aggregation Script
 
