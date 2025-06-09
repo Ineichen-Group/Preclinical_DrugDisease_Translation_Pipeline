@@ -197,19 +197,19 @@ def main():
     parser.add_argument(
         "--input_csv",
         type=str,
-        required=True,
+        default="07_full_text_retrieval/materials_methods/combined/combined_methods.csv",
         help="Path to the input CSV file."
     )
     parser.add_argument(
         "--text_col",
         type=str,
-        required=True,
+        default="Text",
         help="Name of the column in the input CSV that contains the raw text to split."
     )
     parser.add_argument(
         "--output_csv",
         type=str,
-        required=True,
+        default="07_full_text_retrieval/materials_methods/combined/combined_methods_sentences.csv",
         help="Path where the output CSV (sentence‐split, merged) will be written."
     )
 
