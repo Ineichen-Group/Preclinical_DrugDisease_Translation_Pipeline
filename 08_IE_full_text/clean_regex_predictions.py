@@ -82,16 +82,16 @@ def process_species_exclude_singletons(df):
 
 def main():
         # === CONFIGURATION ===
-    INPUT_FILES = ['08_IE_full_text/model_predictions/regex/blinding_predictions_MS.csv',
-                  '08_IE_full_text/model_predictions/regex/randomization_predictions_MS.csv',
-                  '08_IE_full_text/model_predictions/regex/welfare_predictions_MS.csv',
-                  '08_IE_full_text/model_predictions/regex/sex_predictions_MS.csv']
+    INPUT_FILES = ['08_IE_full_text/model_predictions/regex/blinding_predictions.csv',
+                  '08_IE_full_text/model_predictions/regex/randomization_predictions.csv',
+                  '08_IE_full_text/model_predictions/regex/welfare_predictions.csv',
+                  '08_IE_full_text/model_predictions/regex/sex_predictions.csv']
     
     for file in INPUT_FILES:
         if not file.endswith('.csv'):
             raise ValueError(f"Input file '{file}' must be a CSV.")
         prediction_type = file.split('/')[-1].split('_')[0]
-        OUTPUT_FILE = f'08_IE_full_text/model_predictions/regex/{prediction_type}_doc_level_predictions_MS.csv'
+        OUTPUT_FILE = f'08_IE_full_text/model_predictions/regex/{prediction_type}_doc_level_predictions.csv'
         df = pd.read_csv(file)
         doc_df = document_level_strict_zero_fallback(df)
         doc_df.to_csv(OUTPUT_FILE, index=False)
@@ -99,12 +99,12 @@ def main():
         print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
         
     # Process species predictions with refined logic
-    species_file = '08_IE_full_text/model_predictions/regex/species_predictions_MS.csv'
+    species_file = '08_IE_full_text/model_predictions/regex/species_predictions.csv'
     if not species_file.endswith('.csv'):
         raise ValueError(f"Species input file '{species_file}' must be a CSV.")
     species_df = pd.read_csv(species_file)
     species_doc_df = process_species_exclude_singletons(species_df)
-    species_output_file = '08_IE_full_text/model_predictions/regex/species_doc_level_predictions_MS.csv'
+    species_output_file = '08_IE_full_text/model_predictions/regex/species_doc_level_predictions.csv'
     species_doc_df.to_csv(species_output_file, index=False)
     print(f"Species document-level predictions saved to '{species_output_file}'")
     print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
