@@ -132,6 +132,7 @@ def main():
     predictions_combined['age_prediction'] = predictions_combined['age_prediction'].str.replace(r'###.*', '', regex=True).str.strip()
     predictions_combined['prediction_encoded_label'] = predictions_combined['age_prediction'].apply(clean_prediction)
     save_path= f"./08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions.csv"
+    predictions_combined = predictions_combined.rename(columns={'doc_id_unique': 'PMID'})
     predictions_combined.to_csv(save_path, index=False)
     print(f"Processed {len(predictions_combined)} documents with age predictions. Saved to {save_path}")
     
