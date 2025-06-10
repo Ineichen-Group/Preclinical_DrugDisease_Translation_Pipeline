@@ -10,22 +10,18 @@ def parse_fragment(fragment: str) -> Optional[float]:
     Returns:
         • float if successful
         • None if parsing fails
-    Steps:
-        1. Strip whitespace and lowercase.
-        2. Remove ordinal suffixes: "1st" -> "1", "22nd" -> "22", etc.
-        3. Remove leading non-alphanumeric characters (e.g., "=" or "<").
-        4. If empty after cleanup, return None.
-        5. If purely numeric (integer or decimal), cast to float.
-        6. Otherwise, attempt to parse spelled-out English words via text2num.
-           Return float on success or None on failure.
     """
     frag = fragment.strip().lower()
+
+    # Remove common prefixes like 'n ='
+    frag = re.sub(r"^n\s*=\s*", "", frag)
 
     # Remove ordinal suffixes (e.g., "1st" -> "1")
     frag = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", frag)
 
-    # Remove leading noise characters (non-alphanumeric)
+    # Remove leading/trailing noise characters (non-alphanumeric)
     frag = re.sub(r"^[^0-9a-z]+", "", frag)
+    frag = re.sub(r"[^0-9a-z]+$", "", frag)
     if not frag:
         return None
 
@@ -109,7 +105,7 @@ def normalize_number(s: str) -> Union[float, List[float], str]:
 
 if __name__ == "__main__":
     # 1) Read the CSV file containing the `prediction_encoded_label` column
-    input_path = "./model_predictions/animals_nr/animals_nr_predictions_MS.csv"
+    input_path = "./08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions.csv"
     df = pd.read_csv(input_path)
 
     # 2) Drop rows where `prediction_encoded_label` is NaN or empty
@@ -129,7 +125,7 @@ if __name__ == "__main__":
     #    ]
 
     # 6) Save to a new CSV (will contain floats or lists in `numeric_label`)
-    output_path = "./model_predictions/animals_nr/animals_nr_predictions_numeric.csv"
+    output_path = "./08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv"
     df_clean.to_csv(output_path, index=False)
     print(f"\nSaved converted labels to: {output_path}")
 
