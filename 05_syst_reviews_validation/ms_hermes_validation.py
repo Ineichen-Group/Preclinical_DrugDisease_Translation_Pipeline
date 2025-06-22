@@ -9,7 +9,7 @@ from pubmed_utils import (
     is_title_match,
 )
 
-INPUT_CSV = "05_syst_reviews_validation//ms_berger_sr/HERMES_INCLUDED.csv"       # Replace with your actual file
+INPUT_CSV = "05_syst_reviews_validation//ms_berger_sr/HERMES_INCLUDED.csv"      
 OUTPUT_CSV = "05_syst_reviews_validation/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title.csv"
 
 def process_dois(input_csv, output_csv, threshold=90):
@@ -107,7 +107,25 @@ def check_missing_pmids(hermes_df, output_dir):
     target_pmids = set(hermes_df['pmid'])
     print(f"Target PMIDs from HERMES-MS ds: {len(target_pmids)}")
 
-    # 1. NER disease-specific filter
+    # 1. Original query PMIDs
+    original_pmids = set(all_query_pmids)
+    missing_original = target_pmids - original_pmids
+    print(f"Missing after original query filter: {len(missing_original)}")
+    pd.DataFrame(missing_original, columns=["pmid"]).to_csv(f"{output_dir}/missing_original_query.csv", index=False)
+
+    # 2. Animal studies PMIDs
+    animal_pmids = set(all_animal_studies['PMID'])
+    missing_animal = target_pmids - animal_pmids - missing_original # Exclude already missing from original query
+    print(f"Missing after animal studies filter: {len(missing_animal)}")
+    pd.DataFrame(missing_animal, columns=["pmid"]).to_csv(f"{output_dir}/missing_animal_filter.csv", index=False)
+
+    # 3. All NER identified PMIDs
+    ner_pmids = set(identified_studies['PMID'])
+    missing_ner = target_pmids - ner_pmids - missing_animal - missing_original # Exclude already missing from animal and original query
+    print(f"Missing after general NER filter: {len(missing_ner)}")
+    pd.DataFrame(missing_ner, columns=["pmid"]).to_csv(f"{output_dir}/missing_ner_filter.csv", index=False)
+    
+    # 4. NER disease-specific filter
     disease = "multiple sclerosis"
     filtered = identified_studies[
         identified_studies['unique_conditions_linkbert_predictions']
@@ -115,37 +133,33 @@ def check_missing_pmids(hermes_df, output_dir):
         .str.contains(disease, case=False, na=False)
     ]
     disease_pmids = set(filtered['PMID'])
-    missing_disease = target_pmids - disease_pmids
+    print(f"MS Studies identified: {len(disease_pmids)}")
+    missing_disease = target_pmids - disease_pmids - missing_ner - missing_animal - missing_original
     print(f"Missing after disease-specific NER filter: {len(missing_disease)}")
     pd.DataFrame(missing_disease, columns=["pmid"]).to_csv(f"{output_dir}/missing_disease_filter.csv", index=False)
-
-    # 2. Original query PMIDs
-    original_pmids = set(all_query_pmids)
-    missing_original = target_pmids - original_pmids
-    print(f"Missing after original query filter: {len(missing_original)}")
-    pd.DataFrame(missing_original, columns=["pmid"]).to_csv(f"{output_dir}/missing_original_query.csv", index=False)
-
-    # 3. Animal studies PMIDs
-    animal_pmids = set(all_animal_studies['PMID'])
-    missing_animal = target_pmids - animal_pmids
-    print(f"Missing after animal studies filter: {len(missing_animal)}")
-    pd.DataFrame(missing_animal, columns=["pmid"]).to_csv(f"{output_dir}/missing_animal_filter.csv", index=False)
-
-    # 4. All NER identified PMIDs
-    ner_pmids = set(identified_studies['PMID'])
-    missing_ner = target_pmids - ner_pmids
-    print(f"Missing after general NER filter: {len(missing_ner)}")
-    pd.DataFrame(missing_ner, columns=["pmid"]).to_csv(f"{output_dir}/missing_ner_filter.csv", index=False)
+    
+    missing_final = target_pmids - disease_pmids 
+    print(f"Missing after all filters: {len(missing_final)}, {len(missing_final)/len(target_pmids)*100:.2f}% of total")
 
     print("✅ All missing lists saved independently.")
     
-def main(fetch_dois=False, check_missing=True):
+def main(fetch_dois=False, check_missing=False, save_annotated=True):
     #print(get_pmids_for_doi(doi="10.1016/j.intimp.2018.12.001"))
     if fetch_dois:
         process_dois(INPUT_CSV, OUTPUT_CSV)
     if check_missing:    
         hermes_df = pd.read_csv(OUTPUT_CSV)
         check_missing_pmids(hermes_df, output_dir="05_syst_reviews_validation/outputs/missing_ms_hermes_validation")
-   
+    if save_annotated:  
+        hermes_df = pd.read_csv(OUTPUT_CSV)
+        hermes_df_original = pd.read_csv(INPUT_CSV)[[
+            'DOI', 'Title', 
+            'Animal model', 'Species', 'Strain', 'Sex', 'Age', 
+            'Tested drug(s)', 'Comparator', 'Outcome', 'Total number of animals'
+        ]] 
+        hermes_df_original = hermes_df_original.rename(columns={"Title": "title"})
+        merged_df = hermes_df.merge(hermes_df_original, on="title", how="left")
+        merged_df.to_csv("05_syst_reviews_validation/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title_annotated.csv", index=False)
+        
 if __name__ == "__main__":
-    main(fetch_dois=False, check_missing=True)
+    main(fetch_dois=False, check_missing=True, save_annotated=False)
