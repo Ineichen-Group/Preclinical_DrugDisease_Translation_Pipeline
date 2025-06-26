@@ -1,6 +1,23 @@
 import pandas as pd
 import numpy as np
+from typing import Set
 
+def load_wrong_pmids(csv_paths: list) -> Set[str]:
+    """
+    Read multiple CSVs of “wrong” PMIDs (e.g. case reports, reviews) and return their union.
+    """
+    pmids = set()
+    for p in csv_paths:
+        df = pd.read_csv(p)
+        if 'PMID' in df.columns:
+            pmids |= set(df['PMID'].astype(str))
+        elif 'pmid' in df.columns:
+            pmids |= set(df['pmid'].astype(str))
+    return pmids
+
+csv_pmids_to_exclude = ["03_IE_ner/check_study_type/animal_studies_case_report_publications.csv",
+                        "03_IE_ner/check_study_type/animal_studies_review_publications.csv",
+                        "03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"]
 
 def load_and_merge_preclinical_data():    
     """
@@ -49,6 +66,12 @@ def load_and_merge_preclinical_data():
 
     # Print the shape of the merged DataFrame
     print(f"Shape of merged_df: {merged_df.shape}")
+    
+    wrong_pmids = load_wrong_pmids(csv_pmids_to_exclude)
+    print(f"Loaded {len(wrong_pmids)} excluded PMIDs")
+    merged_df["PMID"] = merged_df["PMID"].astype(str).str.strip()
+    merged_df = merged_df[~merged_df["PMID"].isin(wrong_pmids)]
+    print(f"preclinical {len(merged_df)} PMIDs remain after filtering")
 
     # Save the merged DataFrame to a new CSV file
     merged_df.to_csv("04_normalization/data/mapped_all/mapped_preclinical_data.csv", index=False)
