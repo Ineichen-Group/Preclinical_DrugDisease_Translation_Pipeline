@@ -9,8 +9,8 @@ from pubmed_utils import (
     is_title_match,
 )
 
-INPUT_CSV = "05_syst_reviews_validation//ms_berger_sr/HERMES_INCLUDED.csv"      
-OUTPUT_CSV = "05_syst_reviews_validation/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title.csv"
+INPUT_CSV = "05_syst_reviews_validation/data/ms_berger_sr/HERMES_INCLUDED.csv"      
+OUTPUT_CSV = "05_syst_reviews_validation/data/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title.csv"
 
 def process_dois(input_csv, output_csv, threshold=90):
     # Read and normalize header names to lowercase → original
@@ -89,19 +89,25 @@ def load_current_pmids():
     all_animal_studies = pd.read_csv("02_animal_study_classification/model_predictions/all_animal_studies_clean_complete.csv")
 
     # All studies with drug and disease mention which will be kept for future processing
-    identified_studies = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_595768.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
-
+    identified_studies_main = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_595768.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
+    identified_studies_extra = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_4489.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
+    identified_studies = pd.concat([identified_studies_main, identified_studies_extra], ignore_index=True)
+    
+    mapped_after_join = pd.read_csv("06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv")
+    
     print(f"Original PMIDs: {len(all_query_pmids)}")
     print(f"Animal studies PMIDs: {len(all_animal_studies)}")
     print(f"Identified studies PMIDs: {len(identified_studies)}")
-    return all_query_pmids, all_animal_studies, identified_studies
+    print(f"Mapped after join with clinical PMIDs: {len(mapped_after_join)}")
+
+    return all_query_pmids, all_animal_studies, identified_studies, mapped_after_join
     
 def check_missing_pmids(hermes_df, output_dir):
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
     # Load current PMIDs
-    all_query_pmids, all_animal_studies, identified_studies = load_current_pmids()
+    all_query_pmids, all_animal_studies, identified_studies, mapped_after_join = load_current_pmids()
 
     # Full target set
     target_pmids = set(hermes_df['pmid'])
@@ -138,6 +144,12 @@ def check_missing_pmids(hermes_df, output_dir):
     print(f"Missing after disease-specific NER filter: {len(missing_disease)}")
     pd.DataFrame(missing_disease, columns=["pmid"]).to_csv(f"{output_dir}/missing_disease_filter.csv", index=False)
     
+    animal_pmids_after_join = set(mapped_after_join['PMID'])
+    print(f"animal_pmids_after_join: {len(animal_pmids_after_join)}")
+    missing_disease = target_pmids - animal_pmids_after_join
+    print(f"Missing after joining to clinical filter: {len(missing_disease)}")
+    pd.DataFrame(missing_disease, columns=["pmid"]).to_csv(f"{output_dir}/missing_after_clinical_filter.csv", index=False)
+
     missing_final = target_pmids - disease_pmids 
     print(f"Missing after all filters: {len(missing_final)}, {len(missing_final)/len(target_pmids)*100:.2f}% of total")
 
