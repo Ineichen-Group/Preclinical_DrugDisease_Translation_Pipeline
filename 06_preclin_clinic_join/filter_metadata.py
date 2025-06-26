@@ -1,30 +1,11 @@
 import pandas as pd
 import ast
-from typing import Set
-
-def load_wrong_pmids(csv_paths: list) -> Set[str]:
-    """
-    Read multiple CSVs of “wrong” PMIDs (e.g. case reports, reviews) and return their union.
-    """
-    pmids = set()
-    for p in csv_paths:
-        df = pd.read_csv(p)
-        if 'PMID' in df.columns:
-            pmids |= set(df['PMID'].astype(str))
-        elif 'pmid' in df.columns:
-            pmids |= set(df['pmid'].astype(str))
-    return pmids
-
-csv_pmids_to_exclude = ["03_IE_ner/check_study_type/animal_studies_case_report_publications.csv",
-                        "03_IE_ner/check_study_type/animal_studies_review_publications.csv",
-                        "03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"]
-
 
 # === FILE PATH PARAMETERS ===
-MAPPED_STUDIES_PATH = "06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_13420.csv"
+MAPPED_STUDIES_PATH = "06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_12231.csv"
 
 CLINICAL_METADATA_PATH = "06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv"
-PRECLINICAL_METADATA_PATH = "03_IE_ner/data/animal_studies_with_drug_disease/animal_studies_metadata_595768.csv"
+PRECLINICAL_METADATA_PATH = "03_IE_ner/data/animal_studies_with_drug_disease/animal_studies_metadata_562352.csv"
 
 CLINICAL_ANNOTATIONS_PATH = "04_normalization/data/mapped_all/mapped_clinical_data.csv"
 PRECLINICAL_ANNOTATIONS_PATH = "04_normalization/data/mapped_all/mapped_preclinical_data.csv"
@@ -69,12 +50,6 @@ df_clinical_metadata = df_clinical_metadata.drop_duplicates()
 df_preclinical_metadata = df_preclinical_metadata.drop_duplicates()
 
 print(f"Clinical {df_clinical_metadata.shape}, preclinical {df_preclinical_metadata.shape}")
-
-wrong_pmids = load_wrong_pmids(csv_pmids_to_exclude)
-print(f"Loaded {len(wrong_pmids)} excluded PMIDs")
-df_preclinical_metadata["PMID"] = df_preclinical_metadata["PMID"].astype(str).str.strip()
-df_preclinical_metadata = df_preclinical_metadata[~df_preclinical_metadata["PMID"].isin(wrong_pmids)]
-print(f"preclinical {len(df_preclinical_metadata)} PMIDs remain after filtering")
 
 # === RENAME COLUMNS TO STANDARD FORMAT ===
 df_clinical_metadata.rename(columns={
