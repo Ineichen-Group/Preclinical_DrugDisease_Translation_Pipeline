@@ -2,7 +2,7 @@ import pandas as pd
 import ast
 
 # === FILE PATH PARAMETERS ===
-MAPPED_STUDIES_PATH = "06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_12231.csv"
+MAPPED_STUDIES_PATH = "06_preclin_clinic_join/data/joined_data/condition_clinical_and_preclinical_12237.csv"
 
 CLINICAL_METADATA_PATH = "06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv"
 PRECLINICAL_METADATA_PATH = "03_IE_ner/data/animal_studies_with_drug_disease/animal_studies_metadata_562352.csv"

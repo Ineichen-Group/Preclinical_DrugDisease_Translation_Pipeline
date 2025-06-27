@@ -7,7 +7,7 @@ from viz_data import plot_top_entities_side_by_side
 #        LOAD DATA         #
 # ------------------------- #
 
-FILE_PRECLINICAL_LINKING = "04_normalization/data/mapped_all/mapped_preclinical_data.csv"
+FILE_PRECLINICAL_LINKING = "04_normalization/data/mapped_all/mapped_preclinical_data_enriched.csv"
 FILE_CLINICAL_LINKING = "04_normalization/data/mapped_all/mapped_clinical_data.csv"
 FILE_CLINICAL_METADATA = "06_preclin_clinic_join/data/clinical/clinical_nct_docs_metadata_20240313.csv"
 
