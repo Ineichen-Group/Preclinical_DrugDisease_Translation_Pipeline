@@ -89,9 +89,9 @@ def load_current_pmids():
     all_animal_studies = pd.read_csv("02_animal_study_classification/model_predictions/all_animal_studies_clean_complete.csv")
 
     # All studies with drug and disease mention which will be kept for future processing
-    identified_studies_main = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_595768.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
-    identified_studies_extra = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_4489.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
-    identified_studies = pd.concat([identified_studies_main, identified_studies_extra], ignore_index=True)
+    identified_studies = pd.read_csv("./04_normalization/data/mapped_all/mapped_preclinical_data_enriched.csv")[['PMID', 'drug_term_umls_norm', 'disease_term_mondo_norm']]
+    #identified_studies_extra = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_4489.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
+    #identified_studies = pd.concat([identified_studies_main, identified_studies_extra], ignore_index=True)
     
     mapped_after_join = pd.read_csv("06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv")
     
@@ -134,7 +134,7 @@ def check_missing_pmids(hermes_df, output_dir):
     # 4. NER disease-specific filter
     disease = "multiple sclerosis"
     filtered = identified_studies[
-        identified_studies['unique_conditions_linkbert_predictions']
+        identified_studies['disease_term_mondo_norm']
         .str.lower()
         .str.contains(disease, case=False, na=False)
     ]
