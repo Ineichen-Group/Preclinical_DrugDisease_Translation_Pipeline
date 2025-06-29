@@ -1,0 +1,27 @@
+Test Name,Measure,Outcome Domain
+Direct social interaction,Exploration time,Sociability
+Direct social interaction,Time following host,Sociability
+Direct social interaction,Time being followed by host,Sociability
+Direct social interaction,Time sniffing host,Sociability
+Direct social interaction,Time self-grooming,Sociability
+Direct social interaction,Time attacking host,Sociability
+Direct social interaction,Time being attacked by host,Sociability
+Direct social interaction,Time immobile,Sociability
+Social odor discrimination,Increase in frequency of visits to novel social odor,Sociability
+Social odor discrimination,Increase in time spent sniffing novel social odor,Sociability
+Social propinquity,Latency to first share,Sociability
+Social propinquity,Time vacant,Sociability
+Social propinquity,Duration of double occupancy,Sociability
+Elevated zero maze,Crosses into open,Anxiety
+Elevated zero maze,Time in open,Anxiety
+Elevated zero maze,Latency to enter open,Anxiety
+Light/dark box,Crosses into light,Anxiety
+Light/dark box,Time in light,Anxiety
+Light/dark box,Latency to enter light,Anxiety
+3-chamber test,Crosses into empty,Sociability
+3-chamber test,Crosses into occupied,Sociability
+3-chamber test,Time in empty,Sociability
+3-chamber test,Time in occupied,Sociability
+3-chamber test,Latency to enter occupied,Sociability
+3-chamber test,Mean time per visit in occupied,Sociability
+Fecal corticosterone metabolites (FCMs),Change in FCM levels under stressed conditions,Anxiety/Stress
