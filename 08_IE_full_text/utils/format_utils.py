@@ -1,6 +1,6 @@
 # utils/format_utils.py
 
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict
 
 def vector_to_str(vector: List[int]) -> str:
     """
@@ -26,6 +26,25 @@ def format_species_result(
     """
     vector, labels = result
     return vector_to_str(vector), labels_to_str(labels)
+
+def format_assay_result(
+    result: Tuple[List[int], List[str], Dict[str, List[str]]]
+) -> Tuple[str, str, Dict[str, str]]:
+    """
+    Given the tuple returned by SpeciesClassifier.classify(text):
+      - vector: List[int], e.g., [0,1,0,...]
+      - labels: List[str], e.g., ['Imaging','Physiology',...]
+      - label_tokens_dict: Dict[label, List["token (start-end)"]]
+
+    Returns:
+      - prediction_encoded_num: "0,1,0,..."
+      - prediction_encoded_label: "['Imaging','Physiology']"
+      - label_matches_dict: Dict[label, str], values are CSV-friendly "token (start-end); ..."
+    """
+    vector, labels, label_tokens_dict = result
+    dict_str = {label: "; ".join(matches) for label, matches in label_tokens_dict.items()}
+    return vector_to_str(vector), labels_to_str(labels), dict_str
+
 
 def format_generic_result(result: Any) -> Tuple[Any, Any]:
     """

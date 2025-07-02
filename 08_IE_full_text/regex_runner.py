@@ -55,8 +55,10 @@ from regex_classifiers.welfare_classifier import WelfareClassifier
 from regex_classifiers.blinding_classifier import BlindingClassifier
 from regex_classifiers.randomization_classifier import RandomizationClassifier
 from regex_classifiers.age_classifier import AgeClassifier
+from regex_classifiers.assay_classifier import AssayClassifier
 
 from utils.format_utils import format_species_result
+from utils.format_utils import format_assay_result
 
 
 def parse_args():
@@ -71,8 +73,8 @@ def parse_args():
     parser.add_argument(
         "--category",
         required=True,
-        choices=["sex", "species", "welfare", "blinding", "randomization", "age", "all"],
-        help="Which classifier to run: 'sex', 'species', 'welfare', 'blinding', 'randomization', or 'all'.",
+        choices=["sex", "species", "welfare", "blinding", "randomization", "age", "assay", "all"],
+        help="Which classifier to run: 'sex', 'species', 'welfare', 'blinding', 'randomization', 'age', 'assaty' or 'all'.",
     )
     parser.add_argument(
         "--text_col",
@@ -108,13 +110,19 @@ def run_and_save(
 
     def apply_and_format(txt):
         raw_out = clf.classify(txt)
-        # format_fn should return a 2‐element tuple (num_str, label_str)
+        # format_fn should return a 2 element tuple (num_str, label_str) -> excpetion is the assay classifier which returns 3 elements
         return format_fn(raw_out) if format_fn else raw_out
 
-    # The result of .apply(...) must be a Series of length‐2 tuples
-    df_copy[["prediction_encoded_num", "prediction_encoded_label"]] = df_copy[text_col].apply(
-        lambda txt: pd.Series(apply_and_format(txt))
-    )
+    if category_name == "assay":
+        # The result of .apply(...) must be a Series of length‐2 tuples
+        df_copy[["prediction_encoded_num", "prediction_encoded_label", "prediction_tokens"]] = df_copy[text_col].apply(
+            lambda txt: pd.Series(apply_and_format(txt))
+        )
+    else:
+        # The result of .apply(...) must be a Series of length‐2 tuples
+        df_copy[["prediction_encoded_num", "prediction_encoded_label"]] = df_copy[text_col].apply(
+            lambda txt: pd.Series(apply_and_format(txt))
+        )
 
     # 2) Build output filename & path
     out_filename = f"{category_name}_predictions.csv"
@@ -126,6 +134,8 @@ def run_and_save(
             subset_cols = ["PMID", "sentence_id", "prediction_encoded_num", "prediction_encoded_label"]
         else:
             subset_cols = ["PMID", "prediction_encoded_num", "prediction_encoded_label"]
+        if category_name == "assay":
+            subset_cols.append("prediction_tokens")
     else:
         subset_cols = ["prediction_encoded_num", "prediction_encoded_label"]
         print(
@@ -174,6 +184,7 @@ def main():
         "blinding": (BlindingClassifier, None),
         "randomization": (RandomizationClassifier, None),
         "age": (AgeClassifier, None),
+        "assay": (AssayClassifier, format_assay_result),
     }
 
     if args.category != "all":
