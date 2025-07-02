@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import Counter
 import ast
+from collections import defaultdict
 
 def document_level_strict_zero_fallback(df):
     """
@@ -84,9 +85,63 @@ def process_species_exclude_singletons_pivoted(df):
 
     return pd.DataFrame(records)
 
+def process_assay_predictions(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process sentence-level assay predictions into document-level summaries per PMID.
+
+    Returns a DataFrame with:
+    - PMID
+    - prediction_encoded_label: concatenated unique labels
+    - supporting_sent_id_<category>: sentence IDs where each category appears
+    - prediction_tokens_dict: full label-to-token dictionary per PMID
+    """
+    # Convert string representations of lists/dicts to actual Python objects
+    df["prediction_encoded_label"] = df["prediction_encoded_label"].apply(ast.literal_eval)
+    df["prediction_tokens"] = df["prediction_tokens"].apply(ast.literal_eval)
+
+    # Collect all unique categories across the dataset
+    all_categories = sorted({
+        label for labels in df["prediction_encoded_label"] for label in labels
+    })
+
+    def aggregate_doc(group):
+        pmid = group["PMID"].iloc[0]
+        
+        # Unique, sorted list of all predicted labels
+        all_labels = sorted(set(label for labels in group["prediction_encoded_label"] for label in labels))
+        pred_label_str = ", ".join(all_labels)
+
+        # Create sentence_id lists for each category
+        sent_id_cols = {}
+        for cat in all_categories:
+            sent_ids = group.loc[
+                group["prediction_encoded_label"].apply(lambda labels: cat in labels),
+                "sentence_id"
+            ]
+            sent_id_cols[f"supporting_sent_id_{cat}"] = ", ".join(map(str, sent_ids.tolist()))
+
+        # Merge prediction_tokens dicts
+        combined_tokens = defaultdict(list)
+        for d in group["prediction_tokens"]:
+            for k, v in d.items():
+                combined_tokens[k].append(v)
+        
+        # Combine token matches into a readable string
+        combined_tokens = {k: "; ".join(sorted(set(v))) for k, v in combined_tokens.items()}
+
+        return pd.Series({
+            "PMID": pmid,
+            "prediction_encoded_label": pred_label_str,
+            **sent_id_cols,
+            "prediction_tokens_dict": combined_tokens
+        })
+
+    # Apply aggregation per PMID
+    return df.groupby("PMID").apply(aggregate_doc).reset_index(drop=True)
 
 def main():
-        # === CONFIGURATION ===
+    
+    # === CASES OF BINARY or HIERARCHICAL prediction to be selected per document ===
     INPUT_FILES = ['08_IE_full_text/model_predictions/regex/blinding_predictions.csv',
                   '08_IE_full_text/model_predictions/regex/randomization_predictions.csv',
                   '08_IE_full_text/model_predictions/regex/welfare_predictions.csv',
@@ -102,8 +157,10 @@ def main():
         doc_df.to_csv(OUTPUT_FILE, index=False)
         print(f"Document-level predictions saved to '{OUTPUT_FILE}'")
         print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
-        
+    
+    # === CASES when MULTIPLE categories can apply per document ===
     # Process species predictions with refined logic
+    print("Processing species predictions...")
     species_file = '08_IE_full_text/model_predictions/regex/species_predictions.csv'
     if not species_file.endswith('.csv'):
         raise ValueError(f"Species input file '{species_file}' must be a CSV.")
@@ -113,6 +170,19 @@ def main():
     species_doc_df.to_csv(species_output_file, index=False)
     print(f"Species document-level predictions saved to '{species_output_file}'")
     print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
+    
+    # Process assay predictions with refined logic
+    print("Processing assay predictions...")
+    assay_file = '08_IE_full_text/model_predictions/regex/assay_predictions.csv'
+    if not assay_file.endswith('.csv'):
+        raise ValueError(f"Assay input file '{assay_file}' must be a CSV.")
+    assay_df = pd.read_csv(assay_file)
+    assay_doc_df = process_assay_predictions(assay_df)
+    assay_output_file = '08_IE_full_text/model_predictions/regex/assay_doc_level_predictions.csv'
+    assay_doc_df.to_csv(assay_output_file, index=False)
+    print(f"Assay document-level predictions saved to '{assay_output_file}'")
+    print(f"Processed and saved PMIDs: {len(assay_doc_df['PMID'].unique())}")
+
 
 if __name__ == '__main__':
     main()
