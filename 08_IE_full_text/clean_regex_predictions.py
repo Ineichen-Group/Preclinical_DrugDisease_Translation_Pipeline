@@ -105,7 +105,7 @@ def process_assay_predictions(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     def aggregate_doc(group):
-        pmid = group["PMID"].iloc[0]
+        pmid = group.name
         
         # Unique, sorted list of all predicted labels
         all_labels = sorted(set(label for labels in group["prediction_encoded_label"] for label in labels))
@@ -122,13 +122,30 @@ def process_assay_predictions(df: pd.DataFrame) -> pd.DataFrame:
 
         # Merge prediction_tokens dicts
         combined_tokens = defaultdict(list)
+        def split_tokens(val):
+            if isinstance(val, list):
+                items = val
+            else:
+                items = [val]
+            # Split on semicolons and flatten
+            return [item.strip() for v in items for item in str(v).split(";")]
+
         for d in group["prediction_tokens"]:
             for k, v in d.items():
-                combined_tokens[k].append(v)
+                combined_tokens[k].extend(split_tokens(v))
+
+                
+        def dedupe_and_join(tokens: list[str]) -> str:
+            unique = sorted({ t.strip().lower() for t in tokens })
+            return "; ".join(t.title() for t in unique)
         
         # Combine token matches into a readable string
-        combined_tokens = {k: "; ".join(sorted(set(v))) for k, v in combined_tokens.items()}
-
+        combined_tokens = {
+            k: dedupe_and_join(v)
+            for k, v in combined_tokens.items()
+        }
+     
+            
         return pd.Series({
             "PMID": pmid,
             "prediction_encoded_label": pred_label_str,
@@ -137,7 +154,13 @@ def process_assay_predictions(df: pd.DataFrame) -> pd.DataFrame:
         })
 
     # Apply aggregation per PMID
-    return df.groupby("PMID").apply(aggregate_doc).reset_index(drop=True)
+    result = (
+        df.groupby("PMID", group_keys=False)
+        .apply(aggregate_doc)
+        .reset_index(drop=True)
+    )
+    return result
+
 
 def main():
     
