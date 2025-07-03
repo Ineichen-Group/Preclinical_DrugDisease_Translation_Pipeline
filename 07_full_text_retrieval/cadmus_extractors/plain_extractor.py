@@ -126,7 +126,7 @@ def is_likely_junk_section(text: str) -> bool:
     return False
 
 
-def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str, logs_dir: str = None):
+def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str = None, logs_dir: str = None):
     """
     Extracts all 'Materials and Methods'-like sections from a single plain-text string.
 
@@ -143,11 +143,16 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str, logs_dir:
     text_lower = text.lower()
 
     # Regex to match potential methods-like headers
+    section_header_pattern = (
+        r'(?<!\w)'
+        r'(?:\d{1,2}(?:\.\d{1,2})?\s+)?'                             # optional "2." or "2.1"
+        r'(materials\s*(?:and|&)\s*methods|'                         # materials and methods
+        r'experimental\s+(?:procedures|section)|methodology|methods)'
+        r'\b'
+        r'(?!\s*(?:was|were)\s+(?:performed|conducted|carried\s+out))'
+    )
     section_header_matches = list(re.finditer(
-        r'(?<!\w)(\d{0,2}\.?\d{0,2}\s*)?'
-        r'(materials\s*(and|&)?\s*methods|experimental\s+(procedures|section)|methodology|methods)\b',
-        text, flags=re.IGNORECASE
-    ))
+        section_header_pattern, text, flags=re.IGNORECASE))
 
     # Regex for stop sections
     stop_section_regex = re.compile(
@@ -179,23 +184,18 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str, logs_dir:
         # 1) Skip if next char is ')' or ','
         if end_idx_match < len(text) and text[end_idx_match] in [")", ","]:
             continue
-
-        # 2) Skip if lookahead indicates "was performed" etc.
-        lookahead = text_lower[end_idx_match:end_idx_match + 30]
-        if re.search(r'\b(was|were)\s+(performed|conducted|carried out)', lookahead):
-            continue
-
-        # 3) Skip if next characters are " in" or " for"
+            
+        # 2) Skip if next characters are " in" or " for"
         if re.match(r'\s+(in|for|is|of|by|to)\b', text_lower[end_idx_match:end_idx_match + 10]):
             continue
 
-        # 4) Skip if "as described in" appears just before
+        # 3) Skip if "as described in" appears just before
         context_before = text_lower[max(0, start_idx - 30):start_idx]
         if "as described in" in context_before:
             continue
 
-        # 5) Skip if followed by mostly numbers
-        if re.match(r'\s+[\d\s,]{5,}', text[end_idx_match:end_idx_match + 20]):
+        # 4) Skip if followed by mostly numbers or bracketed integer
+        if re.match(r'\s+(?:[\d\s,]{5,}|\[\d+\])', text[end_idx_match:end_idx_match + 20]):
             continue
 
         section_title = match.group().strip()

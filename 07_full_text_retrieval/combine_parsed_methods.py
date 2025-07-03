@@ -8,7 +8,8 @@ def process_standard_folder(
     exclude_pmids: Set[str],
     source_label: str,
     pattern: str = '*.csv'
-) -> List[pd.DataFrame]:
+) -> pd.DataFrame:
+    """Return one big DataFrame of grouped articles for this folder."""
     frames = []
     for csv_path in folder.glob(pattern):
         df = pd.read_csv(csv_path)
@@ -18,8 +19,8 @@ def process_standard_folder(
         if df['pmid'].iloc[0] in exclude_pmids:
             continue
         df['subtitle_paragraph'] = (
-            df.get('subtitle','').fillna('') + ' ' +
-            df.get('paragraph','').fillna('')
+            df.get('subtitle', '').fillna('') + ' ' +
+            df.get('paragraph', '').fillna('')
         )
         merged = (
             df.groupby('pmid')['subtitle_paragraph']
@@ -29,13 +30,14 @@ def process_standard_folder(
         )
         merged['Source'] = source_label
         frames.append(merged)
-    return frames
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID','Text','Source'])
 
 def process_pdf_folder(
     folder: Path,
     source_label: str,
     pattern: str = '*_full_text.csv'
-) -> List[pd.DataFrame]:
+) -> pd.DataFrame:
+    """Return one big DataFrame of all *_full_text.csv for this folder."""
     frames = []
     for csv_path in folder.glob(pattern):
         df = pd.read_csv(csv_path)
@@ -45,7 +47,7 @@ def process_pdf_folder(
         df = df.rename(columns={'doc_id':'PMID'})[['PMID','Text']]
         df['Source'] = source_label
         frames.append(df)
-    return frames
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID','Text','Source'])
 
 def combine_all(
     base_dir: str,
@@ -57,7 +59,7 @@ def combine_all(
 ):
     base = Path(base_dir)
     all_frames = []
-    skipped_std = 0
+    folder_counts = {}  # count loaded PMIDs per subfolder
 
     for sub, inner in zip(subfolders, inner_folders):
         folder = base / sub
@@ -65,29 +67,34 @@ def combine_all(
             folder = folder / inner
         if not folder.is_dir():
             print(f"Warning: {folder} missing")
+            folder_counts[sub] = 0
             continue
 
         if sub == pdf_subfolder:
-            all_frames.extend(process_pdf_folder(folder, source_label=sub))
+            df = process_pdf_folder(folder, source_label=sub)
         else:
-            std_frames = process_standard_folder(folder, exclude_pmids, source_label=sub)
-            skipped_std += (len(list(folder.glob('*.csv'))) - len(std_frames))
-            all_frames.extend(std_frames)
+            df = process_standard_folder(folder, exclude_pmids, source_label=sub)
 
-    if not all_frames:
-        print("No data to combine.")
-        return
+        # tally how many unique PMIDs we got from this sub
+        count = df['PMID'].nunique()
+        folder_counts[sub] = count
 
+        all_frames.append(df)
+
+    # combine and dedupe overall
     combined = pd.concat(all_frames, ignore_index=True)
-    print("Skipped standard files:", skipped_std)
-    print("Before dedup:", combined['PMID'].nunique())
+    print("\n--- Per-folder document counts ---")
+    for sub, cnt in folder_counts.items():
+        print(f"{sub:12s}: {cnt}")
+
+    print(f"\nTotal before dedup: {combined['PMID'].nunique()} unique articles")
     combined = combined.drop_duplicates('PMID')
-    print("After dedup:", combined['PMID'].nunique())
+    print(f"Total after dedup : {combined['PMID'].nunique()} unique articles")
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(out, index=False)
-    print(f"Saved combined CSV to {out}, shape: {combined.shape}")
+    print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
 
 # ── Example usage ──────────────────────────────────────────────────────────────
 if __name__ == '__main__':

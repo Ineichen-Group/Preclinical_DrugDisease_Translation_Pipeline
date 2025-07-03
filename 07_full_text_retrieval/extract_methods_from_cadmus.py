@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from typing import Optional
 
 from cadmus_extractors.utils import (
     read_retrieved_dataframe,
@@ -40,40 +41,61 @@ def process_cadmus_output(
     wrong_csvs: list[Path],
     output_base: Path,
     logs_base: Path,
+    select_format: Optional[str] = None,
     logger=None,
 ):
     """
-    Orchestrate extraction of 'Materials & Methods' across all formats (XML → HTML → PDF → Plain).
+    Orchestrate extraction of 'Materials & Methods' sections from articles in various formats.
 
-    1) Read retrieved_df2.json.zip into a DataFrame.
-    2) Filter out PMIDs in wrong_csvs.
-    3) For each PMID, dispatch to the first format whose can_handle(...) is True.
-    4) Tally per-format and overall statistics, then write summary files.
+    This function performs the end-to-end Cadmus pipeline:
+      1. Loads metadata from a JSON-compressed DataFrame.
+      2. Excludes any PMIDs listed in `wrong_csvs`.
+      3. Filters to records that have at least one available format (XML, HTML, PDF, or Plain text).
+      4. Optionally restricts to a single format via `select_format`, keeping only rows
+         where that format flag is 1 and all other format flags are 0.
+      5. Iterates over each remaining PMID and dispatches it to the first format handler
+         (XML → HTML → PDF → Plain) whose `can_handle` method returns True.
+      6. Collects success/failure counts and subtitle counts for each format and overall.
+      7. Writes per-format and overall summary statistics to log files.
+
+    Parameters:
+        cadmus_base_dir (Path): Root directory containing retrieved data subfolder.
+        wrong_csvs (list[Path]): List of CSV paths; any PMID in these files will be excluded.
+        output_base (Path): Directory where extracted sections will be saved (one subdir per format).
+        logs_base (Path): Directory where logs and summary statistics will be written.
+        select_format (str | None): If provided, must be one of 'xml', 'html', 'pdf', or 'plain'.
+            When set, only rows whose flag for this format is 1 and whose flags for all other
+            formats are 0 will be processed. Use None (default) to process all available formats.
+        logger (Logger | None): Optional Python logger instance. If None, a default logger is created.
+
+    Returns:
+        None: Summary files and extracted sections are written to disk; results are not returned.
     """
     if logger is None:
         logger = setup_logger("cadmus_pipeline", log_file=logs_base / "pipeline.log")
 
-    # 1) Load metadata DataFrame
-    retrieved_zip = cadmus_base_dir / "retrieved_df" / "retrieved_df2.json.zip"
-    df_all = read_retrieved_dataframe(retrieved_zip)
-    logger.info(f"Loaded {len(df_all)} rows from {retrieved_zip}")
-
-    # 2) Filter out 'wrong' PMIDs
+    # --- load & initial filter steps omitted for brevity ---
+    df_all = read_retrieved_dataframe(cadmus_base_dir / "retrieved_df" / "retrieved_df2.json.zip")
     wrong_pmids = load_wrong_pmids(wrong_csvs)
-    logger.info(f"Loaded {len(wrong_pmids)} excluded PMIDs")
     df_filtered = df_all[~df_all["pmid"].isin(wrong_pmids)]
-    logger.info(f"{len(df_filtered)} PMIDs remain after filtering")
-    
-    # 3) Remove rows where all four format flags are zero
-    #    (i.e., xml=0 AND html=0 AND pdf=0 AND plain=0)
-    mask_at_least_one = (
-        (df_filtered["xml"] != 0)
-        | (df_filtered["html"] != 0)
-        | (df_filtered["pdf"] != 0)
-        | (df_filtered["plain"] != 0)
-    )
-    df_filtered = df_filtered[mask_at_least_one]
-    logger.info(f"{len(df_filtered)} PMIDs remain after removing those with xml=0/html=0/pdf=0/plain=0")
+
+    # keep only rows with at least one format-flag
+    formats = ["xml", "html", "pdf", "plain"]
+    mask_any = df_filtered[formats].any(axis=1)
+    df_filtered = df_filtered[mask_any]
+
+    # --- parameterized select_format logic ---
+    if select_format is not None:
+        if select_format not in formats:
+            raise ValueError(f"select_format must be one of {formats!r}, not {select_format!r}")
+        others = [f for f in formats if f != select_format]
+        mask_only = (
+            (df_filtered[select_format] == 1) &
+            (df_filtered[others].sum(axis=1) == 0)
+        )
+        logger.info(f"Applying select_format={select_format!r}: "
+                    f"{mask_only.sum()} rows with only that format")
+        df_filtered = df_filtered[mask_only]
 
 
     # 4) Prepare counters
@@ -199,6 +221,18 @@ if __name__ == "__main__":
         default=Path("07_full_text_retrieval/materials_methods/logs"),
         help="Root directory under which logs and summary files will be placed",
     )
+    
+    parser.add_argument(
+        "--select-format",
+        type=str,
+        choices=["plain", "xml", "html", "pdf"],
+        default="plain",
+        help=(
+            "If set, only keep rows whose flag for this format is 1 "
+            "and whose flags for all other formats are 0. "
+            "One of plain, xml, html or pdf."
+        ),
+    )
     args = parser.parse_args()
 
     process_cadmus_output(
@@ -206,4 +240,5 @@ if __name__ == "__main__":
         wrong_csvs=args.wrong_csvs,
         output_base=args.output_base,
         logs_base=args.logs_base,
+        select_format=args.select_format if args.select_format else None,
     )
