@@ -2,7 +2,7 @@ import re
 import csv
 from typing import Dict, List, Tuple
 from collections import defaultdict
-from .regex_base import RegexClassifier
+from regex_base import RegexClassifier
 
 class AssayClassifier(RegexClassifier):
     """Classifier to detect assays by category using CSV-driven canonical/synonym mapping."""
@@ -66,10 +66,12 @@ class AssayClassifier(RegexClassifier):
             if matches:
                 vector[self._label_to_index[label]] = 1
                 found_labels.append(label)
+            
                 canonicals = [
                    self._synonym_to_canonical[label][m.group(0).lower()]
-                    for m in matches
+                    for m in set(matches)
                 ]
+                canonicals = list(dict.fromkeys(canonicals)) # Remove duplicates while preserving order
                 matches_text_pos = [
                     f"{m.group(0)} ({m.start()}-{m.end()})"
                     for m in matches
