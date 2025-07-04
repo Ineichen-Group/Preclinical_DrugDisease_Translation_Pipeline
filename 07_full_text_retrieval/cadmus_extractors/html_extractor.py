@@ -272,8 +272,10 @@ def _extract_from_ovid_format(soup: BeautifulSoup, doc_id: str):
 
 def _walk_forward_from_methods_heading(soup: BeautifulSoup, doc_id: str):
     """
-    Strategy 6: Find the first <h1/2/3/4> whose text is start‐of‐materials‐methods.
-    Then walk down siblings until you hit an “end‐of‐materials‐methods” heading.
+    Strategy 6: Locate the first heading (<h1–h4>) that marks the start of 
+    the "Materials and Methods" section. Walk through its siblings until 
+    another heading signals the end of the section, collecting all 
+    paragraphs (including those nested inside containers) along the way.
     """
     methods_heading = None
     for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
@@ -296,11 +298,12 @@ def _walk_forward_from_methods_heading(soup: BeautifulSoup, doc_id: str):
         if current.name in ["h2", "h3", "h4"]:
             current_subtitle = text.rstrip(":.")
         elif current.name == "p":
-            rows.append({
-                "doc_id": doc_id,
-                "subtitle": current_subtitle,
-                "paragraph": text
-            })
+            if text:
+                rows.append({
+                    "doc_id": doc_id,
+                    "subtitle": current_subtitle,
+                    "paragraph": text
+                })
         else:
             # If it’s a container, grab all nested <p>
             for p in current.find_all("p", recursive=True):
