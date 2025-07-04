@@ -290,7 +290,7 @@ def _walk_forward_from_methods_heading(soup: BeautifulSoup, doc_id: str):
 
     while current:
         text = current.get_text(strip=True)
-        if not text or is_end_of_materials_methods(text):
+        if is_end_of_materials_methods(text):
             break
 
         if current.name in ["h2", "h3", "h4"]:
