@@ -121,7 +121,7 @@ def is_likely_junk_section(text: str) -> bool:
         return True
     if len(re.findall(r'[A-Z][a-z]+ [A-Z]\.', text)) > 5:  # many names
         return True
-    if len(re.findall(r'institute|university|hospital|address|corresponding author', text.lower())) > 3:
+    if len(re.findall(r'institute|address|corresponding author', text.lower())) > 4:
         return True
     return False
 
@@ -189,9 +189,27 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str = None, lo
         if re.match(r'\s+(in|for|is|of|by|to)\b', text_lower[end_idx_match:end_idx_match + 10]):
             continue
 
-        # 3) Skip if "as described in" appears just before
-        context_before = text_lower[max(0, start_idx - 30):start_idx]
-        if "as described in" in context_before:
+        # 3) Skip if citation-like phrase is near the match
+        context_window_before = 50
+        context_window_after = 50
+        
+        context_before = text_lower[max(0, start_idx - context_window_before):start_idx]
+        context_after = text_lower[end_idx_match:end_idx_match + context_window_after]
+        
+        citation_phrases = [
+            "as described in",
+            "as previously described",
+            "previously reported in",
+            "as reported in",
+            "according to",
+            "in accordance with",
+            "see also",
+            "see e.g.",
+            "has been described"
+        ]
+        
+        # Skip if any phrase found in context before or after
+        if any(phrase in context_before or phrase in context_after for phrase in citation_phrases):
             continue
 
         # 4) Skip if followed by mostly numbers or bracketed integer
