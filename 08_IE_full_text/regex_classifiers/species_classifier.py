@@ -30,7 +30,7 @@ class SpeciesClassifier:
         "mouse": [r"\bmouse\b", r"\bmice\b"],
         "cat": [r"\bcats?\b"],
         "dog": [r"\bdogs?\b"],
-        "guinea pig": [r"\bguinea pig\s?\b"],
+        "guinea pig": [r"\bguinea pigs?\b"],
         "monkey": [
             r"\bmonkeys?\b",
             r"\bmacaques?\b",
@@ -147,32 +147,28 @@ class SpeciesClassifier:
         return False
 
     def classify(self, text: str) -> Tuple[List[int], List[str]]:
-        """
-        For each label in SPECIES_LABELS, run all its compiled regexes.
-        If a regex matches and is not in a false context, mark that label as found:
-          - vector[idx] = 1
-          - add label to found_labels
-        After looping, if found_labels is empty, force 'species-other' = 1.
-        Returns a binary vector and the list of matched labels.
-        """
         vector: List[int] = [0] * len(self.SPECIES_LABELS)
         found_labels: set[str] = set()
+        matched_spans: List[Tuple[int, int]] = []
 
         for idx, label in enumerate(self.SPECIES_LABELS):
             for regex_obj in self._species_patterns.get(label, []):
                 for match_obj in regex_obj.finditer(text):
-                    # Check false‐context near this match
-                    if not self._is_in_false_context(
-                        text, match_obj.start(), match_obj.end(), self.WINDOW
-                    ):
+                    match_start, match_end = match_obj.start(), match_obj.end()
+
+                    # Check for overlap with any previous match
+                    if any(s <= match_start < e or s < match_end <= e for s, e in matched_spans):
+                        continue
+
+                    if not self._is_in_false_context(text, match_start, match_end, self.WINDOW):
                         vector[idx] = 1
                         found_labels.add(label)
-                        break
+                        matched_spans.append((match_start, match_end))
+                        break  # Stop after first valid match for this label
                 if vector[idx] == 1:
                     break
 
         if not found_labels:
-            # Mark 'species-other' if no other species found
             other_idx = self.SPECIES_LABELS.index("species-other")
             vector[other_idx] = 1
             found_labels.add("species-other")
