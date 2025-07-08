@@ -43,7 +43,26 @@ def map_to_weeks(pred_str, time_base):
             return "unknown"
     else:
         return "unknown"  # If time base is not recognized
-    
+
+
+def normalize_age_string(age: str) -> str:
+    if not isinstance(age, str):
+        return age
+
+    age = age.replace("<", "").replace(">", "")
+    age = age.replace("years old", "years")
+    age = age.replace("year old", "years")
+    age = age.replace("days old", "days")
+    age = age.replace("day old", "days")
+    # Convert things like "10-week-old" or "1011-week-old" to "10 weeks"
+    age = re.sub(r'(\d+)-week-old', r'\1 weeks', age)
+
+    # Normalize dashes and spaces
+    age = age.replace('–', '-').replace('—', '-').replace('~', '-')
+    age = re.sub(r'\s*-\s*', '-', age)
+
+    return age
+
 def process_age_predictions(pred_str):
     """
     Process age predictions from a DataFrame column.
@@ -74,20 +93,27 @@ def process_age_predictions(pred_str):
             continue
         if pred == "age not specified":
             continue
+        if pred == "juvenile":
+            classifications.append("young")
+            continue
         try:
+            if len(pred.split(" ")) != 2:
+                pred = normalize_age_string(pred)
+            if len(pred.split(" ")) != 2:
+                print(f"Skipping malformed prediction: {pred}")
+                continue
             age, time_base = pred.split(" ")
         except ValueError:
             print(f"Skipping malformed prediction: {pred}")
             continue
         
-        age = age.replace("–", "-").replace("~", "-")  # Normalize dash characters
-        age = age.replace("<", "").replace(">", "")  # Remove angle brackets
-        age = age.replace("years old", "years")
-        
+        #age = age.replace("–", "-").replace("~", "-")  # Normalize dash characters
+        age = normalize_age_string(age)
+    
         if time_base == "weeks":
             if "-" not in age:
                # Handle cases of wrongly formatted ages 
-               if float(age) > 600:
+               if float(age) > 150:
                    if len(age) == 3:
                        age = age[0] + "-" + age[1:] # assume a dash is missing and the first digit is part of the range
                    else:
@@ -100,6 +126,10 @@ def process_age_predictions(pred_str):
                 classifications.append(age_classification)
                 
         else:
+            if (time_base == "days") and ("-" not in age):
+               # Handle cases of wrongly formatted ages 
+               if float(age) > 1000:
+                    age = age[0:2] + "-" + age[2:] # assume a dash is missing and the first two digits are part of the range
             age_range_values = age.split("-")
             for age_value in age_range_values:
                 age_value = age_value.strip()
