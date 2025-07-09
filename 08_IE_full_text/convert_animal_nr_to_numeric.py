@@ -78,8 +78,11 @@ def normalize_number(s: str) -> Union[float, List[float], str]:
 
     # 3) Remove leading noise from the entire string
     s_clean = re.sub(r"^[^0-9a-z]+", "", s_clean)
+    
+    # 4) Remove leading "a " if followed by a number word (e.g., "a hundred")
+    s_clean = re.sub(r"^a\s+(?=\w+)", "", s_clean)
 
-    # 4) If commas are present, split and parse each part
+    # 5) If commas are present, split and parse each part
     if "," in s_clean:
         parts = s_clean.split(",")
         parsed_list: List[float] = []
@@ -105,18 +108,18 @@ def normalize_number(s: str) -> Union[float, List[float], str]:
 
 if __name__ == "__main__":
     # 1) Read the CSV file containing the `prediction_encoded_label` column
-    input_path = "./08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions.csv"
+    input_path = "./08_IE_full_text/model_predictions/animals_nr/doc_animals_nr_predictions_clean.csv"
     df = pd.read_csv(input_path)
 
     # 2) Drop rows where `prediction_encoded_label` is NaN or empty
     df_clean = df.dropna(subset=["prediction_encoded_label"]).copy()
-    df_clean["prediction_encoded_label"] = (
+    df_clean["prediction_encoded_label_raw"] = (
         df_clean["prediction_encoded_label"].astype(str).str.strip()
     )
-    df_clean = df_clean[df_clean["prediction_encoded_label"] != ""]
+    df_clean = df_clean[df_clean["prediction_encoded_label_raw"] != ""]
 
     # 3) Apply normalization to each label
-    df_clean["numeric_label"] = df_clean["prediction_encoded_label"].apply(normalize_number)
+    df_clean["prediction_encoded_label"] = df_clean["prediction_encoded_label_raw"].apply(normalize_number)
 
     # 4) (Optional) If you want to drop any rows where normalization returned a non‐float/list,
     #    uncomment the following lines to keep only numeric results:
