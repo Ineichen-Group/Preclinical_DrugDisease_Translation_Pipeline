@@ -358,12 +358,18 @@ Inference:
 ### NER-based extraction
 See above NER section for details on the NER-based extraction of conditions and interventions from the full text.
 
+
+
 **Postprocessing**
 - [./08_IE_full_text/clean_ner_predictions.py](./08_IE_full_text/clean_ner_predictions.py)  
   Cleans and processes the NER predictions, including abbreviation expansion and unique entity extraction.
 - [./08_IE_full_text/convert_animal_nr_to_numeric.py](./08_IE_full_text/convert_animal_nr_to_numeric.py)  
   Converts animal number predictions from text to numeric format.
 
+#### Animal Number Extraction
+After the NER-based extraction, we ensure that the number extracted likely refers to the number of animals used in the study. For that we find the mention of the number extracted in the methods section, and check if it is in the context of "animals" or a specific species. This is done in the script [08_IE_full_text/clean_animal_nr.py](08_IE_full_text/clean_animal_nr.py). Only the NER outputs matching this criteria are kept for further processing.
+
+In a second step, the valid animal number predictions are processed to convert them from text to numeric format. This is done in the script [08_IE_full_text/convert_animal_nr_to_numeric.py](08_IE_full_text/convert_animal_nr_to_numeric.py). 
 
 ### Document-Level Aggregation Script
 
