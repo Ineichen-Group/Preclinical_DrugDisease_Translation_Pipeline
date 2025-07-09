@@ -355,16 +355,75 @@ Inference:
 - [./08_IE_full_text/clean_age_llm_predictions.py](./08_IE_full_text/clean_age_llm_predictions.py)  
   Cleans and processes the LLM predictions, including abbreviation expansion and unique entity extraction.
 
+**4. Age Classification**
+The script in [08_IE_full_text/classify_age_predictions.py](08_IE_full_text/classify_age_predictions.py) processes the age-related predictions and classifies them as `young`, `adult`, or `aged`. It also normalizes inconsistent formats and applies species-based filtering.
+
+- **`classify_age(age_in_weeks)`**  
+  Classifies:
+  - `< 8` weeks → `young`
+  - `8–59` weeks → `adult`
+  - `≥ 60` weeks → `aged`
+
+- **`map_to_weeks(value, unit)`**  
+  Converts `days`, `months`, or `years` to weeks.
+
+- **`normalize_age_string(age_str)`**  
+  Cleans age strings (e.g., `"10-week-old"` → `"10 weeks"`).
+
+- **`process_age_predictions(pred_str)`**  
+  Parses and classifies comma-separated age mentions; handles ranges and malformed formats.
+
+- **`classify_age_prediction(df, pred_col, species_df)`**  
+  Applies classification only if supporting sentences contain **only** `mouse`, `rat`, or `species-other`.
+
+Only mouse/rat rows are processed. Others are marked as `"not processed"`.
+
+
 ### NER-based extraction
 See above NER section for details on the NER-based extraction of conditions and interventions from the full text.
-
-
 
 **Postprocessing**
 - [./08_IE_full_text/clean_ner_predictions.py](./08_IE_full_text/clean_ner_predictions.py)  
   Cleans and processes the NER predictions, including abbreviation expansion and unique entity extraction.
-- [./08_IE_full_text/convert_animal_nr_to_numeric.py](./08_IE_full_text/convert_animal_nr_to_numeric.py)  
-  Converts animal number predictions from text to numeric format.
+
+#### Animal Strain Normalization
+The notebook [./08_IE_full_text/Strain_Normalization.ipynb](./08_IE_full_text/Strain_Normalization.ipynb) standardizes strain names using string matching and ontology-driven mapping.
+
+- **Input:** Sentences containing raw strain mentions, e.g., `"C57bl6/j mouse"` or `"Sprague Dawley rats"`.
+
+- **Normalization Approach:**
+  - Preprocess input text (lowercase, strip punctuation, remove stopwords).
+  - Match to canonical strain names using:
+    - Exact match
+    - Fuzzy string similarity (`difflib.get_close_matches`)
+    - Synonym mapping (via lookup table)
+
+- **Strain Ontology:**
+  - A manually curated mapping of:
+    - Canonical strain name
+    - Known variants/synonyms
+    - Common substrings and aliases
+  
+  The strain mapping was built from both public databases and programmatic extraction of aliases:
+
+  - Rat Strains
+    - **Source:** [Rat Genome Database (RGD)](https://rgd.mcw.edu/)
+    - Provided canonical names and synonyms for common rat strains.
+  - Mouse Strains
+    - **Sources:**
+      - [Mouse Phenome Database](https://phenome.jax.org/downloads)
+      - [International Mouse Strain Resource (IMSR)](https://www.findmice.org/index)
+
+- **Alias Extraction:**  
+  Additional aliases were scraped from strain detail pages.
+
+- **Key Variables/Columns:**
+  - `raw_strain` – original text input
+  - `normalized_strain` – matched canonical strain name
+  - `match_score` – similarity score used in fuzzy matching
+
+- **Output:** A DataFrame with raw and normalized strain names.
+
 
 #### Animal Number Extraction
 After the NER-based extraction, we ensure that the number extracted likely refers to the number of animals used in the study. For that we find the mention of the number extracted in the methods section, and check if it is in the context of "animals" or a specific species. This is done in the script [08_IE_full_text/clean_animal_nr.py](08_IE_full_text/clean_animal_nr.py). Only the NER outputs matching this criteria are kept for further processing.
