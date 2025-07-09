@@ -1,7 +1,6 @@
 import pandas as pd
 import ast
 import re
-# TODO: need to make sure we are working with mice or rat data, as the age classification is based on rodent ages.
 
 def classify_age(age_in_weeks_str):
     """
