@@ -248,7 +248,7 @@ The sentences extraction from the full text is done in [./07_full_text_retrieval
 
 ### Regex-based extraction
 
-This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`, and `age`. You can run a specific classifier or all of them in sequence.
+This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`,  `assay` and `age`. You can run a specific classifier or all of them in sequence.
 
 Each classifier processes a specified text column and outputs a CSV file with encoded prediction results. In the current imoplementation, the text column contains the sentences extracted from the methods section of the full text. The regex patterns are defined in a separate file, which is loaded at runtime. They can be found in [./08_IE_full_text/regex_classifiers/](./08_IE_full_text/regex_classifiers/) and are organized by classifier type, and abstracted in the base class [./08_IE_full_text/classifiers/regex_base.py](./08_IE_full_text/classifiers/regex_base.py).
 
@@ -264,11 +264,56 @@ Helper methods:
 
 All regex-based classifiers (e.g., `SexClassifier`, `BlindingClassifier`) inherit from this base class.
 
-#### Special Case: Age Information Extraction (Age IE)
+### Special Case: Assay/Readout Information Extraction
+
+The `AssayClassifier` is a subclass of `RegexClassifier` designed for extracting assay and outcome readout information. It uses a CSV vocabulary of canonical test names and synonyms to detect mentions of experimental assays in text. The final vocabulary is saved in [08_IE_full_text/data/assay_extraction/assay_final_harmonized_with_enriched_synonyms.csv](08_IE_full_text/data/assay_extraction/assay_final_harmonized_with_enriched_synonyms.csv). The processing of the assay vocabulary can be found in [03_IE_tasks/Harmonize_Outcomes_Assay_Library.ipynb](03_IE_tasks/Harmonize_Outcomes_Assay_Library.ipynb).
+
+To build the assay vocabulary:
+
+- Several review papers across domains (e.g., neuroscience, physiology, pharmacology) were reviewed. The outputs are in [03_IE_tasks/data/related/outcomes_endpoints](03_IE_tasks/data/related/outcomes_endpoints).
+- For each article, a structured assay table was constructed with the help of ChatGPT in the following format:
+
+```
+Test Name	Measure	Outcome Domain	Subdomain
+Microarray analysis	Fold-change in expression or hybridization intensity across all array probes	Molecular & Cellular	Transcriptomics
+SNP analysis	Allele frequency and genotype calls across genome-wide SNP panels	Molecular & Cellular	Genomics
+```
+
+- Each test was assigned to one of five outcome domains:
+
+  1. **Behavioural**  
+     *Definition:* Any overt animal action or choice—motor, sensorimotor, cognitive, social, or affective/pain-related  
+     *(e.g., rotarod, open field, elevated plus maze, hyperreflexia, seizure)*
+
+  2. **Imaging**  
+     *Definition:* Includes **in vivo** medical imaging (e.g., MRI, PET, CT). Does **not** include microscopy or photographic images.
+
+  3. **Histology**  
+     *Definition:* Structural and cellular-level visualization methods, typically involving tissue sectioning and staining (e.g., Nissl, H&E, LFB), often coupled with various types of microscopy.
+
+  4. **Physiology**  
+     *Definition:* Vital signs, metabolic readouts, body composition, pharmacokinetics, and survival  
+     *(e.g., heart rate, blood pressure, body weight, blood flow, EEG, EMG)*
+
+  5. **Molecular & Cellular**  
+     *Definition:* Covers analyses that quantify or characterize molecular components (DNA, RNA, proteins, metabolites) or cellular properties (e.g., cell types, activation states) using laboratory assays  
+     *(e.g., Western blot, qPCR, RNA-seq, ELISA, mass spectrometry, FACS)*
+
+- Test names were harmonized into canonical forms. 
+- Synonyms for each test were generated and enriched using ChatGPT. The synonyms are in the file [03_IE_tasks/data/related/outcomes_endpoints/harmonized_synonyms_GPT.xlsx](03_IE_tasks/data/related/outcomes_endpoints/harmonized_synonyms_GPT.xlsx). 
+
+The final harmonized vocabulary was saved as a CSV file and used to compile regex patterns for each assay category. These patterns are used at runtime to extract structured assay information from unstructured text.
+
+The classifier returns:
+- A multi-hot vector indicating matched assay categories
+- A list of matched outcome domains
+- A mapping from matched domains to the canonical test names found
+
+
+#### Special Case: Age Information Extraction 
 
 Age classification follows a multi-step pipeline due to the high likelihood of false positives from simple regex matching. The process includes regex filtering, machine learning classification, and LLM-based age value extraction. The scripts for this are located in the [./08_IE_full_text/age_classifier/](./08_IE_full_text/age_classifier/) directory.
 
----
 
 **1. Sentence Filtering with Regex**
 
@@ -277,7 +322,6 @@ After applying the regex-based age classifier, sentences containing age-related 
 `./08_IE_full_text/extract_age_sentences.py`  
 → Extracts only sentences matched by age-related regex patterns.
 
----
 
 **2. Sentence Classification with Machine Learning**
 
@@ -293,7 +337,6 @@ Inference:
 `./08_IE_full_text/age_classifier/age_sent_clssifier_bert.py`  
 Run via: `./08_IE_full_text/age_classifier/run_age_sent_classifier_bert.sh`
 
----
 
 **3. Age Value Extraction with LLM**
 
@@ -307,9 +350,19 @@ Inference:
 `./08_IE_full_text/age_classifier/LLM_Unsloth_Inference.ipynb`  
 → Applies the LLM to extract age values from each true age sentence.
 
----
+**Postprocessing**
+
+- [./08_IE_full_text/clean_age_llm_predictions.py](./08_IE_full_text/clean_age_llm_predictions.py)  
+  Cleans and processes the LLM predictions, including abbreviation expansion and unique entity extraction.
 
 ### NER-based extraction
+See above NER section for details on the NER-based extraction of conditions and interventions from the full text.
+
+**Postprocessing**
+- [./08_IE_full_text/clean_ner_predictions.py](./08_IE_full_text/clean_ner_predictions.py)  
+  Cleans and processes the NER predictions, including abbreviation expansion and unique entity extraction.
+- [./08_IE_full_text/convert_animal_nr_to_numeric.py](./08_IE_full_text/convert_animal_nr_to_numeric.py)  
+  Converts animal number predictions from text to numeric format.
 
 
 ### Document-Level Aggregation Script
@@ -326,3 +379,6 @@ Each output includes:
 - `PMID`
 - Final label (`prediction_encoded_label` or `species`)
 - Supporting sentence IDs
+
+## Joining preclinical and clincal data
+
