@@ -91,6 +91,6 @@ grouped_df = (
 )
 
 grouped_df.to_csv(
-    "08_IE_full_text/model_predictions/animals_nr/doc_animals_nr_predictions.csv",
+    "08_IE_full_text/model_predictions/animals_nr/doc_animals_nr_predictions_clean.csv",
     index=False
 )
