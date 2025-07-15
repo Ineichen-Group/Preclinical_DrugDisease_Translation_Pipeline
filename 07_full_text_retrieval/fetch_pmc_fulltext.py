@@ -3,6 +3,8 @@ import time
 import requests
 import pandas as pd
 import glob
+import argparse
+import time 
 
 # ---------- CONFIG ----------
 EMAIL = "donevasimona@gmail.com"  # Your email for NCBI API access
@@ -58,82 +60,100 @@ def get_pmc_oai_xml(pmcid):
         f"verb=GetRecord&identifier=oai:pubmedcentral.nih.gov:{pmcid_num}&metadataPrefix=pmc"
     )
     r = requests.get(url)
-    if r.status_code == 200 and "cannotDisseminateFormat" not in r.text:
+    if r.status_code == 200 and ("cannotDisseminateFormat" not in r.text) and ("idDoesNotExist" not in r.text):
         return r.text
     return None
 
 
 # ---------- MAIN FUNCTION ----------
 def fetch_fulltexts(pmids, disease_name, save_dir, logs_dir, format="json"):
+
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs(logs_dir, exist_ok=True)
 
     results = {}
     failed_pmids = []
 
+    already_processed_file = os.path.join(logs_dir, "already_processed.txt")
+    already_processed = set()
+
+    # Load already processed
+    if os.path.exists(already_processed_file):
+        with open(already_processed_file) as f:
+            already_processed = set(line.strip() for line in f if line.strip())
+            print(f"Loaded {len(already_processed)} already processed PMIDs from {already_processed_file}")
+
     start_time = time.time()
 
     for i, pmid in enumerate(pmids, 1):
         print(f"[{i}/{len(pmids)}] Processing PMID: {pmid}")
+
+        if pmid in already_processed:
+            print(f"  Skipping {pmid} — in already_processed.txt")
+            continue
+
         file_ext = format if format == "json" else "xml"
         filename = os.path.join(save_dir, f"{pmid}.{file_ext}")
 
         if os.path.exists(filename):
             print(f"  Skipping {pmid} — already downloaded")
             results[pmid] = filename
-            continue
-
-        pmcid = pmid_to_pmcid(pmid)
-        if not pmcid:
-            print("  No PMCID found.")
-            failed_pmids.append(pmid)
-            continue
-
-        if not is_pmc_open_access(pmcid):
-            print(f"  {pmcid} is not Open Access.")
-            failed_pmids.append(pmid)
-            continue
-
-        print(f"  Found PMCID: {pmcid}, trying BioC {format.upper()}...")
-        fulltext = get_bioc_fulltext(pmcid, format=format)
-
-        if not fulltext:
-            print("  BioC not available. Trying OAI XML...")
-            fulltext = get_pmc_oai_xml(pmcid)
-            file_ext = "xml"
-
-        if fulltext:
-            filename = os.path.join(save_dir, f"{pmid}.{file_ext}")
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(fulltext)
-            results[pmid] = filename
-            print(f"  Full text saved to {filename}")
         else:
-            print("  Full text not available from any source.")
-            failed_pmids.append(pmid)
+            pmcid = pmid_to_pmcid(pmid)
+            if not pmcid:
+                print("  No PMCID found.")
+                failed_pmids.append(pmid)
+            elif not is_pmc_open_access(pmcid):
+                print(f"  {pmcid} is not Open Access.")
+                failed_pmids.append(pmid)
+            else:
+                print(f"  Found PMCID: {pmcid}, trying BioC {format.upper()}...")
+                fulltext = get_bioc_fulltext(pmcid, format=format)
 
-        time.sleep(0.5)  # Be polite to the API
+                if not fulltext:
+                    print("  BioC not available. Trying OAI XML...")
+                    fulltext = get_pmc_oai_xml(pmcid)
+                    file_ext = "xml"
 
-    # Save failed PMIDs with disease in filename
+                if fulltext:
+                    filename = os.path.join(save_dir, f"{pmid}.{file_ext}")
+                    with open(filename, "w", encoding="utf-8") as f:
+                        f.write(fulltext)
+                    results[pmid] = filename
+                    print(f"  Full text saved to {filename}")
+                else:
+                    print("  Full text not available from any source.")
+                    failed_pmids.append(pmid)
+
+        # Immediately mark as processed (regardless of result)
+        with open(already_processed_file, "a") as f:
+            f.write(f"{pmid}\n")
+        already_processed.add(pmid)
+
+        time.sleep(0.1)  # Be nice to the API
+
+    # Save failed PMIDs
     failed_filename = f"failed_pmids_{disease_name}.txt"
     failed_path = os.path.join(logs_dir, failed_filename)
     with open(failed_path, "w") as f:
         f.writelines(f"{pmid}\n" for pmid in failed_pmids)
 
-    # Save summary stats with disease in filename
+    # Save summary
     summary_filename = f"summary_{disease_name}.txt"
     summary_path = os.path.join(logs_dir, summary_filename)
 
     total = len(pmids)
     success = len(results)
     elapsed = time.time() - start_time
+    minutes = int(elapsed // 60)
+    seconds = int(elapsed % 60)
 
     with open(summary_path, "w") as f:
         f.write(f"Disease       : {disease_name}\n")
         f.write(f"Total PMIDs   : {total}\n")
         f.write(f"Successful    : {success}\n")
         f.write(f"Failed        : {len(failed_pmids)}\n")
-        f.write(f"Time taken    : {elapsed:.2f} seconds\n")
+        f.write(f"Time taken    : {minutes} minute(s), {seconds} second(s)\n")
 
     print(f"\nSummary saved to '{summary_path}'")
     print(f"Failed PMIDs saved to '{failed_path}'")
@@ -142,24 +162,49 @@ def fetch_fulltexts(pmids, disease_name, save_dir, logs_dir, format="json"):
     return results
 
 
-# ---------- RUN FOR ALL DISEASE FILES ----------
 if __name__ == "__main__":
-    disease_files = glob.glob(f"{INPUT_DIR}/*_pmids.csv")
+    parser = argparse.ArgumentParser(description="Process disease-based or individual input files.")
+    parser.add_argument("--individual_file", type=str, help="Path to a non-disease-specific input file (CSV with PMIDs).")
+    parser.add_argument("--tag", type=str, default="all_pmids", help="Optional tag for directory naming when using individual file.")
+    args = parser.parse_args()
 
-    for disease_file in disease_files:
-        disease_name = os.path.basename(disease_file).replace("_pmids.csv", "")
-        if disease_name != "epilepsy":
-            print(f"Skipping {disease_name} as it is not epilepsy.")
-            continue
-        save_dir = os.path.join(OUTPUT_BASE_DIR, f"{disease_name}_fulltext")
-        logs_dir = os.path.join(LOG_BASE_DIR, disease_name)
+    if args.individual_file:
+        # === Individual input mode ===
+        save_dir = os.path.join(OUTPUT_BASE_DIR, f"{args.tag}_fulltext")
+        logs_dir = os.path.join(LOG_BASE_DIR, args.tag)
 
         try:
-            pmid_list = pd.read_csv(disease_file)['PMID'].astype(str).tolist()
+            pmid_list = pd.read_csv(f"{INPUT_DIR}/{args.individual_file}")['PMID'].astype(str).tolist()
             print(f"\n==============================")
-            print(f"Processing disease: {disease_name} with {len(pmid_list)} PMIDs")
+            print(f"Processing individual input file with {len(pmid_list)} PMIDs")
             print(f"==============================")
+           
+            fetch_fulltexts(pmid_list, args.tag, save_dir, logs_dir, format=FORMAT)
+          
             
-            fetch_fulltexts(pmid_list, disease_name, save_dir, logs_dir, format=FORMAT)
         except Exception as e:
-            print(f"Error processing {disease_name}: {e}")
+            print(f"Error processing individual file: {e}")
+
+    else:
+        # === Disease-based mode ===
+        disease_files = glob.glob(f"{INPUT_DIR}/*_pmids.csv")
+
+        for disease_file in disease_files:
+            disease_name = os.path.basename(disease_file).replace("_pmids.csv", "")
+            if disease_name != "epilepsy":
+                print(f"Skipping {disease_name} as it is not epilepsy.")
+                continue
+            save_dir = os.path.join(OUTPUT_BASE_DIR, f"{disease_name}_fulltext")
+            logs_dir = os.path.join(LOG_BASE_DIR, disease_name)
+
+            try:
+                pmid_list = pd.read_csv(disease_file)['PMID'].astype(str).tolist()
+                print(f"\n==============================")
+                print(f"Processing disease: {disease_name} with {len(pmid_list)} PMIDs")
+                print(f"==============================")
+                
+                fetch_fulltexts(pmid_list, disease_name, save_dir, logs_dir, format=FORMAT)
+     
+               
+            except Exception as e:
+                print(f"Error processing {disease_name}: {e}")
