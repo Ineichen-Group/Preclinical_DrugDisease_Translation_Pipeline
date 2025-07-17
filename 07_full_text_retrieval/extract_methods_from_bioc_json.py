@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 import pandas as pd
-
+from typing import Tuple
 
 def extract_methods_subtitles_to_csv(
     json_path: Path,
@@ -82,11 +82,91 @@ def extract_methods_subtitles_to_csv(
         print(f"No methods found in {json_path.name}")
         if logs_dir:
             logs_dir.mkdir(parents=True, exist_ok=True)
-            no_methods_file = logs_dir / "no_methods_pmids.txt"
+            no_methods_file = logs_dir / "no_methods_docs_pmc.txt"
             with no_methods_file.open("a") as f:
                 f.write(f"{pmid}\n")
         return False, 0
 
+def extract_methods_subtitles_to_json(
+        json_path: Path,
+        output_json: Path,
+        logs_dir: Path,
+        disease: str = "all_pmids"
+    ) -> Tuple[bool, int]:
+    """
+    Parse a PMC JSON file and extract all 'Methods' section titles and paragraphs.
+
+    Parameters:
+        json_path (Path): Path to the PMC JSON file.
+        output_json (Path): Path where the extracted JSON will be saved.
+        logs_dir (Path): Directory to append PMIDs for which no methods were found.
+
+    Returns:
+        Tuple[bool, int]:
+            - True and number of unique subtitles if extraction succeeded.
+            - False and 0 if no methods were found.
+    """
+    # Load JSON
+    with json_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    rows = []
+    pmid = None
+
+    # The JSON structure is assumed to have a top-level list with 'documents'
+    for doc in data[0].get("documents", []):
+        passages = doc.get("passages", [])
+
+        # Attempt to find PMID in passage infons
+        for p in passages:
+            pmid_candidate = p.get("infons", {}).get("article-id_pmid")
+            if pmid_candidate:
+                pmid = pmid_candidate
+                break
+
+        # If PMID wasn't found in infons, fall back to filename
+        if not pmid:
+            pmid = json_path.stem
+
+        current_subtitle = "METHODS"
+
+        for p in passages:
+            infons = p.get("infons", {})
+            section_type = infons.get("section_type", "").upper()
+            type_ = infons.get("type", "").lower()
+            text = p.get("text", "").strip()
+
+            if section_type == "METHODS":  
+
+                if type_ == "title_2":
+                    # Treat level-2 titles as subtitles under METHODS
+                    current_subtitle = text or "METHODS"
+                elif type_ == "paragraph" and text:
+                    rows.append({
+                        "pmid": pmid,
+                        "subtitle": current_subtitle,
+                        "paragraph": text
+                    })
+            else:
+                continue
+
+    # Write results to JSON if any rows collected
+    if rows:
+        output_json.parent.mkdir(parents=True, exist_ok=True)
+        with output_json.open("w", encoding="utf-8") as f:
+            json.dump(rows, f, ensure_ascii=False, indent=2)
+
+        unique_subtitles = len(set(row["subtitle"] for row in rows))
+        print(f"Saved {len(rows)} entries to {output_json} ({unique_subtitles} unique subtitles)")
+        return True, unique_subtitles
+    else:
+        print(f"No methods found in {json_path.name}")
+        if logs_dir:
+            logs_dir.mkdir(parents=True, exist_ok=True)
+            no_methods_file = logs_dir / f"no_methods_docs_pmc_{disease}.txt"
+            with no_methods_file.open("a") as f:
+                f.write(f"{pmid}\n")
+        return False, 0
 
 def process_each_json_in_dir(
     json_dir: Path,
@@ -117,11 +197,14 @@ def process_each_json_in_dir(
         pmid = json_file.stem
         total += 1
 
-        output_csv = output_dir / f"methods_subtitles_{pmid}.csv"
-        saved, unique_subtitles = extract_methods_subtitles_to_csv(
+        #output_csv = output_dir / f"methods_subtitles_{pmid}.csv"
+        output_json = output_dir / f"methods_subtitles_{pmid}.json"
+
+        saved, unique_subtitles = extract_methods_subtitles_to_json(
             json_path=json_file,
-            output_csv=output_csv,
-            logs_dir=logs_dir
+            output_json=output_json,
+            logs_dir=logs_dir,
+            disease=disease
         )
 
         if saved:
@@ -153,7 +236,7 @@ def main() -> None:
     Example entry point to process PMC JSON files for a given disease.
     Change 'disease' to match the folder names for your JSON input.
     """
-    disease = "epilepsy"  # or "parkinson"
+    disease = "MS"  # or "parkinson", "alzheimer" # all_pmids
     print(f"Processing '{disease}' methods extraction from PMC JSON files...")
 
     base_input = Path("07_full_text_retrieval/pmc_fulltext") / f"{disease}_fulltext"
