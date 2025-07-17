@@ -6,7 +6,7 @@ import zipfile
 import logging
 from pathlib import Path
 from io import TextIOWrapper
-
+import json
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -105,10 +105,10 @@ def extract_methods(
     )
 
     ensure_dir(output_dir)
-    output_csv = output_dir / f"methods_subtitles_{pmid}.csv"
-    # Append mode so that if the file already exists, we don’t rewrite header twice.
-    header_flag = not output_csv.exists()
-    df.to_csv(str(output_csv), index=False, mode="a", header=header_flag)
+    output_json = output_dir / f"methods_subtitles_{pmid}.json"
+    # Convert to list of dictionaries and write to JSON
+    with output_json.open("w", encoding="utf-8") as f:
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
 
     num_unique_subtitles = df["subtitle"].nunique()
     return True, num_unique_subtitles

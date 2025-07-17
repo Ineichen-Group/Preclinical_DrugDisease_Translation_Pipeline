@@ -7,7 +7,7 @@ import logging
 import xml.etree.ElementTree as ET
 from io import TextIOWrapper
 from pathlib import Path
-
+import json
 import pandas as pd
 
 from section_detection_rules import (
@@ -97,9 +97,10 @@ def extract_methods(
         .agg({"paragraph": lambda grp: "\n\n".join(grp)})
     )
 
-    output_csv = output_dir / f"methods_subtitles_{pmid}.csv"
-    header_flag = not output_csv.exists()
-    df.to_csv(str(output_csv), mode="a", index=False, header=header_flag)
+    output_json = output_dir / f"methods_subtitles_{pmid}.json"
+    # Convert to list of dictionaries and write to JSON
+    with output_json.open("w", encoding="utf-8") as f:
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
 
     num_unique = df["subtitle"].nunique()
     return True, num_unique

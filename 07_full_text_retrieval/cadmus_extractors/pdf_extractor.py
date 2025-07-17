@@ -8,7 +8,7 @@ from collections import defaultdict
 
 import pandas as pd
 from papermage.recipes import CoreRecipe
-
+import json
 from section_detection_rules import (
     is_start_of_materials_methods,
     is_end_of_materials_methods,
@@ -171,15 +171,21 @@ def extract_methods(
     full_text_string = "\n\n".join(final_text_parts)
     full_row = {"doc_id": pmid, "Text": full_text_string}
 
-    # Write CSVs
-    csv_full_path = output_dir / f"{pmid}_full_text.csv"
-    csv_sections_path = output_dir / f"{pmid}_sections.csv"
-
-    df_full = pd.DataFrame([full_row])
+    # Write outputs
     df_sections = pd.DataFrame(section_rows)
+    output_json = output_dir / f"methods_subtitles_{pmid}.json"
+    # Convert to list of dictionaries and write to JSON
+    with output_json.open("w", encoding="utf-8") as f:
+        json.dump(df_sections.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
+        
+    #csv_full_path = output_dir / f"{pmid}_full_text.csv"
+    #csv_sections_path = output_dir / f"{pmid}_sections.csv"
 
-    df_full.to_csv(str(csv_full_path), index=False)
-    df_sections.to_csv(str(csv_sections_path), index=False)
+    #df_full = pd.DataFrame([full_row])
+    #df_sections = pd.DataFrame(section_rows)
+
+    #df_full.to_csv(str(csv_full_path), index=False)
+    #df_sections.to_csv(str(csv_sections_path), index=False)
 
     num_subsections = df_sections["Subsection"].nunique()
     return True, num_subsections

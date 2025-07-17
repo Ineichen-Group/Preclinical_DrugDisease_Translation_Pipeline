@@ -5,7 +5,7 @@ import re
 import zipfile
 import logging
 from pathlib import Path
-
+import json
 import pandas as pd
 from cadmus_extractors.utils import setup_logger, ensure_dir
 
@@ -76,12 +76,13 @@ def extract_methods(
             for fname in txt_files:
                 with z.open(fname) as fh:
                     text = fh.read().decode("utf-8")
-                    output_csv_path = output_dir / f"methods_subtitles_{pmid}.csv"
-
+                    #output_csv_path = output_dir / f"methods_subtitles_{pmid}.csv"
+                    output_json_path = output_dir / f"methods_subtitles_{pmid}.json"
+                    
                     was_successful, df = _extract_methods_from_txt(
                         text=text,
                         doc_id=pmid,
-                        output_csv=str(output_csv_path),
+                        output_json=output_json_path,
                         logs_dir=str(logs_dir)
                     )
                     if was_successful and isinstance(df, pd.DataFrame):
@@ -121,19 +122,17 @@ def is_likely_junk_section(text: str) -> bool:
         return True
     if len(re.findall(r'[A-Z][a-z]+ [A-Z]\.', text)) > 5:  # many names
         return True
-    if len(re.findall(r'institute|address|corresponding author', text.lower())) > 4:
-        return True
     return False
 
 
-def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str = None, logs_dir: str = None):
+def _extract_methods_from_txt(text: str, doc_id: str, output_json: str = None, logs_dir: str = None):
     """
     Extracts all 'Materials and Methods'-like sections from a single plain-text string.
 
     Parameters:
         text (str): Flat article text.
         doc_id (str): Document identifier.
-        output_csv (str): Path to CSV for saving extracted content.
+        output_json (str): Path to JSON for saving extracted content.
         logs_dir (str, optional): Path to store logs on failures.
 
     Returns:
@@ -248,11 +247,13 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_csv: str = None, lo
             with open(os.path.join(logs_dir, "no_methods_docs_plain.txt"), "a") as f:
                 f.write(f"{doc_id}\n")
         return False, False
-
+    
     df = pd.DataFrame(rows, columns=["doc_id", "subtitle", "paragraph"]).drop_duplicates()
 
-    # Write to CSV (overwrite or create anew)
-    df.to_csv(output_csv, mode="w", index=False, header=True)
+    # Convert to list of dictionaries and write to JSON
+    with output_json.open("w", encoding="utf-8") as f:
+        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
+
     return True, df
 
 
