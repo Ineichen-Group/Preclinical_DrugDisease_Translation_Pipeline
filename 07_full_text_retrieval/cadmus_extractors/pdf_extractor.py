@@ -104,6 +104,8 @@ def extract_methods(
     try:
         logger.info(f"[PDF] Running PaperMage on {pdf_real_path} (PMID {pmid})")
         doc = _CORE_RECIPE.run(pdf_real_path)
+        if temp_pdf_path.exists():
+            temp_pdf_path.unlink()
     except Exception as e:
         err_msg = f"[PDF][ERROR] Failed to run PaperMage on PMID {pmid}, file {pdf_real_path}: {e}"
         logger.error(err_msg)
@@ -173,6 +175,8 @@ def extract_methods(
 
     # Write outputs
     df_sections = pd.DataFrame(section_rows)
+    #rename columns to match expected output
+    df_sections.rename(columns={"Subsection": "subtitle", "Text": "paragraph"}, inplace=True)
     output_json = output_dir / f"methods_subtitles_{pmid}.json"
     # Convert to list of dictionaries and write to JSON
     with output_json.open("w", encoding="utf-8") as f:
