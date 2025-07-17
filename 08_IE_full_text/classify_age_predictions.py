@@ -213,13 +213,15 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
 
 def main():
     model_name_str = "age_unsloth_meta_llama_3.1_8b"
-    input_file_name = f"08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions.csv"
+    input_file_name = f"08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions_verified.csv"
     predictions_df = pd.read_csv(input_file_name)
-    if "prediction_encoded_label" not in predictions_df.columns:    
-        raise ValueError(f"Input file '{input_file_name}' must contain 'prediction_encoded_label' column.")
+    
+    col_to_process = "verified_prediction_encoded_label"
+    if col_to_process not in predictions_df.columns:    
+        raise ValueError(f"Input file '{input_file_name}' must contain 'col_to_process' column.")
     
     species_df = pd.read_csv("08_IE_full_text/model_predictions/regex/species_predictions.csv")
-    predictions_df = classify_age_prediction(predictions_df, pred_col="prediction_encoded_label", species_df=species_df)
+    predictions_df = classify_age_prediction(predictions_df, pred_col=col_to_process, species_df=species_df)
 
     save_path= f"./08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions_mapped.csv"
     predictions_df.to_csv(save_path, index=False)
