@@ -218,7 +218,7 @@ def main():
     
     col_to_process = "verified_prediction_encoded_label"
     if col_to_process not in predictions_df.columns:    
-        raise ValueError(f"Input file '{input_file_name}' must contain 'col_to_process' column.")
+        raise ValueError(f"Input file '{input_file_name}' must contain '{col_to_process}' column.")
     
     species_df = pd.read_csv("08_IE_full_text/model_predictions/regex/species_predictions.csv")
     predictions_df = classify_age_prediction(predictions_df, pred_col=col_to_process, species_df=species_df)
