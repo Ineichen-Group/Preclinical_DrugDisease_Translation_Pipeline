@@ -1,4 +1,3 @@
-import os
 import json
 from pathlib import Path
 import pandas as pd
@@ -45,7 +44,6 @@ def extract_methods_subtitles_to_csv(
             pmid = json_path.stem
 
         current_subtitle = "METHODS"
-        in_methods = False
 
         for p in passages:
             infons = p.get("infons", {})
@@ -54,7 +52,6 @@ def extract_methods_subtitles_to_csv(
             text = p.get("text", "").strip()
 
             if section_type == "METHODS":
-                in_methods = True
 
                 if type_ == "title_2":
                     # Treat level-2 titles as subtitles under METHODS
@@ -236,12 +233,12 @@ def main() -> None:
     Example entry point to process PMC JSON files for a given disease.
     Change 'disease' to match the folder names for your JSON input.
     """
-    disease = "MS"  # or "parkinson", "alzheimer" # all_pmids
+    disease = "parkinson"  # or "parkinson", "alzheimer" # all_pmids
     print(f"Processing '{disease}' methods extraction from PMC JSON files...")
 
     base_input = Path("07_full_text_retrieval/pmc_fulltext") / f"{disease}_fulltext"
     base_output = Path("07_full_text_retrieval/materials_methods/bioc_json") / f"{disease}_methods"
-    logs_dir = Path("07_full_text_retrieval/materials_methods/logs")
+    logs_dir = Path("07_full_text_retrieval/materials_methods/logs/pmc")
 
     process_each_json_in_dir(
         json_dir=base_input,
