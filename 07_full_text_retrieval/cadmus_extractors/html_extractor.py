@@ -9,6 +9,7 @@ from io import TextIOWrapper
 import json
 import pandas as pd
 from bs4 import BeautifulSoup
+from typing import Tuple, Optional
 
 # These two functions should come from wherever you implemented your section‐detection rules
 from section_detection_rules import (
@@ -19,24 +20,38 @@ from section_detection_rules import (
 # Shared helpers (make sure utils.py implements these)
 from cadmus_extractors.utils import setup_logger, ensure_dir
 
-def can_handle(pmid: str, cadmus_base_dir: str, metadata_row: pd.Series) -> bool:
+def can_handle(pmid: str, cadmus_base_dir: str, metadata_row: pd.Series, logger: logging.Logger = None) -> Tuple[bool, Optional[str]]:
     """
     Return True if this row indicates an HTML zip is available on disk.
-    We expect metadata_row['html'] == 1 and that metadata_row['html_parse_d']['file_path'] exists.
+    We expect metadata_row['html'] == 1 and metadata_row['html_parse_d']['file_path'] exists.
     """
+    if logger is None:
+        logger = setup_logger(__name__)
+
     if metadata_row.get("html", 0) != 1:
-        return False
+        logger.debug(f"[HTML][SKIP] PMID {pmid}: 'html' flag is not 1.")
+        return False, None
 
     parse_info = metadata_row.get("html_parse_d", {})
     zip_path = parse_info.get("file_path", "")
-    zip_path = zip_path.replace("output", str(cadmus_base_dir))
+    zip_path = zip_path.replace("output", str(cadmus_base_dir)).replace(".//", "/")
 
-    return bool(zip_path and os.path.exists(zip_path))
+    if not zip_path:
+        logger.debug(f"[HTML][SKIP] PMID {pmid}: No file path found in metadata.")
+        return False, None
+
+    if os.path.exists(zip_path):
+        logger.info(f"[HTML][FOUND] PMID {pmid}: File found at {zip_path}")
+        return True, zip_path
+    else:
+        logger.warning(f"[HTML][MISSING] PMID {pmid}: File not found at {zip_path}")
+        return False, None
+
 
 
 def extract_methods(
     pmid: str,
-    cadmus_base_dir: Path,
+    file_path: Path,
     parse_info: dict,
     output_dir: Path,
     logs_dir: Path,
@@ -58,11 +73,7 @@ def extract_methods(
     if logger is None:
         logger = setup_logger(__name__)
 
-    zip_path = parse_info.get("file_path", "")
-    zip_path = zip_path.replace("output", str(cadmus_base_dir))
-    if not zip_path or not os.path.exists(zip_path):
-        logger.warning(f"[HTML][can_handle error] File not found for PMID {pmid}: {zip_path}")
-        return False, 0
+    zip_path = file_path
 
     try:
         soup = _process_html_from_zip(zip_path)

@@ -5,6 +5,7 @@ import logging
 import zipfile
 from pathlib import Path
 from collections import defaultdict
+from typing import Tuple, Optional
 
 import pandas as pd
 from papermage.recipes import CoreRecipe
@@ -14,29 +15,83 @@ from section_detection_rules import (
     is_end_of_materials_methods,
 )
 from cadmus_extractors.utils import setup_logger, ensure_dir
+from cadmus_extractors.plain_extractor import _extract_methods_from_txt
 
 # Create a single, module‐wide PaperMage recipe instance
 _CORE_RECIPE = CoreRecipe()
 
 
-def can_handle(pmid: str, cadmus_base_dir: str, metadata_row: pd.Series) -> bool:
+def can_handle(
+    pmid: str,
+    cadmus_base_dir: str,
+    metadata_row: pd.Series,
+    logger: logging.Logger = None
+) -> Tuple[bool, Optional[str]]:
     """
     Return True if this row indicates a PDF is available on disk.
-    We expect metadata_row['pdf'] == 1 and metadata_row['pdf_parse_d']['file_path'] exists.
+    Also returns the corrected file path if found, else None.
     """
+    if logger is None:
+        from cadmus_extractors.utils import setup_logger
+        logger = setup_logger(__name__)
+
     if metadata_row.get("pdf", 0) != 1:
-        return False
+        logger.debug(f"[PDF][SKIP] PMID {pmid}: 'pdf' flag is not 1.")
+        return False, None
 
     parse_info = metadata_row.get("pdf_parse_d", {})
     pdf_path = parse_info.get("file_path", "")
-    pdf_path = pdf_path.replace("output", str(cadmus_base_dir))
+    pdf_path = pdf_path.replace("output", str(cadmus_base_dir)).replace(".//", "/")
 
-    return bool(pdf_path and os.path.exists(pdf_path))
+    if not pdf_path:
+        logger.debug(f"[PDF][SKIP] PMID {pmid}: No file path found in metadata.")
+        return False, None
 
+    if os.path.exists(pdf_path):
+        logger.info(f"[PDF][FOUND] PMID {pmid}: File found at {pdf_path}")
+        return True, pdf_path
+    else:
+        logger.warning(f"[PDF][MISSING] PMID {pmid}: File not found at {pdf_path}")
+        return False, None
+
+def extract_pdf_from_path(
+    pmid: str,
+    pdf_or_zip: str,
+    output_dir: Path,
+    logs_dir: Path,
+    logger: logging.Logger
+) -> tuple[bool, str | None, bool]:
+    """
+    Returns:
+        (success: bool, pdf_path: str | None, is_temp: bool)
+    """
+    if pdf_or_zip.lower().endswith(".zip"):
+        try:
+            with zipfile.ZipFile(pdf_or_zip, "r") as z:
+                pdf_candidates = [name for name in z.namelist() if name.lower().endswith(".pdf")]
+                if not pdf_candidates:
+                    logger.error(f"[PDF][ERROR] No .pdf found inside zip for PMID {pmid}: {pdf_or_zip}")
+                    _append_to_log(logs_dir / "pdf_processing_errors.txt", f"{pmid}\tNo inner PDF in {pdf_or_zip}")
+                    return False, None, False
+
+                inner_pdf_name = pdf_candidates[0]
+                temp_pdf_path = output_dir / f"{pmid}_temp.pdf"
+                ensure_dir(output_dir)
+                with z.open(inner_pdf_name) as inner_fh:
+                    pdf_bytes = inner_fh.read()
+                    temp_pdf_path.write_bytes(pdf_bytes)
+
+                return True, str(temp_pdf_path), True
+        except Exception as e:
+            logger.error(f"[PDF][ERROR] Failed to extract PDF from ZIP for PMID {pmid}: {e}")
+            _append_to_log(logs_dir / "pdf_processing_errors.txt", f"{pmid}\t{pdf_or_zip}\t{e}")
+            return False, None, False
+    else:
+        return True, pdf_or_zip, False
 
 def extract_methods(
     pmid: str,
-    cadmus_base_dir: Path,
+    file_path: Path,
     parse_info: dict,
     output_dir: Path,
     logs_dir: Path,
@@ -60,38 +115,12 @@ def extract_methods(
     if logger is None:
         logger = setup_logger(__name__)
 
-    raw_path = parse_info.get("file_path", "")
-    pdf_or_zip = raw_path.replace("output", str(cadmus_base_dir))
-    if not pdf_or_zip or not os.path.exists(pdf_or_zip):
-        logger.warning(f"[PDF][can_handle error] File not found for PMID {pmid}: {pdf_or_zip}")
+    pdf_or_zip = file_path
+    output_json = output_dir / f"methods_subtitles_{pmid}.json"
+
+    success, pdf_real_path, is_temp_file = extract_pdf_from_path(pmid, pdf_or_zip, output_dir, logs_dir, logger)
+    if not success or not pdf_real_path:
         return False, 0
-    
-    if pdf_or_zip.lower().endswith(".zip"):
-        try:
-            with zipfile.ZipFile(pdf_or_zip, "r") as z:
-                # Find the first .pdf inside
-                pdf_candidates = [name for name in z.namelist() if name.lower().endswith(".pdf")]
-                if not pdf_candidates:
-                    logger.error(f"[PDF][ERROR] No .pdf found inside zip for PMID {pmid}: {pdf_or_zip}")
-                    _append_to_log(logs_dir / "pdf_processing_errors.txt", f"{pmid}\tNo inner PDF in {pdf_or_zip}")
-                    return False, 0
-
-                inner_pdf_name = pdf_candidates[0]
-                # Read that PDF in memory and write to a temp file under output_dir
-                temp_pdf_path = output_dir / f"{pmid}_temp.pdf"
-                ensure_dir(output_dir)
-                with z.open(inner_pdf_name) as inner_fh:
-                    pdf_bytes = inner_fh.read()
-                    temp_pdf_path.write_bytes(pdf_bytes)
-
-                pdf_real_path = str(temp_pdf_path)
-        except Exception as e:
-            logger.error(f"[PDF][ERROR] Failed to extract PDF from ZIP for PMID {pmid}: {e}")
-            _append_to_log(logs_dir / "pdf_processing_errors.txt", f"{pmid}\t{pdf_or_zip}\t{e}")
-            return False, 0
-    else:
-        # It’s already a .pdf on disk
-        pdf_real_path = pdf_or_zip   
 
     # Ensure output/log directories exist
     ensure_dir(output_dir)
@@ -104,8 +133,8 @@ def extract_methods(
     try:
         logger.info(f"[PDF] Running PaperMage on {pdf_real_path} (PMID {pmid})")
         doc = _CORE_RECIPE.run(pdf_real_path)
-        if temp_pdf_path.exists():
-            temp_pdf_path.unlink()
+        if is_temp_file:
+            Path(pdf_real_path).unlink()
     except Exception as e:
         err_msg = f"[PDF][ERROR] Failed to run PaperMage on PMID {pmid}, file {pdf_real_path}: {e}"
         logger.error(err_msg)
@@ -114,7 +143,19 @@ def extract_methods(
 
     # Group all paragraphs by section heading
     section_paragraphs = _group_paragraphs_by_section(doc)
-
+    
+    if list(section_paragraphs)[0] == "Plain text":
+        # No sections detected, just one big block of text
+        logger.info(f"[PDF] No sections found for PMID {pmid}, treating as plain text.")
+        plain_text = section_paragraphs['Plain text']
+        status, df_from_plain = _extract_methods_from_txt(
+            text=plain_text,
+            doc_id=pmid,
+            output_json=output_json,
+            logs_dir=str(logs_dir)
+        )
+        return status, df_from_plain["subtitle"].nunique() if isinstance(df_from_plain, pd.DataFrame) else 0
+        
     # Now, keep only sections between “Materials and Methods” start/end
     sub_sections = defaultdict(list)
     inside_mm = False
@@ -159,8 +200,8 @@ def extract_methods(
 
         section_rows.append({
             "doc_id": pmid,
-            "Subsection": subsection,
-            "Text": joined_text
+            "subtitle": subsection,
+            "paragraph": joined_text
         })
         final_text_parts.append(f"{subsection}\n{joined_text}")
 
@@ -176,8 +217,7 @@ def extract_methods(
     # Write outputs
     df_sections = pd.DataFrame(section_rows)
     #rename columns to match expected output
-    df_sections.rename(columns={"Subsection": "subtitle", "Text": "paragraph"}, inplace=True)
-    output_json = output_dir / f"methods_subtitles_{pmid}.json"
+    
     # Convert to list of dictionaries and write to JSON
     with output_json.open("w", encoding="utf-8") as f:
         json.dump(df_sections.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
@@ -191,7 +231,8 @@ def extract_methods(
     #df_full.to_csv(str(csv_full_path), index=False)
     #df_sections.to_csv(str(csv_sections_path), index=False)
 
-    num_subsections = df_sections["Subsection"].nunique()
+    num_subsections = df_sections["subtitle"].nunique()
+    logger.info(f"[PDF] Extracted {num_subsections} unique subsections for PMID {pmid}")
     return True, num_subsections
 
 
@@ -206,36 +247,35 @@ def _append_to_log(log_path: Path, text: str) -> None:
 
 def _group_paragraphs_by_section(doc) -> dict[str, list[str]]:
     """
-    Given a PaperMage Document, build a dict mapping each section heading
-    to a list of its paragraphs, in reading order.
-
-    Returns:
-        {section_title: [para_text, para_text, ...], ...}
+    Build a dict mapping section headings (if present) to paragraph texts.
+    If no sections exist, return a single entry with all text under 'Plain text'.
     """
-    # Build a sorted list of (start_offset, SectionEntity) pairs
-    section_boundaries = sorted(
-        [(sec.spans[0].start, sec) for sec in doc.sections],
-        key=lambda x: x[0]
-    )
-
-    # Determine an "end-of-document" boundary for the last section
-    max_para_end = max(p.spans[0].end for p in doc.paragraphs)
-    section_boundaries.append((max_para_end + 1, None))
-
     result: dict[str, list[str]] = {}
 
-    # Loop through each real section and collect paras between boundaries
-    for idx in range(len(section_boundaries) - 1):
-        this_start, sec_entity = section_boundaries[idx]
-        next_start, _ = section_boundaries[idx + 1]
+    if doc.sections:
+        # Use semantic section headings
+        section_boundaries = sorted(
+            [(sec.spans[0].start, sec) for sec in doc.sections if sec.spans],
+            key=lambda x: x[0]
+        )
+        max_para_end = max(p.spans[0].end for p in doc.paragraphs if p.spans)
+        section_boundaries.append((max_para_end + 1, None))
 
-        paras_in_section = [
-            p for p in doc.paragraphs
-            if this_start <= p.spans[0].start < next_start
-        ]
-        paras_in_section.sort(key=lambda p: p.spans[0].start)
+        for idx in range(len(section_boundaries) - 1):
+            this_start, sec_entity = section_boundaries[idx]
+            next_start, _ = section_boundaries[idx + 1]
 
-        heading = sec_entity.text if sec_entity is not None else "<no heading>"
-        result[heading] = [p.text for p in paras_in_section]
+            paras_in_section = [
+                p for p in doc.paragraphs
+                if p.spans and this_start <= p.spans[0].start < next_start
+            ]
+            paras_in_section.sort(key=lambda p: p.spans[0].start)
+
+            heading = sec_entity.text if sec_entity is not None else "<no heading>"
+            result[heading] = [p.text for p in paras_in_section]
+    else:
+        # Fallback: merge all paragraphs under a single key -> can happen with older or malformed PDFs
+        all_paras = [p.text for p in doc.paragraphs if p.text.strip()]
+        result["Plain text"] = ' '.join(all_paras)
 
     return result

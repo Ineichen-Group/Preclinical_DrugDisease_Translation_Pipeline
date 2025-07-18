@@ -120,8 +120,13 @@ def process_cadmus_output(
         # We’ll keep going through all formats until one actually succeeds.
         handled = False
         for fmt_name, can_handle, extract in FORMAT_HANDLERS:
-            if not can_handle(pmid, cadmus_base_dir, row):
+            can_handle, correct_file_path = can_handle(pmid, cadmus_base_dir, row, logger)
+            
+            if not can_handle:
                 continue
+            ### TEMPORARY DEBUGGING ###
+            #if fmt_name == "pdf" or fmt_name == "plain":
+             #   continue
 
             format_stats[fmt_name]["total"] += 1
 
@@ -134,7 +139,7 @@ def process_cadmus_output(
             try:
                 success, count = extract(
                     pmid=pmid,
-                    cadmus_base_dir=cadmus_base_dir,
+                    file_path=correct_file_path,
                     parse_info=row[f"{fmt_name}_parse_d"],
                     output_dir=out_dir,
                     logs_dir=log_dir,
@@ -226,7 +231,7 @@ if __name__ == "__main__":
         "--select-format",
         type=str,
         choices=["plain", "xml", "html", "pdf"],
-        default="plain",
+        default=None,
         help=(
             "If set, only keep rows whose flag for this format is 1 "
             "and whose flags for all other formats are 0. "

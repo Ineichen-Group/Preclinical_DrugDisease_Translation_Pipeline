@@ -10,23 +10,37 @@ import pandas as pd
 from cadmus_extractors.utils import setup_logger, ensure_dir
 
 
-def can_handle(pmid: str, cadmus_base_dir: Path, metadata_row: pd.Series) -> bool:
+def can_handle(pmid: str, cadmus_base_dir: Path, metadata_row: pd.Series, logger: logging.Logger = None) -> bool:
     """
     Return True if this row indicates a plain-text ZIP is available on disk.
     We expect metadata_row['plain'] == 1 and metadata_row['plain_parse_d']['file_path'] exists.
     """
+    if logger is None:
+        logger = setup_logger(__name__)
+
     if metadata_row.get("plain", 0) != 1:
-        return False
+        logger.debug(f"[PLAIN][SKIP] PMID {pmid}: 'plain' flag is not 1.")
+        return False, None
+
     parse_info = metadata_row.get("plain_parse_d", {})
     zip_path = parse_info.get("file_path", "")
-    zip_path = zip_path.replace("output", str(cadmus_base_dir))
+    zip_path = zip_path.replace("output", str(cadmus_base_dir)).replace(".//", "/")
 
-    return bool(zip_path and os.path.exists(zip_path))
+    if not zip_path:
+        logger.debug(f"[PLAIN][SKIP] PMID {pmid}: No file path found in metadata.")
+        return False, None
+
+    if os.path.exists(zip_path):
+        logger.info(f"[PLAIN][FOUND] PMID {pmid}: File found at {zip_path}")
+        return True, zip_path
+    else:
+        logger.warning(f"[PLAIN][MISSING] PMID {pmid}: File not found at {zip_path}")
+        return False, None
 
 
 def extract_methods(
     pmid: str,
-    cadmus_base_dir: Path,
+    file_path: Path,
     parse_info: dict,
     output_dir: Path,
     logs_dir: Path,
@@ -48,12 +62,7 @@ def extract_methods(
     if logger is None:
         logger = setup_logger(__name__)
 
-    zip_path = parse_info.get("file_path", "")
-    zip_path = zip_path.replace("output", str(cadmus_base_dir))
-
-    if not zip_path or not os.path.exists(zip_path):
-        logger.warning(f"[PLAIN][can_handle error] File not found for PMID {pmid}: {zip_path}")
-        return False, 0
+    zip_path = file_path
 
     ensure_dir(output_dir)
     ensure_dir(logs_dir)
