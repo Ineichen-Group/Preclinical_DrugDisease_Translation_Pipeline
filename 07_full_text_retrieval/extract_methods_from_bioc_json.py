@@ -58,7 +58,7 @@ def extract_methods_subtitles_to_csv(
                     current_subtitle = text or "METHODS"
                 elif type_ == "paragraph" and text:
                     rows.append({
-                        "pmid": pmid,
+                        "doc_id": pmid,
                         "subtitle": current_subtitle,
                         "paragraph": text
                     })
@@ -140,7 +140,7 @@ def extract_methods_subtitles_to_json(
                     current_subtitle = text or "METHODS"
                 elif type_ == "paragraph" and text:
                     rows.append({
-                        "pmid": pmid,
+                        "doc_id": pmid,
                         "subtitle": current_subtitle,
                         "paragraph": text
                     })
@@ -233,7 +233,7 @@ def main() -> None:
     Example entry point to process PMC JSON files for a given disease.
     Change 'disease' to match the folder names for your JSON input.
     """
-    disease = "parkinson"  # or "parkinson", "alzheimer" # all_pmids
+    disease = "epilepsy"  # or "parkinson", "alzheimer" # all_pmids
     print(f"Processing '{disease}' methods extraction from PMC JSON files...")
 
     base_input = Path("07_full_text_retrieval/pmc_fulltext") / f"{disease}_fulltext"

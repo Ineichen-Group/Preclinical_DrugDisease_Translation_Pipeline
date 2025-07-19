@@ -1,20 +1,23 @@
 from pathlib import Path
 import pandas as pd
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 from cadmus_extractors.utils import load_wrong_pmids
 
-def process_standard_folder(
+
+def process_json_folder(
     folder: Path,
     exclude_pmids: Set[str],
     source_label: str,
-    pattern: str = '*.csv'
+    pattern: str = '*.json'
 ) -> pd.DataFrame:
-    """Return one big DataFrame of grouped articles for this folder."""
+    """Return one big DataFrame of grouped articles from JSON files."""
     frames = []
-    for csv_path in folder.glob(pattern):
-        df = pd.read_csv(csv_path)
-        if 'pmid' not in df.columns and 'doc_id' in df.columns:
-            df = df.rename(columns={'doc_id': 'pmid'})
+    for json_path in folder.glob(pattern):
+        df = pd.read_json(json_path)
+        if 'doc_id' not in df.columns or 'paragraph' not in df.columns:
+            print(f"Skipping {json_path}: missing doc_id or paragraph")
+            continue
+        df = df.rename(columns={'doc_id': 'pmid'})
         df['pmid'] = df['pmid'].astype(str)
         if df['pmid'].iloc[0] in exclude_pmids:
             continue
@@ -26,63 +29,59 @@ def process_standard_folder(
             df.groupby('pmid')['subtitle_paragraph']
               .apply(' '.join)
               .reset_index(name='Text')
-              .rename(columns={'pmid':'PMID'})
+              .rename(columns={'pmid': 'PMID'})
         )
         merged['Source'] = source_label
         frames.append(merged)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID','Text','Source'])
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID', 'Text', 'Source'])
 
-def process_pdf_folder(
-    folder: Path,
-    source_label: str,
-    pattern: str = '*_full_text.csv'
-) -> pd.DataFrame:
-    """Return one big DataFrame of all *_full_text.csv for this folder."""
-    frames = []
-    for csv_path in folder.glob(pattern):
-        df = pd.read_csv(csv_path)
-        if 'doc_id' not in df.columns or 'Text' not in df.columns:
-            print(f"Skipping {csv_path}: missing doc_id or Text")
-            continue
-        df = df.rename(columns={'doc_id':'PMID'})[['PMID','Text']]
-        df['Source'] = source_label
-        frames.append(df)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID','Text','Source'])
 
 def combine_all(
     base_dir: str,
     subfolders: List[str],
-    inner_folders: List[Optional[str]],
-    pdf_subfolder: str,
+    inner_folders: List[Union[None, str, List[str]]],
     exclude_pmids: Set[str],
     output_path: str
 ):
     base = Path(base_dir)
     all_frames = []
-    folder_counts = {}  # count loaded PMIDs per subfolder
+    folder_counts = {}
 
     for sub, inner in zip(subfolders, inner_folders):
-        folder = base / sub
-        if inner:
-            folder = folder / inner
-        if not folder.is_dir():
-            print(f"Warning: {folder} missing")
-            folder_counts[sub] = 0
-            continue
+        base_folder = base / sub
 
-        if sub == pdf_subfolder:
-            df = process_pdf_folder(folder, source_label=sub)
-        else:
-            df = process_standard_folder(folder, exclude_pmids, source_label=sub)
+        # Handle single or multiple inner folders
+        if inner is None:
+            folders_to_process = [base_folder]
+        elif isinstance(inner, str):
+            folders_to_process = [base_folder / inner]
+        else:  # assume list of str
+            folders_to_process = [base_folder / i for i in inner]
 
-        # tally how many unique PMIDs we got from this sub
-        count = df['PMID'].nunique()
-        folder_counts[sub] = count
+        total_pmids = 0
+        for folder in folders_to_process:
+            if not folder.is_dir():
+                print(f"Warning: {folder} missing")
+                continue
 
-        all_frames.append(df)
+            json_files = list(folder.glob("*.json"))
+            if not json_files:
+                print(f"Warning: No JSON files found in {folder}")
+                continue
 
-    # combine and dedupe overall
+            df = process_json_folder(folder, exclude_pmids, source_label=sub)
+            count = df['PMID'].nunique()
+            total_pmids += count
+            all_frames.append(df)
+
+        folder_counts[sub] = total_pmids
+
+    if not all_frames:
+        print("No data found in any folder.")
+        return
+
     combined = pd.concat(all_frames, ignore_index=True)
+
     print("\n--- Per-folder document counts ---")
     for sub, cnt in folder_counts.items():
         print(f"{sub:12s}: {cnt}")
@@ -96,12 +95,11 @@ def combine_all(
     combined.to_csv(out, index=False)
     print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
 
-# ── Example usage ──────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
-    BASE_DIR      = '07_full_text_retrieval/materials_methods'
-    SUBFOLDERS    = ['html', 'xml', 'plain', 'bioc_json', 'pdf']
-    INNER_FOLDERS = [None,    None,    None,    'MS_methods', None]
-    PDF_SUBFOLDER = 'pdf'
+    BASE_DIR = '07_full_text_retrieval/materials_methods'
+    SUBFOLDERS = ['html', 'xml', 'plain', 'bioc_json', 'pdf']
+    INNER_FOLDERS = [None, None, None, ['MS_methods', 'alzheimer_methods', 'parkinson_methods', 'epilepsy_methods'], None]
 
     wrong_csvs = [
         Path("03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"),
@@ -115,7 +113,6 @@ if __name__ == '__main__':
         base_dir=BASE_DIR,
         subfolders=SUBFOLDERS,
         inner_folders=INNER_FOLDERS,
-        pdf_subfolder=PDF_SUBFOLDER,
         exclude_pmids=EXCLUDE_PMIDS,
         output_path=str(OUTPUT)
     )
