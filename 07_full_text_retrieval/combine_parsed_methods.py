@@ -3,6 +3,7 @@ import pandas as pd
 from typing import List, Optional, Set, Union
 from cadmus_extractors.utils import load_wrong_pmids
 import csv
+import re
 
 def process_json_folder(
     folder: Path,
@@ -36,9 +37,27 @@ def process_json_folder(
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID', 'Text', 'Source'])
 
 def normalize_text(text):
-    if isinstance(text, str):
-        return text.replace("\u2028", " ").replace("\u2029", " ")
-    return text
+    """
+    Normalize text for JSONL export via pandas:
+    - Remove control characters (except \n and \t)
+    - Replace Unicode line/paragraph separators
+    - Replace fancy quotes with standard ones
+    - Strip leading/trailing whitespace
+    """
+    if not isinstance(text, str):
+        return text
+
+    # Remove control characters except newline/tab
+    text = re.sub(r"[\x00-\x08\x0B-\x1F\x7F]", "", text)
+
+    # Replace Unicode line/paragraph separators
+    text = text.replace("\u2028", " ").replace("\u2029", " ")
+
+    # Replace fancy quotes
+    text = text.replace("“", '"').replace("”", '"')
+    text = text.replace("‘", "'").replace("’", "'")
+
+    return text.strip()
 
 def combine_all(
     base_dir: str,

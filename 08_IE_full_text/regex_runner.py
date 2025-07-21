@@ -63,29 +63,52 @@ from utils.format_utils import format_assay_result
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Run regex‐based classification (sex, species, welfare, blinding, randomization, or all) on a CSV of texts."
+        description=(
+            "Run regex-based classification on a dataset of texts.\n\n"
+            "Supported input formats:\n"
+            "  - CSV file (e.g., .csv)\n"
+            "  - JSON Lines file (e.g., .jsonl with one record per line)\n\n"
+            "Supported classification categories:\n"
+            "  - sex: Detects mentions of biological sex\n"
+            "  - species: Identifies referenced species (e.g., mouse, rat)\n"
+            "  - welfare: Detects animal welfare or ethical compliance\n"
+            "  - blinding: Checks for mention of blinding procedures\n"
+            "  - randomization: Detects randomization-related descriptions\n"
+            "  - age: Classifies animal age mentions\n"
+            "  - assay: Recognizes experimental assays mentioned\n"
+            "  - all: Runs all of the above classifiers sequentially"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter
     )
+
     parser.add_argument(
         "--df_path",
         required=True,
-        help="Path to input CSV (must contain a column 'Text' or as specified).",
+        help=(
+            "Path to the input file (.csv or .jsonl). Must contain a column with text "
+            f"to classify (default column name: 'Text'). For .jsonl, each line should be a valid JSON object."
+        ),
     )
+
     parser.add_argument(
         "--category",
         required=True,
         choices=["sex", "species", "welfare", "blinding", "randomization", "age", "assay", "all"],
-        help="Which classifier to run: 'sex', 'species', 'welfare', 'blinding', 'randomization', 'age', 'assaty' or 'all'.",
+        help="Classifier to run. Choose from: sex, species, welfare, blinding, randomization, age, assay, or all.",
     )
+
     parser.add_argument(
         "--text_col",
         default="Text",
-        help="Name of the column in the CSV that contains the full text to classify.",
+        help="Name of the column containing input text (default: 'Text').",
     )
+
     parser.add_argument(
         "--output_dir",
         default="predictions",
-        help="Directory where output CSV(s) should be written.",
+        help="Directory to save the classifier outputs (default: ./predictions).",
     )
+
     return parser.parse_args()
 
 
@@ -157,7 +180,13 @@ def main():
         print(f"ERROR: Input file {args.df_path} does not exist.", file=sys.stderr)
         sys.exit(1)
 
-    df = pd.read_csv(args.df_path)
+    if args.df_path.endswith(".jsonl"):
+        df = pd.read_json(args.df_path, lines=True)
+        print(f"Loaded JSONL input with {len(df)} rows.")
+    else:
+        df = pd.read_csv(args.df_path)
+        print(f"Loaded CSV input with {len(df)} rows.")
+
     if args.text_col not in df.columns:
         print(
             f"ERROR: Specified text_col '{args.text_col}' not found in CSV columns: {df.columns.tolist()}",

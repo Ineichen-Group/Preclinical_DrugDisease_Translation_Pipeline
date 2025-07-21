@@ -3,17 +3,27 @@
 extract_sentences.py
 
 A script that:
-1. Reads raw text from a specified column in an input CSV.
-2. Splits text into “preliminary” sentences using NLTK’s Punkt tokenizer.
-3. Re-tokenizes each preliminary sentence into word/punctuation tokens.
-4. Merges consecutive sentences if they match “no-split” patterns (using should_merge).
-5. Writes out a CSV where each row corresponds to one (possibly merged) sentence.
+1. Reads raw text from a specified column in an input file (JSONL).
+2. Splits text into preliminary sentences using NLTK’s Punkt tokenizer.
+3. Re-tokenizes each sentence into word/punctuation tokens.
+4. Merges consecutive sentences based on domain-specific "no-split" rules (using should_merge).
+5. Filters out sentence fragments and junk entries.
+6. Writes the output to a JSONL file where each line is a dictionary with:
+   - "PMID": Document identifier (if present)
+   - "sentence_id": Local sentence index within the document
+   - "tokens": List of tokens
+   - "sent_txt": Raw sentence string
 
 Usage:
     python extract_sentences.py \
-        --input_csv ./data/your_input_file.csv \
+        --input_jsonl ./data/your_input_file.jsonl \
         --text_col Text \
-        --output_csv ./data/sentence_split_merged.csv
+        --output_path ./data/processed_sentences/
+
+Notes:
+- Input can be either a `.jsonl` file.
+- Output will be written as a `.jsonl` file with sentence-level structure.
+- The script expects the input file to contain a text column with complete document text.
 """
 
 from tqdm import tqdm
