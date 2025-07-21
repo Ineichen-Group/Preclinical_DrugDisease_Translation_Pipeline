@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 from typing import List, Optional, Set, Union
 from cadmus_extractors.utils import load_wrong_pmids
-
+import csv
 
 def process_json_folder(
     folder: Path,
@@ -35,13 +35,17 @@ def process_json_folder(
         frames.append(merged)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID', 'Text', 'Source'])
 
+def normalize_text(text):
+    if isinstance(text, str):
+        return text.replace("\u2028", " ").replace("\u2029", " ")
+    return text
 
 def combine_all(
     base_dir: str,
     subfolders: List[str],
     inner_folders: List[Union[None, str, List[str]]],
     exclude_pmids: Set[str],
-    output_path: str
+    output_path: Path
 ):
     base = Path(base_dir)
     all_frames = []
@@ -90,16 +94,26 @@ def combine_all(
     combined = combined.drop_duplicates('PMID')
     print(f"Total after dedup : {combined['PMID'].nunique()} unique articles")
 
-    out = Path(output_path)
+    out = output_path / f"combined_materials_methods_{combined['PMID'].nunique()}.jsonl"
+
     out.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_csv(out, index=False)
+    combined["Text"] = combined["Text"].map(normalize_text)
+
+    #combined.to_csv(
+      #  out,
+       # index=False,
+       # quoting=csv.QUOTE_ALL,
+       # escapechar="\\"
+    #)
+    combined.to_json(out, orient="records", lines=True, force_ascii=False)
+
     print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
 
 
 if __name__ == '__main__':
     BASE_DIR = '07_full_text_retrieval/materials_methods'
     SUBFOLDERS = ['html', 'xml', 'plain', 'bioc_json', 'pdf']
-    INNER_FOLDERS = [None, None, None, ['MS_methods', 'alzheimer_methods', 'parkinson_methods', 'epilepsy_methods'], None]
+    INNER_FOLDERS = [None, None, None, ['MS_methods', 'alzheimer_methods', 'parkinson_methods', 'epilepsy_methods', 'all_pmids_methods'], None]
 
     wrong_csvs = [
         Path("03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"),
@@ -108,11 +122,11 @@ if __name__ == '__main__':
     ]
     EXCLUDE_PMIDS = load_wrong_pmids(wrong_csvs)
 
-    OUTPUT = Path(BASE_DIR) / 'combined' / 'combined_methods.csv'
+    OUTPUT = Path(BASE_DIR) / 'combined'
     combine_all(
         base_dir=BASE_DIR,
         subfolders=SUBFOLDERS,
         inner_folders=INNER_FOLDERS,
         exclude_pmids=EXCLUDE_PMIDS,
-        output_path=str(OUTPUT)
+        output_path=OUTPUT
     )

@@ -15,15 +15,20 @@ Usage:
         --text_col Text \
         --output_csv ./data/sentence_split_merged.csv
 """
+
+from tqdm import tqdm
 import argparse
 import re
 import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
+import json
+import os
 
 # Download Punkt models if not already present. Comment out after first run if desired.
 nltk.download("punkt", quiet=True)
 
+# TODO: maybe scispacy has a better sentence splitter for scientific text? -> nlp = spacy.load("en_core_sci_sm")
 
 def should_merge(prev, next_):
     """
@@ -189,74 +194,41 @@ def is_valid_sentence(sent_str, sent_tokens):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Tokenize raw text, split into sentences with NLTK, "
-                    "merge based on custom rules (including i.p., S.D., etc.), "
-                    "filter out junk sentences, and save to CSV."
-    )
-    parser.add_argument(
-        "--input_csv",
-        type=str,
-        default="07_full_text_retrieval/materials_methods/combined/combined_methods.csv",
-        help="Path to the input CSV file."
-    )
-    parser.add_argument(
-        "--text_col",
-        type=str,
-        default="Text",
-        help="Name of the column in the input CSV that contains the raw text to split."
-    )
-    parser.add_argument(
-        "--output_csv",
-        type=str,
-        default="07_full_text_retrieval/materials_methods/combined/combined_methods_sentences.csv",
-        help="Path where the output CSV (sentence‐split, merged) will be written."
-    )
-
+    parser = argparse.ArgumentParser(description="Process JSONL input and save split sentences as JSONL.")
+    parser.add_argument("--input_jsonl", type=str, required=True, help="Path to the input JSONL file.")
+    parser.add_argument("--output_jsonl", type=str, required=True, help="Path to save the output JSONL.")
+    parser.add_argument("--text_col", type=str, required=True, help="Column with text for splitting.")
     args = parser.parse_args()
-    input_path = args.input_csv
-    text_column = args.text_col
-    output_path = args.output_csv
 
-    # Load the input DataFrame
-    df = pd.read_csv(input_path)
+    input_path = args.input_jsonl
+    output_path = args.output_jsonl
+    text_col = args.text_col
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    # Ensure the specified text column exists
-    if text_column not in df.columns:
-        raise ValueError(f"Column '{text_column}' not found in input CSV.")
+    with open(input_path, "r", encoding="utf-8") as fin, open(output_path, "w", encoding="utf-8") as fout:
+        for line in tqdm(fin, desc="Processing documents"):
+            try:
+                entry = json.loads(line)
+                pmid = str(entry.get("PMID", ""))
+                raw_text = entry.get(text_col, "")
 
-    new_rows = []
+                prelim = split_with_nltk(raw_text)
+                merged = merge_sentences(prelim)
 
-    for _, row in df.iterrows():
-        doc_id = row.get("PMID", None)   # If no PMID column, doc_id will be None
-        raw_text = row[text_column]
+                for sent_id, (sent_str, sent_tokens) in enumerate(merged):
+                    if not is_valid_sentence(sent_str, sent_tokens):
+                        continue
+                    out_entry = {
+                        "PMID": pmid,
+                        "sentence_id": sent_id,
+                        "tokens": sent_tokens,
+                        "sent_txt": sent_str
+                    }
+                    fout.write(json.dumps(out_entry, ensure_ascii=False) + "\n")
+            except Exception as e:
+                print(f"Error processing line: {e}")
 
-        # 1. Split into preliminary sentences + tokenize each one
-        prelim = split_with_nltk(raw_text)
-
-        # 2. Merge adjacent sentences based on should_merge logic
-        merged = merge_sentences(prelim)
-
-        # 3. For each merged sentence, apply the filter before appending
-        for sent_id, (sent_str, sent_tokens) in enumerate(merged):
-            if not is_valid_sentence(sent_str, sent_tokens):
-                # Skip this “junk” sentence
-                continue
-
-            new_rows.append({
-                "PMID": doc_id,
-                "sentence_id": sent_id,
-                "tokens": sent_tokens,
-                "sent_txt": sent_str
-            })
-
-    # Build a DataFrame from the collected (filtered) sentence‐rows
-    sentence_df = pd.DataFrame(new_rows)
-
-    # Write out to the specified output CSV
-    sentence_df.to_csv(output_path, index=False)
-    print(f"Filtered sentence‐split CSV written to: {output_path}")
-
+    print(f"\nDone. Output written to: {output_path}")
 
 if __name__ == "__main__":
     main()
