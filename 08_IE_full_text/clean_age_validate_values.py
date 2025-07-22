@@ -12,6 +12,7 @@ import spacy
 from typing import Dict, List
 import os
 tqdm.pandas()  # enables progress_apply on DataFrames
+import argparse
 
 # Load SciSpacy model
 def load_nlp_model():
@@ -548,9 +549,22 @@ def create_pmid_mapping(df: pd.DataFrame, pmid_col: str = "PMID", flat_col: str 
         mapping[pmid].append({flat: new})
     return mapping
 
+
 if __name__ == '__main__':
     # Load original
-    df_orig = pd.read_csv("./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv")
+    #df_orig = pd.read_csv("./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv")
+    
+    parser = argparse.ArgumentParser(description="NER CSV prediction processor")
+    parser.add_argument(
+        "--input_csv",
+        default="./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv",
+        help="Path to the input CSV file containing predictions. Default is age_unsloth_meta_llama_3.1_8b."
+    )
+    args = parser.parse_args()
+
+    # Load the input CSV from the argument
+    df_orig = pd.read_csv(args.input_csv)
+    
     print(f"Loaded {len(df_orig)} original age predictions.")
     # Preprocess flat data
     df_flat = extract_weekly_ages(df_orig)
@@ -614,6 +628,6 @@ if __name__ == '__main__':
         new_col="prediction_encoded_label_new"
     )
     df_final = apply_mappings(df_orig, map1, map2, map3)  # add map3 when available
-    save_path_final = "./model_predictions/age/post_processing/df_age_predictions_verified_20250722.csv"
+    save_path_final = "./model_predictions/age/df_age_predictions_verified_20250722.csv"
     df_final.to_csv(save_path_final, index=False)
     print(f"Cleaned predictions saved to {save_path_final}")
