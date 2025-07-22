@@ -112,8 +112,8 @@ def process_age_predictions(pmid, pred_str):
         
         #age = age.replace("–", "-").replace("~", "-")  # Normalize dash characters
         age = normalize_age_string(age)
-        if age.count(".") > 1:
-            print(f"Skipping malformed prediction with multiple dots: {pred}")
+        if age.count('.') > 1 or re.search(r"[^\d.\s\-]", age):
+            print(f"Skipping malformed prediction with multiple dots or invalid characters: {pred}")
             continue
         if time_base == "weeks":
             if "-" not in age:
