@@ -1,145 +1,249 @@
-
+#!/usr/bin/env python
 import re
+import os
+import gc
 import pandas as pd
-import time
+import argparse
+
+# ——— Regex patterns precompiled for speed —————————————————————————
+
+# Matches trailing time units
+UNIT_PATTERN = re.compile(r'\b(weeks?|months?|days?|years?)\b$', re.IGNORECASE)
+
+# Matches weight entries to drop
+WEIGHT_PATTERN = re.compile(
+    r'\b\d*\.?\d+\s*[-–]?\s*\d*\s*'
+    r'(g|gram|grams|kg|kilogram|kilograms)\b',
+    re.IGNORECASE
+)
+
+# Matches pure “NOT AGE”
+NOT_AGE_PATTERN = re.compile(r'^NOT AGE$', re.IGNORECASE)
+
+
+# ——— Sentence→document combining ————————————————————————————————
 
 def combine_age_predictions(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Process a DataFrame to:
-    1. Extract base document ID from 'doc_id_unique'
-    2. Clean 'age_prediction' values
-    3. Group by base document ID and combine unique predictions
-    
-    Parameters:
-        df (pd.DataFrame): Input DataFrame with 'doc_id_unique' and 'age_prediction' columns.
-        
-    Returns:
-        pd.DataFrame: Processed DataFrame with unique combined age predictions.
+    From sentence-level predictions in `df`, produce one row per document:
+    - doc_base: strip off the last underscore segment
+    - Extract AGE:… text
+    - Clean and dedupe within each doc
+    - Collect supporting sentence IDs
     """
-    # Step 1: Extract base document ID (before the last underscore)
+    # Derive document base
     df['doc_base'] = df['doc_id_unique'].str.rsplit('_', n=1).str[0]
 
-    # Step 2: Clean the age_prediction text
-    # Extract AGE predictions into a new column (may include NaNs)
-    df['age_extracted'] = df['age_prediction'].str.extract(r'AGE:\s*(.*?)(?=\.\s|$)', expand=False)
+    # Extract text after “AGE: ”
+    df['age_extracted'] = df['age_prediction'] \
+        .str.extract(r'AGE:\s*(.*?)(?=\.\s|$)', expand=False)
 
-    # Define a helper function for cleaning age strings
+    # Simple cleanup: split on commas, strip, dedupe+sort
     def clean_age_string(x):
         if pd.isna(x):
             return None
-        return ', '.join(sorted(set([part.strip() for part in x.split(',') if part.strip()])))
+        parts = [p.strip() for p in x.split(',') if p.strip()]
+        return ', '.join(sorted(set(parts))) if parts else None
 
-    # Apply the cleaning function
     df['age_prediction_clean'] = df['age_extracted'].apply(clean_age_string)
 
-    # Step 3: Group by base document and combine unique age predictions
-    combined = (
+    # Rows with at least one valid age
+    valid = df[df['age_prediction_clean'].notna()]
+
+    # Aggregate per doc_base
+    grouped = (
         df.groupby('doc_base')['age_prediction_clean']
-        .apply(lambda x: ', '.join(sorted(set(x.dropna()))))
-        .reset_index()
-        .rename(columns={'age_prediction_clean': 'age_prediction', 'doc_base': 'doc_id_unique'})
+          .apply(lambda s: ', '.join(sorted(set(s.dropna()))))
+          .reset_index()
+          .rename(columns={
+              'doc_base': 'doc_id_unique',
+              'age_prediction_clean': 'age_prediction'
+          })
     )
 
-    # Filter out any header row or malformed entry
-    predictions_combined = combined[combined['doc_id_unique'] != 'doc_id']
+    # Collect supporting sentence IDs
+    supporting = (
+        valid.groupby('doc_base')['doc_id_unique']
+             .apply(lambda ids: '; '.join(sorted(set(ids))))
+             .reset_index()
+             .rename(columns={
+                 'doc_base': 'doc_id_unique',
+                 'doc_id_unique': 'supporting_sentence_ids'
+             })
+    )
 
-    return predictions_combined
+    # Merge them
+    combined = pd.merge(grouped, supporting, on='doc_id_unique', how='left')
+    combined = combined[combined['doc_id_unique'] != 'doc_id']  # drop header artifacts
+    return combined
 
-def clean_not_age(val):
+
+# ——— Clean “NOT AGE” rows —————————————————————————————————————
+
+def clean_not_age(val: str) -> str:
     if pd.isna(val):
         return val
     parts = [p.strip() for p in val.split(',')]
-    
-    # Case: Only 'NOT AGE'
+    # Only “NOT AGE” → “AGE NOT SPECIFIED”
     if parts == ['NOT AGE']:
         return 'AGE NOT SPECIFIED'
-    
-    # Case: Mixed values, remove 'NOT AGE'
+    # Otherwise drop any “NOT AGE” tokens
     parts = [p for p in parts if p != 'NOT AGE']
-    
     return ', '.join(parts)
 
-def clean_prediction(text):
+
+# ——— Normalize & encode age expressions ————————————————————————
+
+def clean_prediction(text: str) -> str:
     """
-    Cleans age prediction text and returns a comma-separated string of unique age expressions
-    in the original order (no sorting).
-    - Converts 'X weeks to Y weeks' → 'X-Y weeks'
-    - Removes spaces around hyphens in ranges: 'X - Y' → 'X-Y'
-    - Removes weight-related entries (e.g., '200-300 g', '350 grams')
-    - Filters out non-specific labels when specific ones are present
-    - If nothing valid remains, returns 'age not specified'
-    - Preserves input order
+    Standardizes age expressions, e.g.:
+      P10-P17 days   → 10-17 days
+      3 or 6 months  → 3 months, 6 months
+      14, 21 days    → 14 days, 21 days
     """
     if pd.isna(text):
-        return "age not specified"
+        return 'age not specified'
 
-    text = text.replace('\n', ' ').replace('\t', ' ')
+    # 1) Normalize whitespace & strip leading “P”
+    txt = text.replace('\n', ' ').replace('\t', ' ').strip()
+    txt = re.sub(r'\bP(?=\d)', '', txt)
 
-    # Extract AGE: segments
-    matches = re.findall(r'AGE:\s*(.*?)(?=\s*(AGE:|$|###|---))', text, flags=re.IGNORECASE)
+    # 2) Extract trailing unit for later
+    unit_m = UNIT_PATTERN.search(txt)
+    default_unit = unit_m.group(1).lower() if unit_m else None
 
-    extracted_parts = []
-    for match, _ in matches:
-        match = match.strip()
-        match = re.sub(r'\s+and\s+', ', ', match, flags=re.IGNORECASE)
-        match = re.sub(r'(\d+)\s*(weeks?|months?|days?|years?)\s+to\s+(\d+)\s*(weeks?|months?|days?|years?)',
-                       lambda m: f"{m.group(1)}-{m.group(3)} {m.group(2)}", match, flags=re.IGNORECASE)
-        match = re.sub(r'(\d+)\s+to\s+(\d+)', r'\1-\2', match, flags=re.IGNORECASE)
-        match = re.sub(r'\s*-\s*', '-', match)  # normalize hyphens
-        extracted_parts.extend([m.strip() for m in match.split(',')])
+    # 3) Expand “14, 21, 56 days” → “14 days, 21 days, 56 days”
+    m = re.match(
+        r'^(?P<numlist>\d+(?:\s*,\s*\d+)*)\s*'
+        r'(?P<unit>weeks?|months?|days?|years?)$',
+        txt, re.IGNORECASE
+    )
+    if m:
+        nums = [n.strip() for n in m.group('numlist').split(',')]
+        txt = ', '.join(f"{n} {m.group('unit')}" for n in nums)
 
-    if not matches:
-        text = text.strip()
-        text = re.sub(r'\s+and\s+', ', ', text, flags=re.IGNORECASE)
-        text = re.sub(r'(\d+)\s*(weeks?|months?|days?|years?)\s+to\s+(\d+)\s*(weeks?|months?|days?|years?)',
-                      lambda m: f"{m.group(1)}-{m.group(3)} {m.group(2)}", text, flags=re.IGNORECASE)
-        text = re.sub(r'(\d+)\s+to\s+(\d+)', r'\1-\2', text, flags=re.IGNORECASE)
-        text = re.sub(r'\s*-\s*', '-', text)
-        extracted_parts = [m.strip() for m in text.split(',')]
+    # 4) “and”/“or” → commas
+    txt = re.sub(r'\s+and\s+', ' , ', txt, flags=re.IGNORECASE)
+    txt = re.sub(r'\s+or\s+', ' , ', txt, flags=re.IGNORECASE)
 
-    # Remove weight-related expressions (e.g., 300-350 g, 200 grams, 0.5 kg)
-    weight_pattern = re.compile(r'\b\d*\.?\d+\s*[-–]?\s*\d*\s*(g|gram|grams|kg|kilogram|kilograms)\b', re.IGNORECASE)
-    extracted_parts = [p for p in extracted_parts if not weight_pattern.search(p)]
+    # 5) Ranges “X to Y” or “X weeks to Y weeks” → “X-Y unit”
+    txt = re.sub(
+        r'(\d+)\s*(weeks?|months?|days?|years?)\s+to\s+'
+        r'(\d+)\s*(weeks?|months?|days?|years?)',
+        lambda mm: f"{mm.group(1)}-{mm.group(3)} {mm.group(2)}",
+        txt, flags=re.IGNORECASE
+    )
+    txt = re.sub(r'(\d+)\s+to\s+(\d+)', r'\1-\2', txt, flags=re.IGNORECASE)
+    txt = re.sub(r'\s*[-–]\s*', '-', txt)
 
-    # Remove empty strings and normalize
-    extracted_parts = [p for p in extracted_parts if p.strip()]
+    # 6) Split out any AGE:… segments, else full text
+    parts = []
+    segs = re.findall(
+        r'AGE:\s*(.*?)(?=\s*(AGE:|$|###|---))',
+        txt, flags=re.IGNORECASE
+    )
+    if segs:
+        for seg, _ in segs:
+            parts.extend(p.strip() for p in seg.split(',') if p.strip())
+    else:
+        parts.extend(p.strip() for p in txt.split(',') if p.strip())
 
-    # Handle non-specific age expressions
-    nonspecific_pattern = re.compile(r'^(age\s*)?(not specified|unknown|unspecified)$', re.IGNORECASE)
-    specific = [p for p in extracted_parts if not nonspecific_pattern.fullmatch(p)]
-    nonspecific = [p for p in extracted_parts if nonspecific_pattern.fullmatch(p)]
+    # 7) Append default unit to bare numbers/ranges
+    if default_unit:
+        for i, p in enumerate(parts):
+            if re.match(r'^\d+(?:-\d+)?$', p):
+                parts[i] = f"{p} {default_unit}"
 
+    # 8) Drop weight entries
+    parts = [p for p in parts if not WEIGHT_PATTERN.search(p)]
+
+    # 9) Handle nonspecific labels (if no specifics, keep “unknown” etc.)
+    nonspec = re.compile(
+        r'^(age\s*)?(not specified|unknown|unspecified)$',
+        re.IGNORECASE
+    )
+    specific = [p for p in parts if not nonspec.fullmatch(p)]
+    use = specific if specific else [p for p in parts if nonspec.fullmatch(p)]
+
+    # 10) Dedupe in original order
     seen = set()
-    def unique_ordered(items):
-        for item in items:
-            if item not in seen:
-                seen.add(item)
-                yield item
+    final = []
+    for p in use:
+        if p not in seen:
+            seen.add(p)
+            final.append(p)
 
-    if not specific and nonspecific:
-        return ', '.join(unique_ordered(nonspecific))
-    elif not specific:
-        return "age not specified"
+    return ', '.join(final) if final else 'age not specified'
 
-    return ', '.join(unique_ordered(specific))
 
-def main():
-    model_file_name = "age_unsloth_meta_llama_3.1_8b.csv"
-    model_name_str = model_file_name.replace(".csv", "").replace("-", "_")
-    predictions_df = pd.read_csv(f"08_IE_full_text/model_predictions/age/{model_file_name}", names=['doc_id_unique','ent_text','age_prediction'])
-    predictions_combined = combine_age_predictions(predictions_df)
-    predictions_combined['age_prediction'] = predictions_combined['age_prediction'].apply(clean_not_age)
-    predictions_combined['age_prediction'] = predictions_combined['age_prediction'].str.replace(r'###.*', '', regex=True).str.strip()
-    predictions_combined['prediction_encoded_label'] = predictions_combined['age_prediction'].apply(clean_prediction)
-    save_path= f"./08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions.csv"
-    predictions_combined = predictions_combined.rename(columns={'doc_id_unique': 'PMID'})
-    predictions_combined.to_csv(save_path, index=False)
-    print(f"Processed {len(predictions_combined)} documents with age predictions. Saved to {save_path}")
-    
-if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    elapsed = end_time - start_time
-    mins, secs = divmod(elapsed, 60)
-    print(f"Done in {elapsed:.2f} seconds ({int(mins)}m {secs:.2f}s).")
+# ——— Main: chunked processing to avoid OOM —————————————————————————
+
+def main(input_csv: str, output_csv: str = None, chunksize: int = 100_000):
+    # Derive output path if not provided
+    if output_csv is None:
+        base, ext = os.path.splitext(input_csv)
+        output_csv = f"{base}_doc_level_predictions{ext}"
+
+    first = True
+    reader = pd.read_csv(
+        input_csv,
+        names=['doc_id', 'doc_id_unique', 'ent_text', 'age_prediction'],
+        usecols=[1, 3],
+        chunksize=chunksize,
+        iterator=True,
+        low_memory=True
+    )
+
+    for chunk in reader:
+        # 1) Combine
+        combined = combine_age_predictions(chunk)
+
+        # 2) Clean NOT AGE and strip trailing junk
+        combined['age_prediction'] = (
+            combined['age_prediction']
+              .apply(clean_not_age)
+              .str.replace(r'###.*', '', regex=True)
+              .str.strip()
+        )
+
+        # 3) Encode final labels
+        combined['prediction_encoded_label'] = \
+            combined['age_prediction'].apply(clean_prediction)
+
+        # 4) Rename & write
+        combined = combined.rename(columns={'doc_id_unique': 'PMID'})
+        combined.to_csv(
+            output_csv,
+            mode='w' if first else 'a',
+            index=False,
+            header=first
+        )
+        first = False
+
+        # 5) Free memory
+        del chunk, combined
+        gc.collect()
+
+    print(f"Processed and saved to {output_csv}")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Combine & clean age predictions (chunked).'
+    )
+    parser.add_argument(
+        '-i', '--input',
+        default='08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b.csv',
+        help='Raw predictions CSV'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        default=None,
+        help='Output CSV (defaults to input + _doc_level_predictions)'
+    )
+    parser.add_argument(
+        '-c', '--chunksize', type=int, default=100_000,
+        help='Rows per chunk'
+    )
+    args = parser.parse_args()
+    main(args.input, args.output, args.chunksize)
