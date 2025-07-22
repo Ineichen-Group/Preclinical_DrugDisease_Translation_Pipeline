@@ -13,6 +13,7 @@ from typing import Dict, List
 import os
 tqdm.pandas()  # enables progress_apply on DataFrames
 import argparse
+from regex_classifiers.species_classifier import SpeciesClassifier
 
 # Load SciSpacy model
 def load_nlp_model():
@@ -21,6 +22,7 @@ def load_nlp_model():
 # Common regex
 age_range_re = re.compile(r"\d+\s*[-–]\s*\d+", flags=re.IGNORECASE)
 week_re = re.compile(r"(\d+(?:\.\d+)?)\s*(weeks?|wks?)", flags=re.IGNORECASE)
+species_clf = SpeciesClassifier()
 
 # Compiled regex pattern for week-related age expressions
 age_keywords_pattern = r"""
@@ -43,6 +45,18 @@ def contains_week_age_expression(text: str) -> bool:
     Returns True if the text contains a week-related age expression, else False.
     """
     return bool(_age_week_regex.search(text))
+
+def contains_animal_expression(text: str) -> bool:
+    """
+    Returns True if the text contains an animal-related expression, else False.
+    """
+    _, found_labels = species_clf.classify(text)
+
+    if len(found_labels) == 1 and found_labels[0] == "species-other":
+        if not re.search(r'\banimals?\b', text, flags=re.IGNORECASE):
+            return False
+        
+    return True
 
 def extract_weekly_ages(df: pd.DataFrame,
                         label_col: str = 'prediction_encoded_label',
@@ -122,31 +136,38 @@ def clean_too_high(df_flat: pd.DataFrame) -> dict:
 
 def resolve_age_from_text(age_text_to_check: str, current_age: str, current_age_time: str) -> str:
     """
-    Detects if current_age (e.g., "68") is in the text. If not, tries to detect if it was misparsed from a range like "6–8".
-    Returns the matched form, or original fallback if not found.
+    Try to verify or correct a potentially misparsed age.
+    If the current age isn't found, detect common range forms like '5–8' or '5 to 8'.
     """
     current_age = str(current_age).strip()
     current_age_time = str(current_age_time).strip()
-    # 1. Try common valid forms for the age
-    patterns = [
-        rf'\b{current_age}\b(?!\s*[%\w])',                                # e.g. 56 but NOT 56%, 56001, 56n
-        rf'\b{current_age}\s*(weeks?|wks?)\b(?!\s*%)',                    # e.g. 56 weeks, not 56% weeks
-        rf'\b{current_age}[-\s]?(weeks?|wks?)[-\s]?old\b(?!\s*%)',        # e.g. 56-week-old
+
+    # Step 1: Look for exact age match (e.g., '58 months')
+    exact_patterns = [
+        rf'\b{current_age}\b(?!\s*[%\w])',
+        rf'\b{current_age}\s*(weeks?|wks?|months?|mos?)\b(?!\s*%)',
+        rf'\b{current_age}[-\s]?(weeks?|wks?|months?|mos?)[-\s]?old\b(?!\s*%)',
     ]
-    for pattern in patterns:
+    for pattern in exact_patterns:
         if re.search(pattern, age_text_to_check, flags=re.IGNORECASE):
             return f"{current_age} {current_age_time}"
 
-    # 2. Try to catch range forms like "6–8"
-    if len(current_age) == 2:
+    # Step 2: Try to recover from a split range like "5–8" → 58
+    if len(current_age) == 2 and current_age.isdigit():
         a, b = current_age[0], current_age[1]
-        range_pattern = rf'\b{a}[-–]{b}(?=\s|[-–]?(weeks?|wks?)\b)'
-        match = re.search(range_pattern, age_text_to_check)
-        if match:
-            return f"{a}-{b} {current_age_time}"
+        range_patterns = [
+            rf'\b{a}\s*(to|-|–|—)\s*{b}\s*(weeks?|wks?|months?|mos?)?\b',
+            rf'\b{a}-{b}\s*(weeks?|wks?|months?|mos?)?\b',
+            rf'\b{a}–{b}\s*(weeks?|wks?|months?|mos?)?\b',  # en-dash
+        ]
+        for pattern in range_patterns:
+            if re.search(pattern, age_text_to_check, flags=re.IGNORECASE):
+                return f"{a}-{b} {current_age_time}"
 
-    # 3. Fallback
+    # Step 3: Fallback
+    print(f"Resolved age from text: {current_age} {current_age_time}")
     return f"{current_age} {current_age_time}"
+
 
 # Stage 2: Clean via PMC
 EMAIL = "youremail@example.com"
@@ -237,7 +258,7 @@ def clean_via_pmc(df_flat, pmcid_file: str = None, map1=None,):
                 doc = nlp(p.get_text(strip=True))
                 for sent in doc.sents:
                     stxt = sent.text.strip()
-                    if contains_week_age_expression(stxt) and stxt not in seen:
+                    if contains_week_age_expression(stxt) and contains_animal_expression(stxt) and (stxt not in seen):
                         seen.add(stxt)
                         age_sentences.append(stxt)
                     
@@ -474,7 +495,7 @@ def get_normalized_age_from_publisher(pmid: str, current_age: str, current_age_t
         if is_numeric_metadata_line(sentence_text):
             continue
         #label, _ = age_clf.classify(sentence_text)
-        if contains_week_age_expression(sentence_text):
+        if contains_week_age_expression(sentence_text) and contains_animal_expression(sentence_text):
             age_sentences.append(sentence_text)
 
     # Step 6: Normalize and return
