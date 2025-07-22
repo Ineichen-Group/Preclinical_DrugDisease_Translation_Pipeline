@@ -2,7 +2,7 @@ import pandas as pd
 import ast
 import re
 from typing import Set
-
+import os
 
 def normalize_entity(text: str) -> str:
     """
@@ -74,8 +74,8 @@ def extract_unique_entities(pred_str: str) -> str:
     return ", ".join(sorted(unique_texts))
 
 
-def process_ner_entities(
-    input_file: str, ner_column: str, output_file: str = None
+def process_ner_entities_from_file(
+    input_file: str, ner_column: str
 ) -> pd.DataFrame:
     """
     Read a CSV, extract and normalize unique NER entities from a specified column,
@@ -84,7 +84,6 @@ def process_ner_entities(
     Parameters:
         input_file (str): Path to the CSV containing the raw NER predictions.
         ner_column (str): Column name in the CSV that holds the raw entity tuples.
-        output_file (str, optional): If provided, saves the processed DataFrame to this path.
 
     Returns:
         pd.DataFrame: Columns ['PMID', 'Source', 'prediction_encoded_label'] where
@@ -100,40 +99,41 @@ def process_ner_entities(
     # Keep only the needed columns
     result_df = df[["PMID", "Source", "prediction_encoded_label"]]
 
-    if output_file:
-        result_df.to_csv(output_file, index=False)
-
     return result_df
 
 
-if __name__ == "__main__":
-    # Process strains predictions
-    strain_input = (
-        "08_IE_full_text/model_predictions/strain/"
-        "test_annotated_BioLinkBERT-base_tuples_20250430MS_part_1.csv"
-    )
-    strain_output = (
-        "08_IE_full_text/model_predictions/strain/strain_predictions_MS.csv"
-    )
-    result_df = process_ner_entities(
-        input_file=strain_input,
-        ner_column="ner_prediction_BioLinkBERT-base_normalized",
-        output_file=strain_output,
-    )
-    print(f"Strain entities written to: {strain_output}")
+def process_directory(
+    input_dir: str, ner_column: str, output_dir: str
+) -> None:
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Process animal number predictions
-    animal_input = (
-        "08_IE_full_text/model_predictions/animals_nr/"
-        "test_annotated_BioLinkBERT-base_tuples_20250430MS_part_1.csv"
-    )
-    animal_output = (
-        "08_IE_full_text/model_predictions/animals_nr/"
-        "animals_nr_predictions_MS.csv"
-    )
-    result_df = process_ner_entities(
-        input_file=animal_input,
-        ner_column="ner_prediction_BioLinkBERT-base_normalized",
-        output_file=animal_output,
-    )
-    print(f"Animal entities written to: {animal_output}")
+    # Regex pattern for chunked filenames between 1 and 10
+    pattern = re.compile(r"chunk_([1-9]|10)\.csv$")
+
+    for filename in sorted(os.listdir(input_dir)):
+        match = pattern.search(filename)
+        if not match:
+            continue
+
+        chunk_number = match.group(1)
+        input_path = os.path.join(input_dir, filename)
+        output_filename = f"chunk_{chunk_number}.csv"
+        output_path = os.path.join(output_dir, output_filename)
+
+        print(f"Processing: {input_path}")
+        result_df = process_ner_entities_from_file(input_path, ner_column)
+
+        if result_df is not None:
+            result_df.to_csv(output_path, index=False)
+            print(f"Saved to: {output_path}")
+        else:
+            print(f"Skipping file due to errors: {input_path}")
+
+
+if __name__ == "__main__":
+    # Customize as needed
+    INPUT_DIR = "08_IE_full_text/model_predictions/strain/"
+    OUTPUT_DIR = "08_IE_full_text/model_predictions/strain/processed/"
+    NER_COLUMN = "ner_prediction_BioLinkBERT-base_normalized"
+
+    process_directory(INPUT_DIR, NER_COLUMN, OUTPUT_DIR)
