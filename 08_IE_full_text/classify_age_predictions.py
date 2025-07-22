@@ -9,7 +9,11 @@ def classify_age(age_in_weeks_str):
     :return: Age classification as 'young', 'adult', or 'aged'.
     """
 
-    age_in_weeks = float(age_in_weeks_str)
+    try:
+        age_in_weeks = float(age_in_weeks_str)
+    except (ValueError, TypeError):
+        print(f"Invalid age input: {age_in_weeks_str}")
+        return None  
 
     if age_in_weeks < 8:
         return "young"
@@ -62,7 +66,7 @@ def normalize_age_string(age: str) -> str:
 
     return age
 
-def process_age_predictions(pred_str):
+def process_age_predictions(pmid, pred_str):
     """
     Process age predictions from a DataFrame column.
     
@@ -71,7 +75,7 @@ def process_age_predictions(pred_str):
     """
     if not isinstance(pred_str, str):
         return "unknown"
-    
+    print(f"Processing PMID: {pmid}")
     pred_str = pred_str.strip().lower()
     #print(pred_str)
     if pred_str == "adult":
@@ -108,7 +112,9 @@ def process_age_predictions(pred_str):
         
         #age = age.replace("–", "-").replace("~", "-")  # Normalize dash characters
         age = normalize_age_string(age)
-    
+        if age.count(".") > 1:
+            print(f"Skipping malformed prediction with multiple dots: {pred}")
+            continue
         if time_base == "weeks":
             if "-" not in age:
                # Handle cases of wrongly formatted ages 
@@ -137,20 +143,20 @@ def process_age_predictions(pred_str):
                     age_classification = classify_age(age_in_weeks)
                     classifications.append(age_classification)
                     normalized_age.append(age_in_weeks + " weeks")
-    mapped_classificatinos = ", ".join(list(set(classifications)))
-    mapped_normalized_age = ", ".join(list(set(normalized_age)))
-    print(f"Mapped classifications: {mapped_classificatinos}")
-    return mapped_classificatinos, mapped_normalized_age
+    mapped_classifications = ", ".join(sorted({c for c in classifications if c is not None}))
+    mapped_normalized_age = ", ".join(sorted({c for c in normalized_age if c is not None}))
+    print(f"Mapped classifications: {mapped_classifications}")
+    return mapped_classifications, mapped_normalized_age
     
     
-def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", species_df=None):
+def classify_age_prediction(prediction_df, pred_col_species="prediction_encoded_label", pred_col_age="verified_prediction_encoded_label", species_df=None):
     """
     Classify age predictions based on sentence-level species annotations.
     Only classify if supporting sentences contain only 'mouse', 'rat', or species-other.
     If any non-allowed species (other than species-other) is present, prediction is skipped.
     
     :param prediction_df: DataFrame with age predictions
-    :param pred_col: Column with age prediction strings
+    :param pred_col_species: Column with prediction strings for species
     :param species_df: Sentence-level species annotations
     :return: DataFrame with age classifications
     """
@@ -160,7 +166,7 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
         species_df = species_df.copy()
 
         # Parse list-like strings to real lists
-        species_df['prediction_encoded_label'] = species_df['prediction_encoded_label'].apply(
+        species_df[pred_col_species] = species_df[pred_col_species].apply(
             lambda x: ast.literal_eval(x) if isinstance(x, str) else []
         )
 
@@ -168,7 +174,7 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
         species_df['sentence_uid'] = species_df['PMID'].astype(str) + '_' + species_df['sentence_id'].astype(str)
 
         # Build map: sentence_uid → species label list
-        sentence_species_map = dict(zip(species_df['sentence_uid'], species_df['prediction_encoded_label']))
+        sentence_species_map = dict(zip(species_df['sentence_uid'], species_df[pred_col_species]))
 
         def is_valid_species(supporting_ids_str):
             if pd.isna(supporting_ids_str):
@@ -194,7 +200,7 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
     # Apply classification only to valid rows
     def conditional_process(row):
         if row['is_mouse_or_rat_only']:
-            return pd.Series(process_age_predictions(row[pred_col]))
+            return pd.Series(process_age_predictions(row['PMID'], row[pred_col_age]))
         else:
             return pd.Series([None, None])
 
@@ -204,7 +210,7 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
 
     # Fill in unprocessed rows
     prediction_df['age_classification'] = prediction_df['age_classification'].fillna("not processed")
-    prediction_df['prediction_normalized_age'] = prediction_df['prediction_normalized_age'].fillna(prediction_df[pred_col])
+    prediction_df['prediction_normalized_age'] = prediction_df['prediction_normalized_age'].fillna(prediction_df[pred_col_age])
 
     prediction_df.drop(columns=["is_mouse_or_rat_only"], inplace=True)
 
@@ -213,17 +219,16 @@ def classify_age_prediction(prediction_df, pred_col="prediction_encoded_label", 
 
 def main():
     model_name_str = "age_unsloth_meta_llama_3.1_8b"
-    input_file_name = f"08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions_verified.csv"
+    input_file_name = f"./model_predictions/age/df_age_predictions_verified_20250722.csv"
     predictions_df = pd.read_csv(input_file_name)
+    print(f"Loaded {len(predictions_df)} predictions")
+    if "verified_prediction_encoded_label" not in predictions_df.columns:    
+        raise ValueError(f"Input file '{input_file_name}' must contain 'verified_prediction_encoded_label' column.")
     
-    col_to_process = "verified_prediction_encoded_label"
-    if col_to_process not in predictions_df.columns:    
-        raise ValueError(f"Input file '{input_file_name}' must contain '{col_to_process}' column.")
-    
-    species_df = pd.read_csv("08_IE_full_text/model_predictions/regex/species_predictions.csv")
-    predictions_df = classify_age_prediction(predictions_df, pred_col=col_to_process, species_df=species_df)
+    species_df = pd.read_csv("./model_predictions/regex/server/species_predictions.csv")
+    predictions_df = classify_age_prediction(predictions_df, pred_col_species="prediction_encoded_label", pred_col_age="verified_prediction_encoded_label", species_df=species_df)
 
-    save_path= f"./08_IE_full_text/model_predictions/age/{model_name_str}_doc_level_predictions_mapped.csv"
+    save_path= f"./model_predictions/age/{model_name_str}_doc_level_predictions_mapped_20250722.csv"
     predictions_df.to_csv(save_path, index=False)
     print(f"Processed {len(predictions_df)} documents with age predictions. Saved to {save_path}")
     
