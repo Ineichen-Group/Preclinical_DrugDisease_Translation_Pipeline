@@ -2,6 +2,8 @@ import pandas as pd
 from collections import Counter
 import ast
 from collections import defaultdict
+import argparse
+import os
 
 def document_level_strict_zero_fallback(df):
     """
@@ -33,12 +35,11 @@ def document_level_strict_zero_fallback(df):
 
 def process_species_exclude_singletons_pivoted(df):
     """
-    Process species predictions at the document level with updated logic:
-    - Exclude species mentioned only once in one sentence.
-    - Include 'species-other' only if no other species remain.
-    - Include supporting sentence IDs.
-    Process species predictions and return one row per PMID,
-    pivoting species into separate columns with frequency and sentence info.
+    Process species predictions at the document level with refined logic:
+    - Retain species that appear in multiple sentences.
+    - Allow species that appear in only one sentence *if they are the only species* (excluding species-other).
+    - Remove species-other if any other species exists.
+    - Include supporting sentence IDs and frequencies per species.
     """
     records = []
 
@@ -55,32 +56,43 @@ def process_species_exclude_singletons_pivoted(df):
             for label in labels:
                 species_sent_map.setdefault(label, set()).add(sent_id)
 
-        # Filter species that occur in more than one sentence
-        filtered_species = {
+        # Separate out species-other
+        species_other_sent_ids = species_sent_map.pop('species-other', set())
+
+        # Identify species with more than one sentence
+        multi_sent_species = {
             species: sent_ids
             for species, sent_ids in species_sent_map.items()
             if len(sent_ids) > 1
         }
 
-        # If no species left but species-other exists, keep it
-        if not filtered_species and 'species-other' in species_sent_map:
-            filtered_species = {
-                'species-other': species_sent_map['species-other']
-            }
+        # Handle singleton species
+        singleton_species = {
+            species: sent_ids
+            for species, sent_ids in species_sent_map.items()
+            if len(sent_ids) == 1
+        }
 
-        # If multiple species and species-other is included, remove species-other
-        elif 'species-other' in filtered_species and len(filtered_species) > 1:
-            del filtered_species['species-other']
+        # Include singleton species only if they are the *only* species mentioned
+        if not multi_sent_species and singleton_species:
+            valid_species = singleton_species
+        else:
+            valid_species = multi_sent_species
+
+        # If no species left and species-other was found, restore it
+        if not valid_species and species_other_sent_ids:
+            valid_species = {'species-other': species_other_sent_ids}
+
+        # If valid species include anything besides species-other, remove species-other
+        if 'species-other' in valid_species and len(valid_species) > 1:
+            del valid_species['species-other']
 
         row_data = {'PMID': pmid}
-
-        for species, sent_ids in filtered_species.items():
+        for species, sent_ids in valid_species.items():
             row_data[f"supporting_frequency_{species}"] = len(sent_ids)
             row_data[f"supporting_sent_id_{species}"] = ','.join(map(str, sorted(sent_ids)))
 
-        # Optionally include a list of species
-        row_data["prediction_encoded_label"] = ', '.join(sorted(filtered_species.keys()))
-
+        row_data['prediction_encoded_label'] = ', '.join(sorted(valid_species.keys()))
         records.append(row_data)
 
     return pd.DataFrame(records)
@@ -162,49 +174,59 @@ def process_assay_predictions(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+
 def main():
-    
-    # === CASES OF BINARY or HIERARCHICAL prediction to be selected per document ===
-    INPUT_FILES = ['08_IE_full_text/model_predictions/regex/blinding_predictions.csv',
-                  '08_IE_full_text/model_predictions/regex/randomization_predictions.csv',
-                  '08_IE_full_text/model_predictions/regex/welfare_predictions.csv',
-                  '08_IE_full_text/model_predictions/regex/sex_predictions.csv']
-    
-    for file in INPUT_FILES:
-        if not file.endswith('.csv'):
-            raise ValueError(f"Input file '{file}' must be a CSV.")
-        prediction_type = file.split('/')[-1].split('_')[0]
-        OUTPUT_FILE = f'08_IE_full_text/model_predictions/regex/{prediction_type}_doc_level_predictions.csv'
-        df = pd.read_csv(file)
+    parser = argparse.ArgumentParser(description="Process document-level regex predictions.")
+    parser.add_argument(
+        "--input_dir",
+        default="./model_predictions/regex",
+        help="Directory containing prediction CSVs (default: './model_predictions/regex')"
+    )
+    args = parser.parse_args()
+
+    input_dir = args.input_dir
+    print(f" Using input directory: {input_dir}")
+
+    # === CASES OF BINARY or HIERARCHICAL prediction ===
+    prediction_files = ['blinding_predictions.csv',
+                        'randomization_predictions.csv',
+                        'welfare_predictions.csv',
+                        'sex_predictions.csv']
+
+    for filename in prediction_files:
+        file_path = os.path.join(input_dir, filename)
+        if not file_path.endswith('.csv'):
+            raise ValueError(f"Input file '{file_path}' must be a CSV.")
+        prediction_type = filename.split('_')[0]
+        output_file = os.path.join(input_dir, f"{prediction_type}_doc_level_predictions.csv")
+        df = pd.read_csv(file_path)
         doc_df = document_level_strict_zero_fallback(df)
-        doc_df.to_csv(OUTPUT_FILE, index=False)
-        print(f"Document-level predictions saved to '{OUTPUT_FILE}'")
-        print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
-    
-    # === CASES when MULTIPLE categories can apply per document ===
-    # Process species predictions with refined logic
+        doc_df.to_csv(output_file, index=False)
+        print(f" Saved: {output_file}")
+        print(f" PMIDs processed: {len(doc_df['PMID'].unique())}")
+
+    # === MULTI-LABEL CASES ===
     print("Processing species predictions...")
-    species_file = '08_IE_full_text/model_predictions/regex/species_predictions.csv'
+    species_file = os.path.join(input_dir, 'species_predictions.csv')
     if not species_file.endswith('.csv'):
         raise ValueError(f"Species input file '{species_file}' must be a CSV.")
     species_df = pd.read_csv(species_file)
     species_doc_df = process_species_exclude_singletons_pivoted(species_df)
-    species_output_file = '08_IE_full_text/model_predictions/regex/species_doc_level_predictions.csv'
+    species_output_file = os.path.join(input_dir, 'species_doc_level_predictions.csv')
     species_doc_df.to_csv(species_output_file, index=False)
-    print(f"Species document-level predictions saved to '{species_output_file}'")
-    print(f"Processed and saved PMIDs: {len(doc_df['PMID'].unique())}")
-    
-    # Process assay predictions with refined logic
+    print(f" Saved: {species_output_file}")
+    print(f" PMIDs processed: {len(species_doc_df['PMID'].unique())}")
+
     print("Processing assay predictions...")
-    assay_file = '08_IE_full_text/model_predictions/regex/assay_predictions.csv'
+    assay_file = os.path.join(input_dir, 'assay_predictions.csv')
     if not assay_file.endswith('.csv'):
         raise ValueError(f"Assay input file '{assay_file}' must be a CSV.")
     assay_df = pd.read_csv(assay_file)
     assay_doc_df = process_assay_predictions(assay_df)
-    assay_output_file = '08_IE_full_text/model_predictions/regex/assay_doc_level_predictions.csv'
+    assay_output_file = os.path.join(input_dir, 'assay_doc_level_predictions.csv')
     assay_doc_df.to_csv(assay_output_file, index=False)
-    print(f"Assay document-level predictions saved to '{assay_output_file}'")
-    print(f"Processed and saved PMIDs: {len(assay_doc_df['PMID'].unique())}")
+    print(f" Saved: {assay_output_file}")
+    print(f" PMIDs processed: {len(assay_doc_df['PMID'].unique())}")
 
 
 if __name__ == '__main__':
