@@ -14,6 +14,7 @@ import os
 tqdm.pandas()  # enables progress_apply on DataFrames
 import argparse
 from regex_classifiers.species_classifier import SpeciesClassifier
+from num2words import num2words
 
 # Load SciSpacy model
 def load_nlp_model():
@@ -136,36 +137,60 @@ def clean_too_high(df_flat: pd.DataFrame) -> dict:
 
 def resolve_age_from_text(age_text_to_check: str, current_age: str, current_age_time: str) -> str:
     """
-    Try to verify or correct a potentially misparsed age.
-    If the current age isn't found, detect common range forms like '5–8' or '5 to 8'.
+    Attempts to validate or correct a predicted age based on context from biomedical text.
+
+    - If exact age/unit is found, returns it as is.
+    - If age looks like a misparsed range (e.g., '58' from '5–8'), tries to recover.
+    - If the context includes 'P56'-style notation, overrides the unit to 'days'.
+    - Otherwise, returns the original prediction.
     """
     current_age = str(current_age).strip()
-    current_age_time = str(current_age_time).strip()
+    current_age_time = str(current_age_time).strip().lower()
 
-    # Step 1: Look for exact age match (e.g., '58 months')
+    # Step 1: Look for exact age/unit
     exact_patterns = [
         rf'\b{current_age}\b(?!\s*[%\w])',
-        rf'\b{current_age}\s*(weeks?|wks?|months?|mos?)\b(?!\s*%)',
-        rf'\b{current_age}[-\s]?(weeks?|wks?|months?|mos?)[-\s]?old\b(?!\s*%)',
+        rf'\b{current_age}\s*(weeks?|wks?|months?|mos?|days?)\b(?!\s*%)',
+        rf'\b{current_age}[-\s]?(weeks?|wks?|months?|mos?|days?)[-\s]?old\b(?!\s*%)',
     ]
     for pattern in exact_patterns:
         if re.search(pattern, age_text_to_check, flags=re.IGNORECASE):
             return f"{current_age} {current_age_time}"
 
-    # Step 2: Try to recover from a split range like "5–8" → 58
+    # Step 2: Try to recover from a range like "5–8" misparsed as "58"
     if len(current_age) == 2 and current_age.isdigit():
         a, b = current_age[0], current_age[1]
         range_patterns = [
-            rf'\b{a}\s*(to|-|–|—)\s*{b}\s*(weeks?|wks?|months?|mos?)?\b',
-            rf'\b{a}-{b}\s*(weeks?|wks?|months?|mos?)?\b',
-            rf'\b{a}–{b}\s*(weeks?|wks?|months?|mos?)?\b',  # en-dash
+            rf'\b{a}\s*(to|-|–|—)\s*{b}\s*(weeks?|wks?|months?|mos?|days?)?\b',
+            rf'\b{a}-{b}\s*(weeks?|wks?|months?|mos?|days?)?\b',
+            rf'\b{a}–{b}\s*(weeks?|wks?|months?|mos?|days?)?\b',
         ]
         for pattern in range_patterns:
             if re.search(pattern, age_text_to_check, flags=re.IGNORECASE):
                 return f"{a}-{b} {current_age_time}"
 
-    # Step 3: Fallback
-    print(f"Resolved age from text: {current_age} {current_age_time}")
+    # Step 3: Override unit if context includes P56-style notation
+    p_matches = re.findall(r'\bP(\d{1,3})(?=[)\s,\.])', age_text_to_check)
+    if current_age in p_matches:
+        print(f"Overriding unit to 'days' based on context match with P{current_age}")
+        print(f"[DONE] Resolved age from text: {current_age} days")
+        return f"{current_age} days"
+
+    # Step 4: Salvage likely real age from high predicted age (e.g. Fifty seven-week-old → 7 weeks and not 57 weeks)
+    if current_age.isdigit():
+        for digit_char in current_age:
+            digit = int(digit_char)
+            if digit == 0:
+                continue  # skip zero
+            word = num2words(digit)  # e.g., "8" → "eight"
+            pattern = rf'\b{word}-week-old\b'
+            if re.search(pattern, age_text_to_check, flags=re.IGNORECASE):
+                print(f"Matched digit-derived age: {digit} from '{word}-week-old' in text")
+                print(f"[DONE] Resolved age from text: {digit} {current_age_time}")
+                return f"{digit} {current_age_time}"
+
+    # Step 6: Fallback
+    print(f"[DONE] Resolved age from text: {current_age} {current_age_time}")
     return f"{current_age} {current_age_time}"
 
 
