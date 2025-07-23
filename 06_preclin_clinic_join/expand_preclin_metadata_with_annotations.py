@@ -6,56 +6,57 @@ import os
 # === CONFIGURATION ===
 # Maps label group names to a tuple:
 # (path to CSV, {source column name: target column name}, parse_list flag)
-ANNOTATION_FILES = {
-    'animal_sex': (
-        "08_IE_full_text/model_predictions/regex/sex_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'animal_sex'},
-        False
-    ),
-    'animal_species': (
-        "08_IE_full_text/model_predictions/regex/species_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'animal_species'},
-        False
-    ),
-    'animal_age': (
-        "08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv",
-        {
-            'age_classification': 'animal_age_class',
-            'prediction_normalized_age': 'animal_age'
-        },
-        False
-    ),
-    'rigor_blinding': (
-        "08_IE_full_text/model_predictions/regex/blinding_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'rigor_blinding'},
-        False
-    ),
-    'rigor_randomization': (
-        "08_IE_full_text/model_predictions/regex/randomization_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'rigor_randomization'},
-        False
-    ),
-    'rigor_welfare': (
-        "08_IE_full_text/model_predictions/regex/welfare_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'rigor_welfare'},
-        False
-    ),
-    'assay_type': (
-        "08_IE_full_text/model_predictions/regex/assay_doc_level_predictions.csv",
-        {'prediction_encoded_label': 'assay_type'},
-        False
-    ),
-    'animal_strain': (
-        "08_IE_full_text/model_predictions/strain/strain_predictions_norm.csv",
-        {'prediction_encoded_label': 'animal_strain'},
-        False
-    ),
-    'animal_number': (
-        "08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv",
-        {'prediction_encoded_label': 'animal_number'},
-        False
-    )
-}
+def build_annotation_files(base_dir):
+    return {
+        'animal_sex': (
+            os.path.join(base_dir, "regex/server/sex_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'animal_sex'},
+            False
+        ),
+        'animal_species': (
+            os.path.join(base_dir, "regex/server/species_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'animal_species'},
+            False
+        ),
+        'animal_age': (
+            os.path.join(base_dir, "age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped_20250722.csv"),
+            {
+                'age_classification': 'animal_age_class',
+                'prediction_normalized_age': 'animal_age'
+            },
+            False
+        ),
+        'rigor_blinding': (
+            os.path.join(base_dir, "regex/server/blinding_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'rigor_blinding'},
+            False
+        ),
+        'rigor_randomization': (
+            os.path.join(base_dir, "regex/server/randomization_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'rigor_randomization'},
+            False
+        ),
+        'rigor_welfare': (
+            os.path.join(base_dir, "regex/server/welfare_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'rigor_welfare'},
+            False
+        ),
+        'assay_type': (
+            os.path.join(base_dir, "regex/server/assay_doc_level_predictions.csv"),
+            {'prediction_encoded_label': 'assay_type'},
+            False
+        ),
+        'animal_strain': (
+            os.path.join(base_dir, "strain/strain_predictions_normalized.csv"),
+            {'prediction_encoded_label': 'animal_strain'},
+            False
+        ),
+        'animal_number': (
+            os.path.join(base_dir, "animals_nr/animals_nr_predictions_numeric.csv"),
+            {'prediction_encoded_label': 'animal_number'},
+            False
+        )
+    }
 
 def load_annotation(file_path, col_rename_map, parse_list=False):
     """
@@ -118,22 +119,44 @@ def add_annotation(main_df, annot_df, new_cols, fulltext_pmids=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Join preclinical metadata with prediction annotations.")
-    parser.add_argument("--metadata", default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv", help="Path to preclinical metadata.")
-    parser.add_argument("--fulltext_pmids", default="07_full_text_retrieval/materials_methods/combined/combined_methods.csv", help="CSV with PMIDs that have full text.")
-    parser.add_argument("--output", default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped_annotated.csv", help="Path to save final output.")
+    parser.add_argument(
+        "--base_annotation_dir",
+        default="08_IE_full_text/model_predictions",
+        help="Base directory where annotation prediction CSVs are located."
+    )
+    parser.add_argument(
+        "--metadata",
+        default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv",
+        help="Path to preclinical metadata CSV."
+    )
+    parser.add_argument(
+        "--fulltext_pmids",
+        default="07_full_text_retrieval/materials_methods/combined/combined_methods.jsonl",
+        help="JSONL file with PMIDs and full text content (used to check full text availability)."
+    )
+    parser.add_argument(
+        "--output",
+        default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped_annotated.csv",
+        help="Path to save final annotated output CSV."
+    )
     args = parser.parse_args()
 
-    print(f"Reading metadata: {args.metadata}")
     metadata_df = pd.read_csv(args.metadata)
-    fulltext_pmids = pd.read_csv(args.fulltext_pmids)["PMID"].unique()
-    merged = metadata_df.copy()
+    print(f"Read metadata: {args.metadata} with {metadata_df.shape[0]} rows")
 
+    fulltext_df = pd.read_json(args.fulltext_pmids, lines=True)
+    fulltext_pmids = fulltext_df["PMID"].unique()
+    print(f"Read full-text PMIDs from JSONL: {args.fulltext_pmids} with {len(fulltext_pmids)} unique PMIDs")
+
+    merged = metadata_df.copy()
+    ANNOTATION_FILES = build_annotation_files(args.base_annotation_dir)
+    # Apply annotations
     for label_group, (file_path, col_rename_map, parse_list) in ANNOTATION_FILES.items():
         print(f"\nProcessing annotation group: {label_group}")
         annot_df = load_annotation(file_path, col_rename_map, parse_list=parse_list)
         merged = add_annotation(merged, annot_df, list(col_rename_map.values()), fulltext_pmids=fulltext_pmids)
 
-    # Summary of missing values
+    # Summary
     print("\nAnnotation summary:")
     for _, (_, col_map, _) in ANNOTATION_FILES.items():
         for label in col_map.values():
@@ -144,6 +167,7 @@ def main():
     print(f"\nSaving annotated dataset to: {args.output}")
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     merged.to_csv(args.output, index=False)
+
 
 if __name__ == "__main__":
     main()
