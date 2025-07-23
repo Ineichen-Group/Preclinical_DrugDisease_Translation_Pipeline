@@ -2,6 +2,7 @@ from text_to_num import text2num
 import re
 import pandas as pd
 from typing import Union, List, Optional
+import argparse
 
 
 def parse_fragment(fragment: str) -> Optional[float]:
@@ -107,30 +108,30 @@ def normalize_number(s: str) -> Union[float, List[float], str]:
     return s
 
 if __name__ == "__main__":
-    # 1) Read the CSV file containing the `prediction_encoded_label` column
-    input_path = "./08_IE_full_text/model_predictions/animals_nr/doc_animals_nr_predictions_clean.csv"
-    df = pd.read_csv(input_path)
+    parser = argparse.ArgumentParser(description="Normalize predicted labels into numeric values.")
+    parser.add_argument(
+        "--input_file",
+        default="./08_IE_full_text/model_predictions/animals_nr/doc_animals_nr_predictions_clean.csv",
+        help="Path to the input CSV file with prediction_encoded_label."
+    )
+    parser.add_argument(
+        "--output_file",
+        default="./08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv",
+        help="Path to save the output CSV with numeric predictions."
+    )
+    args = parser.parse_args()
 
-    # 2) Drop rows where `prediction_encoded_label` is NaN or empty
+    df = pd.read_csv(args.input_file)
     df_clean = df.dropna(subset=["prediction_encoded_label"]).copy()
     df_clean["prediction_encoded_label_raw"] = (
         df_clean["prediction_encoded_label"].astype(str).str.strip()
     )
     df_clean = df_clean[df_clean["prediction_encoded_label_raw"] != ""]
 
-    # 3) Apply normalization to each label
     df_clean["prediction_encoded_label"] = df_clean["prediction_encoded_label_raw"].apply(normalize_number)
 
-    # 4) (Optional) If you want to drop any rows where normalization returned a non‐float/list,
-    #    uncomment the following lines to keep only numeric results:
-    #    df_clean = df_clean[
-    #        df_clean["numeric_label"].apply(lambda x: isinstance(x, (float, list)))
-    #    ]
-
-    # 6) Save to a new CSV (will contain floats or lists in `numeric_label`)
-    output_path = "./08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv"
-    df_clean.to_csv(output_path, index=False)
-    print(f"\nSaved converted labels to: {output_path}")
+    df_clean.to_csv(args.output_file, index=False)
+    print(f"\n✅ Saved converted labels to: {args.output_file}")
 
 
 
