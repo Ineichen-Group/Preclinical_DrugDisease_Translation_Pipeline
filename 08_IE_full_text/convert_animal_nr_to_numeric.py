@@ -8,32 +8,47 @@ import argparse
 def parse_fragment(fragment: str) -> Optional[float]:
     """
     Attempt to parse a single "number fragment" (no commas) into a float.
+    
+    Cleans and standardizes strings like:
+    - 'n = 5' → 5
+    - 'thirty matured' → 30
+    - 'about 130' → 130
+    - 'one hundred and 62' → 162
+
     Returns:
-        • float if successful
-        • None if parsing fails
+        float if successful, otherwise None
     """
     frag = fragment.strip().lower()
 
-    # Remove common prefixes like 'n ='
-    frag = re.sub(r"^n\s*=\s*", "", frag)
+    # Remove common leading modifiers
+    frag = re.sub(r"^n\s*=\s*", "", frag)                     # n = 5 → 5
+    frag = re.sub(r"^(about|another|score|the|an|a)\s+", "", frag)  # about 40 → 40
+    frag = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", frag)       # 1st → 1
 
-    # Remove ordinal suffixes (e.g., "1st" -> "1")
-    frag = re.sub(r"(\d+)(st|nd|rd|th)\b", r"\1", frag)
+    # Remove trailing descriptors (noise words)
+    frag = re.sub(r"\s+(matured|new|same|ups|cb|cm|kg|g|days?|weeks?|animals?)\b", "", frag)
 
-    # Remove leading/trailing noise characters (non-alphanumeric)
+    # Fix compact cases like "of200", "5days", "one hundred and 62"
+    frag = re.sub(r"and", "", frag)
+    frag = re.sub(r"(\D)(\d)", r"\1 \2", frag)
+    frag = re.sub(r"(\d)(\D)", r"\1 \2", frag)
+
+    # Final cleanup: remove leading/trailing non-alphanumerics
     frag = re.sub(r"^[^0-9a-z]+", "", frag)
     frag = re.sub(r"[^0-9a-z]+$", "", frag)
+    frag = frag.strip()
+
     if not frag:
         return None
 
-    # If purely numeric (integer or decimal)
+    # Directly parse numerics
     if re.fullmatch(r"[+-]?\d+(\.\d+)?", frag):
         try:
             return float(frag)
         except ValueError:
             return None
 
-    # Attempt to parse spelled-out words
+    # Try parsing words to number
     try:
         return float(text2num(frag, "en"))
     except ValueError:
@@ -108,6 +123,7 @@ def normalize_number(s: str) -> Union[float, List[float], str]:
     return s
 
 if __name__ == "__main__":
+    
     parser = argparse.ArgumentParser(description="Normalize predicted labels into numeric values.")
     parser.add_argument(
         "--input_file",
@@ -131,9 +147,5 @@ if __name__ == "__main__":
     df_clean["prediction_encoded_label"] = df_clean["prediction_encoded_label_raw"].apply(normalize_number)
 
     df_clean.to_csv(args.output_file, index=False)
-    print(f"\n✅ Saved converted labels to: {args.output_file}")
-
-
-
-
+    print(f"\nSaved converted labels to: {args.output_file}")
 
