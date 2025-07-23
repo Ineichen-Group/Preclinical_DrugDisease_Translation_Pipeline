@@ -1,80 +1,149 @@
 import pandas as pd
 import ast
+import argparse
+import os
 
 # === CONFIGURATION ===
-
-# Annotation files and their settings (label name: (file path, parse_list))
+# Maps label group names to a tuple:
+# (path to CSV, {source column name: target column name}, parse_list flag)
 ANNOTATION_FILES = {
-    'animal_sex':    ("08_IE_full_text/model_predictions/regex/sex_doc_level_predictions.csv", False),
-    'animal_species':("08_IE_full_text/model_predictions/regex/species_doc_level_predictions.csv", False),
-    'animal_age':    ("08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv", False),
-    
-    'rigor_blinding':    ("08_IE_full_text/model_predictions/regex/blinding_doc_level_predictions.csv", False),
-    'rigor_randomization':    ("08_IE_full_text/model_predictions/regex/randomization_doc_level_predictions.csv", False),
-    'rigor_welfare':    ("08_IE_full_text/model_predictions/regex/welfare_doc_level_predictions.csv", False),
-    'assay_type':    ("08_IE_full_text/model_predictions/regex/assay_doc_level_predictions.csv", False),
-    
-    'animal_strain': ("08_IE_full_text/model_predictions/strain/strain_predictions_norm.csv", False),
-    'animal_number': ("08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv", False)
+    'animal_sex': (
+        "08_IE_full_text/model_predictions/regex/sex_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'animal_sex'},
+        False
+    ),
+    'animal_species': (
+        "08_IE_full_text/model_predictions/regex/species_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'animal_species'},
+        False
+    ),
+    'animal_age': (
+        "08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv",
+        {
+            'age_classification': 'animal_age_class',
+            'prediction_normalized_age': 'animal_age'
+        },
+        False
+    ),
+    'rigor_blinding': (
+        "08_IE_full_text/model_predictions/regex/blinding_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'rigor_blinding'},
+        False
+    ),
+    'rigor_randomization': (
+        "08_IE_full_text/model_predictions/regex/randomization_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'rigor_randomization'},
+        False
+    ),
+    'rigor_welfare': (
+        "08_IE_full_text/model_predictions/regex/welfare_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'rigor_welfare'},
+        False
+    ),
+    'assay_type': (
+        "08_IE_full_text/model_predictions/regex/assay_doc_level_predictions.csv",
+        {'prediction_encoded_label': 'assay_type'},
+        False
+    ),
+    'animal_strain': (
+        "08_IE_full_text/model_predictions/strain/strain_predictions_norm.csv",
+        {'prediction_encoded_label': 'animal_strain'},
+        False
+    ),
+    'animal_number': (
+        "08_IE_full_text/model_predictions/animals_nr/animals_nr_predictions_numeric.csv",
+        {'prediction_encoded_label': 'animal_number'},
+        False
+    )
 }
 
-# === FUNCTIONS ===
+def load_annotation(file_path, col_rename_map, parse_list=False):
+    """
+    Load a single annotation CSV file and select/rename columns as needed.
 
-def load_annotation(file_path, label_name, parse_list=False):
-    """Load annotation file and rename the prediction column."""
-    df = pd.read_csv(file_path)[['PMID', 'prediction_encoded_label']]
-    df = df.rename(columns={'prediction_encoded_label': label_name})
+    Args:
+        file_path (str): Path to the CSV file containing predictions.
+        col_rename_map (dict): Mapping from column names in the file to desired output names.
+        parse_list (bool): Whether to parse stringified lists into actual strings (e.g. ['a', 'b'] → 'a, b').
+
+    Returns:
+        pd.DataFrame: DataFrame with 'PMID' and renamed annotation columns.
+    """
+    print(f'Loading annotation from: {file_path}')
+    df = pd.read_csv(file_path)
+
+    # Select only required columns
+    required_cols = ['PMID'] + list(col_rename_map.keys())
+    if missing := (set(required_cols) - set(df.columns)):
+        raise ValueError(f"Missing columns in {file_path}: {missing}")
+    
+    df = df[required_cols].rename(columns=col_rename_map)
+
+    # Optionally convert stringified lists to comma-separated strings
     if parse_list:
-        df[label_name] = df[label_name].apply(
-            lambda x: ', '.join(ast.literal_eval(x)) if pd.notna(x) else x
-        )
+        for col in col_rename_map.values():
+            df[col] = df[col].apply(
+                lambda x: ', '.join(ast.literal_eval(x)) if pd.notna(x) else x
+            )
+
     return df
 
-def add_annotation(main_df, annot_df, label_name, fulltext_pmids=None):
-    """Merge annotation and label missing values based on full text availability."""
-    merged_df = main_df.merge(annot_df, on='PMID', how='left')
+def add_annotation(main_df, annot_df, new_cols, fulltext_pmids=None):
+    """
+    Merge one annotation DataFrame into the main metadata and fill missing labels.
 
-    if fulltext_pmids is not None:
-        is_missing = merged_df[label_name].isna()
-        has_full_text = merged_df['PMID'].isin(fulltext_pmids)
+    Args:
+        main_df (pd.DataFrame): Preclinical metadata (with 'PMID').
+        annot_df (pd.DataFrame): One annotation result table to merge.
+        new_cols (list): Names of the new columns added.
+        fulltext_pmids (iterable): Set of PMIDs with full-text available.
 
-        # Assign fallback labels
-        merged_df.loc[is_missing & has_full_text, label_name] = 'unlabeled'
-        merged_df.loc[is_missing & ~has_full_text, label_name] = 'no full text'
-    else:
-        merged_df[label_name] = merged_df[label_name].fillna('unlabeled')
+    Returns:
+        pd.DataFrame: Updated metadata with merged annotation columns.
+    """
+    merged = main_df.merge(annot_df, on='PMID', how='left')
 
-    return merged_df
+    for col in new_cols:
+        if fulltext_pmids is not None:
+            is_missing = merged[col].isna()
+            has_text = merged['PMID'].isin(fulltext_pmids)
 
-# === MAIN EXECUTION ===
+            # Assign fallback labels for missing values
+            merged.loc[is_missing & has_text, col] = 'unlabeled'
+            merged.loc[is_missing & ~has_text, col] = 'no full text'
+        else:
+            merged[col] = merged[col].fillna('unlabeled')
 
-# File paths
-PRECLIN_METADATA_FILE = "06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv"
-FULLTEXT_PMID_FILE = "07_full_text_retrieval/materials_methods/combined/combined_methods.csv"
-OUTPUT_FILE = "06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped_annotated.csv"
+    return merged
 
-# Load preclinical metadata
-preclin_metadata = pd.read_csv(PRECLIN_METADATA_FILE)
-print(f'preclin_metadata: {preclin_metadata.shape}')
+def main():
+    parser = argparse.ArgumentParser(description="Join preclinical metadata with prediction annotations.")
+    parser.add_argument("--metadata", default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped.csv", help="Path to preclinical metadata.")
+    parser.add_argument("--fulltext_pmids", default="07_full_text_retrieval/materials_methods/combined/combined_methods.csv", help="CSV with PMIDs that have full text.")
+    parser.add_argument("--output", default="06_preclin_clinic_join/data/joined_data/preclinical_metadata_mapped_annotated.csv", help="Path to save final output.")
+    args = parser.parse_args()
 
-# Load full text PMIDs
-fulltext_pmids = pd.read_csv(FULLTEXT_PMID_FILE)["PMID"].unique()
+    print(f"Reading metadata: {args.metadata}")
+    metadata_df = pd.read_csv(args.metadata)
+    fulltext_pmids = pd.read_csv(args.fulltext_pmids)["PMID"].unique()
+    merged = metadata_df.copy()
 
-# Merge all annotations
-merged = preclin_metadata.copy()
-for label, (file_path, parse_list) in ANNOTATION_FILES.items():
-    print(f'Loading annotation for {label} from {file_path}')
-    annot_df = load_annotation(file_path, label, parse_list=parse_list)
-    merged = add_annotation(merged, annot_df, label, fulltext_pmids=fulltext_pmids)
+    for label_group, (file_path, col_rename_map, parse_list) in ANNOTATION_FILES.items():
+        print(f"\nProcessing annotation group: {label_group}")
+        annot_df = load_annotation(file_path, col_rename_map, parse_list=parse_list)
+        merged = add_annotation(merged, annot_df, list(col_rename_map.values()), fulltext_pmids=fulltext_pmids)
 
-# Count and report missing labels
-for label in ANNOTATION_FILES.keys():
-    unlabeled_count = (merged[label] == 'unlabeled').sum()
-    no_fulltext_count = (merged[label] == 'no full text').sum()
-    print(f"Unlabeled {label} count: {unlabeled_count}")
-    print(f"No full text {label} count: {no_fulltext_count}")
-    print(f"Total {label} count: {merged[label].notna().sum()}")
+    # Summary of missing values
+    print("\nAnnotation summary:")
+    for _, (_, col_map, _) in ANNOTATION_FILES.items():
+        for label in col_map.values():
+            unlab = (merged[label] == 'unlabeled').sum()
+            noft = (merged[label] == 'no full text').sum()
+            print(f"  {label}: {len(merged) - unlab - noft} annotated | {unlab} unlabeled | {noft} no full text")
 
-# Save final annotated metadata
-print(f'Merged with annotations: {merged.shape}; saving to {OUTPUT_FILE}')
-merged.to_csv(OUTPUT_FILE, index=False)
+    print(f"\nSaving annotated dataset to: {args.output}")
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
+    merged.to_csv(args.output, index=False)
+
+if __name__ == "__main__":
+    main()
