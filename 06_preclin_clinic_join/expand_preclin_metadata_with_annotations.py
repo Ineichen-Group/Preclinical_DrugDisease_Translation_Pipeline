@@ -48,7 +48,7 @@ def build_annotation_files(base_dir):
         ),
         'animal_strain': (
             os.path.join(base_dir, "strain/strain_predictions_normalized.csv"),
-            {'prediction_encoded_label': 'animal_strain'},
+            {'animal_strain_norm': 'animal_strain'},
             False
         ),
         'animal_number': (
@@ -89,27 +89,48 @@ def load_annotation(file_path, col_rename_map, parse_list=False):
 
     return df
 
-def add_annotation(main_df, annot_df, new_cols, fulltext_pmids=None):
+def add_annotation(main_df, annot_df, new_cols, fulltext_pmids=None, label_group_name=""):
     """
     Merge one annotation DataFrame into the main metadata and fill missing labels.
+    Logs unmatched PMIDs between metadata and annotation files.
 
     Args:
         main_df (pd.DataFrame): Preclinical metadata (with 'PMID').
         annot_df (pd.DataFrame): One annotation result table to merge.
         new_cols (list): Names of the new columns added.
         fulltext_pmids (iterable): Set of PMIDs with full-text available.
+        label_group_name (str): Name of the annotation group (used for logging).
 
     Returns:
         pd.DataFrame: Updated metadata with merged annotation columns.
     """
+    # Ensure PMIDs are strings
+    main_df['PMID'] = main_df['PMID'].astype(str)
+    annot_df['PMID'] = annot_df['PMID'].astype(str)
+
+    if fulltext_pmids is not None:
+        fulltext_pmids = set(map(str, fulltext_pmids))
+
+    # Log unmatched PMIDs before merging
+    annot_only = set(annot_df['PMID']) - set(main_df['PMID'])
+    meta_only = set(main_df['PMID']) - set(annot_df['PMID'])
+
+    if annot_only:
+        log_path = f"server_logs/unmatched_PMIDs_in_{label_group_name}_annotation_NOT_in_metadata.txt"
+        with open(log_path, "w") as f:
+            f.writelines(f"{pmid}\n" for pmid in sorted(annot_only))
+        print(f"{len(annot_only)} PMIDs in {label_group_name} annotation not found in metadata. Logged to: {log_path}")
+
+    if meta_only:
+        print(f"{len(meta_only)} PMIDs in metadata not found in {label_group_name} annotation.")
+
+    # Merge and fill missing
     merged = main_df.merge(annot_df, on='PMID', how='left')
 
     for col in new_cols:
+        is_missing = merged[col].isna() | (merged[col].astype(str).str.strip() == "")
         if fulltext_pmids is not None:
-            is_missing = merged[col].isna()
             has_text = merged['PMID'].isin(fulltext_pmids)
-
-            # Assign fallback labels for missing values
             merged.loc[is_missing & has_text, col] = 'unlabeled'
             merged.loc[is_missing & ~has_text, col] = 'no full text'
         else:
@@ -154,15 +175,22 @@ def main():
     for label_group, (file_path, col_rename_map, parse_list) in ANNOTATION_FILES.items():
         print(f"\nProcessing annotation group: {label_group}")
         annot_df = load_annotation(file_path, col_rename_map, parse_list=parse_list)
-        merged = add_annotation(merged, annot_df, list(col_rename_map.values()), fulltext_pmids=fulltext_pmids)
+        merged = add_annotation(
+                    merged,
+                    annot_df,
+                    list(col_rename_map.values()),
+                    fulltext_pmids=fulltext_pmids,
+                    label_group_name=label_group  # pass label name for logging
+                )
 
     # Summary
-    print("\nAnnotation summary:")
+    print("\nAnnotation summary (Label Labeled |  Unlabeled |   No full text):")
     for _, (_, col_map, _) in ANNOTATION_FILES.items():
         for label in col_map.values():
             unlab = (merged[label] == 'unlabeled').sum()
             noft = (merged[label] == 'no full text').sum()
-            print(f"  {label}: {len(merged) - unlab - noft} annotated | {unlab} unlabeled | {noft} no full text")
+            labeled = len(merged) - unlab - noft
+            print(f"{label:<25} {labeled:>10} | {unlab:>10} | {noft:>15}")
 
     print(f"\nSaving annotated dataset to: {args.output}")
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
