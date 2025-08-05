@@ -4,6 +4,8 @@ from typing import List, Optional, Set, Union
 from cadmus_extractors.utils import load_wrong_pmids
 import csv
 import re
+import argparse
+import json
 
 def process_json_folder(
     folder: Path,
@@ -128,24 +130,64 @@ def combine_all(
 
     print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
 
-
 if __name__ == '__main__':
-    BASE_DIR = '07_full_text_retrieval/materials_methods'
-    SUBFOLDERS = ['html', 'xml', 'plain', 'bioc_json', 'pdf']
-    INNER_FOLDERS = [None, None, None, ['MS_methods', 'alzheimer_methods', 'parkinson_methods', 'epilepsy_methods', 'all_pmids_methods'], None]
+    parser = argparse.ArgumentParser(
+        description='Combine JSON article paragraphs into a single JSONL file.'
+    )
+    parser.add_argument('--base-dir', type=str,
+                        default='07_full_text_retrieval/materials_methods',
+                        help='Root directory containing subfolders')
+    parser.add_argument('--subfolders', type=str, nargs='+',
+                        default=['html', 'xml', 'plain', 'bioc_json', 'pdf'],
+                        help='List of subfolders to process')
+    parser.add_argument('--inner-folders', type=str, nargs='+',
+                        default=[
+                            'None', 'None', 'None', json.dumps([
+                                'MS_methods', 'alzheimer_methods',
+                                'parkinson_methods', 'epilepsy_methods',
+                                'all_pmids_methods'
+                            ]), 'None'
+                        ],
+                        help='JSON strings or comma-separated names for inner folders; use "None" for no inner folder')
+    parser.add_argument('--exclude-csvs', type=str, nargs='+',
+                        default=[
+                            '03_IE_ner/check_study_type/animal_studies_case_report_publications.csv',
+                            '03_IE_ner/check_study_type/animal_studies_review_publications.csv',
+                            '03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv',
+                            '03_IE_ner/check_study_type/animal_studies_randomized_controlled_trial_publications.csv'
+                        ],
+                        help='Paths to CSVs listing PMIDs to exclude')
+    parser.add_argument('--output-dir', type=str,
+                        help='Directory to save combined output; defaults to <base-dir>/combined')
 
-    wrong_csvs = [
-        Path("03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"),
-        Path("03_IE_ner/check_study_type/animal_studies_review_publications.csv"),
-        Path("03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"),
-    ]
-    EXCLUDE_PMIDS = load_wrong_pmids(wrong_csvs)
+    args = parser.parse_args()
 
-    OUTPUT = Path(BASE_DIR) / 'combined'
+    # Process inner_folders argument
+    inner = []
+    for item in args.inner_folders:
+        if item == 'None':
+            inner.append(None)
+        else:
+            try:
+                loaded = json.loads(item)
+                if isinstance(loaded, list):
+                    inner.append(loaded)
+                else:
+                    inner.append(str(loaded))
+            except json.JSONDecodeError:
+                inner.append(item.split(','))
+
+    # Load exclusion PMIDs
+    wrong_csv_paths = [Path(p) for p in args.exclude_csvs]
+    exclude_pmids = load_wrong_pmids(wrong_csv_paths)
+
+    # Determine output path
+    output_path = Path(args.output_dir) if args.output_dir else Path(args.base_dir) / 'combined'
+
     combine_all(
-        base_dir=BASE_DIR,
-        subfolders=SUBFOLDERS,
-        inner_folders=INNER_FOLDERS,
-        exclude_pmids=EXCLUDE_PMIDS,
-        output_path=OUTPUT
+        base_dir=args.base_dir,
+        subfolders=args.subfolders,
+        inner_folders=inner,
+        exclude_pmids=exclude_pmids,
+        output_path=output_path
     )
