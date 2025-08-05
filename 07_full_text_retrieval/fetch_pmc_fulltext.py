@@ -6,17 +6,6 @@ import glob
 import argparse
 import time 
 
-# ---------- CONFIG ----------
-EMAIL = "donevasimona@gmail.com"  # Your email for NCBI API access
-FORMAT = "json"  # Choose "json" or "xml"
-
-INPUT_DIR = "./06_preclin_clinic_join/data/preclinical_for_full_text"
-OUTPUT_BASE_DIR = "07_full_text_retrieval/pmc_fulltext"
-LOG_BASE_DIR = os.path.join(OUTPUT_BASE_DIR, "logs")
-
-os.makedirs(OUTPUT_BASE_DIR, exist_ok=True)
-os.makedirs(LOG_BASE_DIR, exist_ok=True)
-
 
 # ---------- UTILITIES ----------
 def is_pmc_open_access(pmcid):
@@ -164,17 +153,36 @@ def fetch_fulltexts(pmids, disease_name, save_dir, logs_dir, format="json"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process disease-based or individual input files.")
+
+    # Configurable parameters via command line
+    parser.add_argument("--email", type=str, default="donevasimona@gmail.com", help="Email for NCBI API access.")
+    parser.add_argument("--format", type=str, choices=["json", "xml"], default="json", help="Output format: json or xml.")
+    parser.add_argument("--input_dir", type=str, default="./06_preclin_clinic_join/data/preclinical_for_full_text", help="Directory containing input disease files.")
+    parser.add_argument("--output_dir", type=str, default="07_full_text_retrieval/pmc_fulltext", help="Base output directory for full text.")
+    
+    # Optional argument for individual processing
     parser.add_argument("--individual_file", type=str, help="Path to a non-disease-specific input file (CSV with PMIDs).")
-    parser.add_argument("--tag", type=str, default="all_pmids", help="Optional tag for directory naming when using individual file.")
+    parser.add_argument("--tag", type=str, default="preclin_all_remaining_pmids", help="Optional tag for directory naming when using individual file.")
+
     args = parser.parse_args()
 
+    # Use args values
+    EMAIL = args.email
+    FORMAT = args.format
+    INPUT_DIR = args.input_dir
+    OUTPUT_BASE_DIR = args.output_dir
+    LOG_BASE_DIR = os.path.join(OUTPUT_BASE_DIR, "logs")
+
+    os.makedirs(OUTPUT_BASE_DIR, exist_ok=True)
+    os.makedirs(LOG_BASE_DIR, exist_ok=True)
+    
     if args.individual_file:
         # === Individual input mode ===
         save_dir = os.path.join(OUTPUT_BASE_DIR, f"{args.tag}_fulltext")
         logs_dir = os.path.join(LOG_BASE_DIR, args.tag)
 
         try:
-            pmid_list = pd.read_csv(f"{INPUT_DIR}/{args.individual_file}")['PMID'].astype(str).tolist()
+            pmid_list = pd.read_csv(f"{args.individual_file}")['PMID'].astype(str).tolist()
             print(f"\n==============================")
             print(f"Processing individual input file with {len(pmid_list)} PMIDs")
             print(f"==============================")
