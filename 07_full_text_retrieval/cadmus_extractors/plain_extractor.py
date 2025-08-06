@@ -8,9 +8,10 @@ from pathlib import Path
 import json
 import pandas as pd
 from cadmus_extractors.utils import setup_logger, ensure_dir
+from typing import Tuple, Optional
 
 
-def can_handle(pmid: str, cadmus_base_dir: Path, metadata_row: pd.Series, logger: logging.Logger = None) -> bool:
+def can_handle(pmid: str, cadmus_base_dir: Path, metadata_row: pd.Series, logger: logging.Logger = None) -> Tuple[bool, Optional[str]]:
     """
     Return True if this row indicates a plain-text ZIP is available on disk.
     We expect metadata_row['plain'] == 1 and metadata_row['plain_parse_d']['file_path'] exists.

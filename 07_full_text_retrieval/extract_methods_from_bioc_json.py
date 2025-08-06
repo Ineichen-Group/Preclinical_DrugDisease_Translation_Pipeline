@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 import pandas as pd
 from typing import Tuple
+from cadmus_extractors.xml_extractor import (
+    extract_methods as xml_extract,
+)
 
 def extract_methods_subtitles_to_csv(
     json_path: Path,
@@ -165,55 +168,76 @@ def extract_methods_subtitles_to_json(
                 f.write(f"{pmid}\n")
         return False, 0
 
-def process_each_json_in_dir(
+def process_each_json_or_xml_in_dir(
     json_dir: Path,
     output_dir: Path,
     logs_dir: Path,
     disease: str
 ) -> None:
     """
-    Iterate over all JSON files in a directory, extracting methods sections to CSV.
+    Iterate over all JSON and XML files in a directory, extracting methods sections to JSON.
 
     Parameters:
-        json_dir (Path): Directory containing PMC JSON files (one per PMID).
-        output_dir (Path): Directory where per-PMID CSVs will be created.
+        json_dir (Path): Directory containing PMC JSON or XML files (one per PMID).
+        output_dir (Path): Directory where per-PMID outputs will be created.
         logs_dir (Path): Directory where summary and error logs go.
         disease (str): Label used when writing summary stats.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
 
-    success = 0
     total = 0
+    success = 0
     subtitle_counts = []
 
-    for json_file in json_dir.iterdir():
-        if not json_file.is_file() or json_file.suffix.lower() != ".json":
-            continue
+    json_total = 0
+    xml_total = 0
 
-        pmid = json_file.stem
-        total += 1
+    for file in json_dir.iterdir():
+        if file.is_file() and file.suffix.lower() == ".json":
+            pmid = file.stem
+            total += 1
+            json_total += 1
 
-        #output_csv = output_dir / f"methods_subtitles_{pmid}.csv"
-        output_json = output_dir / f"methods_subtitles_{pmid}.json"
+            output_json = output_dir / f"methods_subtitles_{pmid}.json"
 
-        saved, unique_subtitles = extract_methods_subtitles_to_json(
-            json_path=json_file,
-            output_json=output_json,
-            logs_dir=logs_dir,
-            disease=disease
-        )
+            saved, unique_subtitles = extract_methods_subtitles_to_json(
+                json_path=file,
+                output_json=output_json,
+                logs_dir=logs_dir,
+                disease=disease
+            )
 
-        if saved:
-            success += 1
-            subtitle_counts.append(unique_subtitles)
+            if saved:
+                success += 1
+                subtitle_counts.append(unique_subtitles)
+
+        elif file.is_file() and file.suffix.lower() == ".xml":
+            print(f"Processing XML file: {file.name}")
+            pmid = file.stem
+            total += 1
+            xml_total += 1
+
+            saved, unique_subtitles = xml_extract(
+                file_path=file,
+                pmid=pmid,
+                parse_info="",
+                output_dir=output_dir,
+                logs_dir=logs_dir
+            )
+
+            if saved:
+                success += 1
+                subtitle_counts.append(unique_subtitles)
 
     # Calculate summary statistics
     success_rate = (success / total) * 100 if total else 0.0
     avg_subtitles = (sum(subtitle_counts) / len(subtitle_counts)) if subtitle_counts else 0.0
 
     print(f"\nSummary Statistics ({disease}):")
-    print(f"  Total JSON files processed : {total}")
+    print(f"  Total files processed      : {total}")
+    print(f"    JSON files               : {json_total}")
+    print(f"    XML files                : {xml_total}")
     print(f"  Successful extractions     : {success}")
     print(f"  Success rate               : {success_rate:.2f}%")
     print(f"  Avg. unique subtitles      : {avg_subtitles:.2f}")
@@ -222,7 +246,9 @@ def process_each_json_in_dir(
     summary_path = logs_dir / f"summary_stats_pmc_methods_{disease}.txt"
     with summary_path.open("w") as f:
         f.write("Summary Statistics:\n")
-        f.write(f"Total JSON files processed : {total}\n")
+        f.write(f"Total files processed      : {total}\n")
+        f.write(f"  JSON files               : {json_total}\n")
+        f.write(f"  XML files                : {xml_total}\n")
         f.write(f"Successful extractions     : {success}\n")
         f.write(f"Success rate               : {success_rate:.2f}%\n")
         f.write(f"Avg. unique subtitles      : {avg_subtitles:.2f}\n")
@@ -233,14 +259,14 @@ def main() -> None:
     Example entry point to process PMC JSON files for a given disease.
     Change 'disease' to match the folder names for your JSON input.
     """
-    disease = "epilepsy"  # or "parkinson", "alzheimer" # all_pmids
+    disease = "preclin_disease_filtered_pmids"  # or "parkinson", "alzheimer" # all_pmids
     print(f"Processing '{disease}' methods extraction from PMC JSON files...")
 
     base_input = Path("07_full_text_retrieval/pmc_fulltext") / f"{disease}_fulltext"
     base_output = Path("07_full_text_retrieval/materials_methods/bioc_json") / f"{disease}_methods"
     logs_dir = Path("07_full_text_retrieval/materials_methods/logs/pmc")
 
-    process_each_json_in_dir(
+    process_each_json_or_xml_in_dir(
         json_dir=base_input,
         output_dir=base_output,
         logs_dir=logs_dir,

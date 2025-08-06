@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 import pandas as pd
 from typing import Tuple, Optional
+from ftfy import fix_text
 
 from section_detection_rules import (
     is_start_of_materials_methods,
@@ -94,6 +95,15 @@ def extract_methods(
         except Exception as e:
             logger.error(f"[XML][ERROR] JATS-like extraction failed for PMID {pmid}: {e}")
             paragraphs = None
+            
+    # If returns no paragraphs, attempt PMC-like
+    if not paragraphs:
+        logger.info(f"[XML] Falling back to PMC-like extractor for PMID {pmid}")
+        try:
+            paragraphs = _extract_from_pmc_xml(zip_path, pmid)
+        except Exception as e:
+            logger.error(f"[XML][ERROR] PMC-like extraction failed for PMID {pmid}: {e}")
+            paragraphs = None
 
     if not paragraphs:
         # Nothing found → log and return failure
@@ -126,137 +136,248 @@ def _append_to_log(log_path: Path, text: str) -> None:
         f.write(f"{text}\n")
 
 
-def _extract_materials_methods_from_xml(zip_path: str, doc_id: str):
+def _extract_materials_methods_from_xml(file_path: str, doc_id: str):
     """
     Wiley-like XML extraction:
+    Supports both:
+      - ZIP archives containing an XML file
+      - Direct XML files
+
+    Logic:
     - Detect namespace (if present).
     - Traverse <section> elements in order.
     - When a <section>'s <title> matches start‐of‐methods, set in_methods = True.
     - Collect all <p> under that section/subsections until an end-of-methods title is encountered.
     """
-    with zipfile.ZipFile(zip_path, "r") as z:
-        xml_files = [f for f in z.namelist() if f.lower().endswith(".xml")]
-        if not xml_files:
-            return None
+    def parse_xml(root):
+        # Detect namespace
+        m = re.match(r"\{(.*)\}", root.tag)
+        ns_uri = m.group(1) if m else ""
+        has_ns = bool(ns_uri)
+        ns = {"ns": ns_uri} if has_ns else {}
 
-        xml_filename = xml_files[0]
-        with z.open(xml_filename) as xml_file:
-            tree = ET.parse(TextIOWrapper(xml_file, "utf-8"))
-            root = tree.getroot()
+        section_path = ".//ns:section" if has_ns else ".//section"
+        title_tag = "ns:title" if has_ns else "title"
+        p_tag = "ns:p" if has_ns else "p"
 
-            # Detect namespace
-            m = re.match(r"\{(.*)\}", root.tag)
-            ns_uri = m.group(1) if m else ""
-            has_ns = bool(ns_uri)
-            ns = {"ns": ns_uri} if has_ns else {}
+        results = []
+        in_methods = False
+        current_subtitle = "Materials and Methods"
 
-            section_path = ".//ns:section" if has_ns else ".//section"
-            title_tag = "ns:title" if has_ns else "title"
-            p_tag = "ns:p" if has_ns else "p"
+        for section in root.findall(section_path, ns):
+            title_elem = section.find(title_tag, ns) if has_ns else section.find(title_tag)
+            title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
 
-            results = []
-            in_methods = False
-            current_subtitle = "Materials and Methods"
+            if not in_methods and is_start_of_materials_methods(title_text):
+                in_methods = True
+                current_subtitle = title_text or current_subtitle
+            elif in_methods and is_end_of_materials_methods(title_text):
+                break
+            elif in_methods:
+                current_subtitle = title_text or current_subtitle
 
-            for section in root.findall(section_path, ns):
-                # Get section title
-                title_elem = section.find(title_tag, ns) if has_ns else section.find(title_tag)
-                title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
-
-                if not in_methods and is_start_of_materials_methods(title_text):
-                    in_methods = True
-                    current_subtitle = title_text or current_subtitle
-                elif in_methods and is_end_of_materials_methods(title_text):
-                    break
-                elif in_methods:
-                    current_subtitle = title_text or current_subtitle
-
-                if in_methods:
-                    for para in section.findall(p_tag, ns):
-                        text = "".join(para.itertext()).strip()
-                        if text:
-                            results.append({
-                                "doc_id": doc_id,
-                                "subtitle": current_subtitle,
-                                "paragraph": text
-                            })
-
-            return results if results else None
-
-
-def _extract_from_jats_like_article(zip_path: str, doc_id: str):
-    """
-    JATS-like XML extraction:
-    - Detect namespace.
-    - Find <body> … then recursively search for the first <sec> whose <title> matches start‐of‐methods.
-    - parse_sec(sec, current_subtitle) collects all <p> until an end-of-methods is found, then stops.
-    """
-    with zipfile.ZipFile(zip_path, "r") as z:
-        xml_files = [f for f in z.namelist() if f.lower().endswith(".xml")]
-        if not xml_files:
-            return None
-
-        xml_filename = xml_files[0]
-        with z.open(xml_filename) as xml_file:
-            tree = ET.parse(TextIOWrapper(xml_file, "utf-8"))
-            root = tree.getroot()
-
-            # Detect namespace
-            m = re.match(r"\{(.*)\}", root.tag)
-            ns_uri = m.group(1) if m else ""
-            ns = {"ns": ns_uri} if ns_uri else {}
-            use_ns = bool(ns_uri)
-
-            def tag(name: str) -> str:
-                return f"ns:{name}" if use_ns else name
-
-            # Locate <body>
-            body = root.find(f".//{tag('body')}", ns)
-            if body is None:
-                return None
-
-            results = []
-
-            def parse_sec(sec, current_subtitle):
-                # Get section title
-                title_elem = sec.find(tag("title"), ns)
-                title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
-
-                # If this title is an end-of-methods marker, stop recursion
-                if is_end_of_materials_methods(title_text):
-                    return False
-
-                subtitle = title_text or current_subtitle
-
-                # Collect paragraphs
-                for p in sec.findall(tag("p"), ns):
-                    text = "".join(p.itertext()).strip()
+            if in_methods:
+                for para in section.findall(p_tag, ns):
+                    text = "".join(para.itertext()).strip()
                     if text:
                         results.append({
                             "doc_id": doc_id,
-                            "subtitle": subtitle,
+                            "subtitle": current_subtitle,
                             "paragraph": text
                         })
 
-                # Recurse into nested <sec>
-                for child_sec in sec.findall(tag("sec"), ns):
-                    if parse_sec(child_sec, subtitle) is False:
-                        return False
+        return results if results else None
 
-                return True
+    # Handle .zip or .xml
+    if str(file_path).lower().endswith(".zip"):
+        with zipfile.ZipFile(file_path, "r") as z:
+            xml_files = [f for f in z.namelist() if f.lower().endswith(".xml")]
+            if not xml_files:
+                return None
+            with z.open(xml_files[0]) as xml_file:
+                tree = ET.parse(TextIOWrapper(xml_file, "utf-8"))
+                return parse_xml(tree.getroot())
+    else:
+        # Plain XML file
+        with open(file_path, "r", encoding="utf-8") as xml_file:
+            tree = ET.parse(xml_file)
+            return parse_xml(tree.getroot())
 
-            def find_first_methods_sec(node):
-                for sec in node.findall(tag("sec"), ns):
-                    title_elem = sec.find(tag("title"), ns)
-                    title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
 
-                    if is_start_of_materials_methods(title_text):
-                        return parse_sec(sec, title_text)
+def _extract_from_jats_like_article(file_path: str, doc_id: str):
+    """
+    JATS-like XML extraction:
+    - Supports both .zip and .xml input files.
+    - Finds <body>, then recursively searches for the first <sec> whose <title> matches start-of-methods.
+    - parse_sec(sec, current_subtitle) collects all <p> until an end-of-methods title is found, then stops.
+    """
 
-                    if find_first_methods_sec(sec):
-                        return True
+    def parse_jats_article(root):
+        # Detect namespace
+        m = re.match(r"\{(.*)\}", root.tag)
+        ns_uri = m.group(1) if m else ""
+        ns = {"ns": ns_uri} if ns_uri else {}
+        use_ns = bool(ns_uri)
 
+        def tag(name: str) -> str:
+            return f"ns:{name}" if use_ns else name
+
+        # Locate <body>
+        body = root.find(f".//{tag('body')}", ns)
+        if body is None:
+            return None
+
+        results = []
+
+        def parse_sec(sec, current_subtitle):
+            title_elem = sec.find(tag("title"), ns)
+            title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+
+            if is_end_of_materials_methods(title_text):
                 return False
 
-            found = find_first_methods_sec(body)
-            return results if found and results else None
+            subtitle = title_text or current_subtitle
+
+            for p in sec.findall(tag("p"), ns):
+                text = "".join(p.itertext()).strip()
+                if text:
+                    results.append({
+                        "doc_id": doc_id,
+                        "subtitle": subtitle,
+                        "paragraph": text
+                    })
+
+            for child_sec in sec.findall(tag("sec"), ns):
+                if parse_sec(child_sec, subtitle) is False:
+                    return False
+
+            return True
+
+        def find_first_methods_sec(node):
+            for sec in node.findall(tag("sec"), ns):
+                title_elem = sec.find(tag("title"), ns)
+                title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+
+                if is_start_of_materials_methods(title_text):
+                    return parse_sec(sec, title_text)
+
+                if find_first_methods_sec(sec):
+                    return True
+
+            return False
+
+        found = find_first_methods_sec(body)
+        return results if found and results else None
+
+    # Detect and load from ZIP or XML file
+    if str(file_path).lower().endswith(".zip"):
+        with zipfile.ZipFile(file_path, "r") as z:
+            xml_files = [f for f in z.namelist() if f.lower().endswith(".xml")]
+            if not xml_files:
+                return None
+            with z.open(xml_files[0]) as xml_file:
+                tree = ET.parse(TextIOWrapper(xml_file, "utf-8"))
+                return parse_jats_article(tree.getroot())
+    else:
+        with open(file_path, "r", encoding="utf-8") as xml_file:
+            tree = ET.parse(xml_file)
+            return parse_jats_article(tree.getroot())
+
+def _extract_from_pmc_xml(file_path: str, doc_id: str):
+    """
+    PMC-style (OAI-PMH-wrapped) XML extraction:
+    - Supports both raw .xml files and ZIP archives.
+    - Finds <article> inside nested OAI-PMH structure.
+    - Locates <body> and extracts Materials & Methods from nested <sec> tags.
+    """
+
+    def parse_pmc_article(root):
+        # Find the <article> element, regardless of nesting
+        article_elem = next((el for el in root.iter() if el.tag.endswith("}article")), None)
+        if article_elem is None:
+            return None
+        root = article_elem
+
+        # Detect namespace
+        m = re.match(r"\{(.*)\}", root.tag)
+        ns_uri = m.group(1) if m else ""
+        ns = {"ns": ns_uri} if ns_uri else {}
+        use_ns = bool(ns_uri)
+
+        def tag(name: str) -> str:
+            return f"ns:{name}" if use_ns else name
+
+        # Find <body>
+        body = root.find(f".//{tag('body')}", ns)
+        if body is None:
+            return None
+
+        results = []
+
+        def parse_sec(sec, current_subtitle):
+            title_elem = sec.find(tag("title"), ns)
+            title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+            title_text = fix_text(title_text)
+
+            if is_end_of_materials_methods(title_text):
+                return False
+
+            subtitle = title_text or current_subtitle
+
+            for p in sec.findall(tag("p"), ns):
+                text = "".join(p.itertext()).strip()
+                text = fix_text(text)  
+                if text:
+                    results.append({
+                        "doc_id": doc_id,
+                        "subtitle": subtitle,
+                        "paragraph": text
+                    })
+
+            for child_sec in sec.findall(tag("sec"), ns):
+                if parse_sec(child_sec, subtitle) is False:
+                    return False
+
+            return True
+
+        def find_first_methods_sec(node):
+            for sec in node.findall(tag("sec"), ns):
+                title_elem = sec.find(tag("title"), ns)
+                title_text = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
+                title_text = fix_text(title_text)
+
+                if is_start_of_materials_methods(title_text):
+                    return parse_sec(sec, title_text)
+
+                if find_first_methods_sec(sec):
+                    return True
+
+            return False
+
+        found = find_first_methods_sec(body)
+        return results if found and results else None
+
+    # File handling: support .zip and .xml
+    file_path_str = str(file_path)  # Ensure we can use string methods
+    if file_path_str.lower().endswith(".zip"):
+        with zipfile.ZipFile(file_path_str, "r") as z:
+            xml_files = [f for f in z.namelist() if f.lower().endswith(".xml")]
+            if not xml_files:
+                return None
+            with z.open(xml_files[0]) as xml_file:
+                raw_bytes = xml_file.read()
+
+                encoding_match = re.search(rb'encoding=["\']([^"\']+)["\']', raw_bytes[:200])
+                encoding = encoding_match.group(1).decode('ascii') if encoding_match else 'utf-8'
+
+                tree = ET.ElementTree(ET.fromstring(raw_bytes.decode(encoding)))
+                return parse_pmc_article(tree.getroot())
+    else:
+        with open(file_path_str, "rb") as xml_file:
+            raw_bytes = xml_file.read()
+
+            encoding_match = re.search(rb'encoding=["\']([^"\']+)["\']', raw_bytes[:200])
+            encoding = encoding_match.group(1).decode('ascii') if encoding_match else 'utf-8'
+
+            tree = ET.ElementTree(ET.fromstring(raw_bytes.decode(encoding)))
+            return parse_pmc_article(tree.getroot())

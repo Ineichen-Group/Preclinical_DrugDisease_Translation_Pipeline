@@ -2,6 +2,7 @@ import re
 
 MATERIALS_METHODS_TITLES = [
     r"materials\s*(and|&)?\s*methods",           # matches "Materials and Methods"
+    r"methods\s*(and|&)?\s*materials",           # matches "Methods and Materials"
     r"materials",                                # matches just "Materials"
     r"methodology",                              # matches "Methodology"
     r"experimental\s+(procedure[s]?|section[s]?)",  # matches "Experimental Procedures" or "Experimental Sections"
@@ -9,17 +10,16 @@ MATERIALS_METHODS_TITLES = [
 ]
 
 STOP_SECTION_TITLES = [
-    "RESULTS",
-    "DISCUSSION",
-    "CONCLUSION",
-    "ACKNOWLEDGMENTS",
-    "ACKNOWLEDGEMENT",
-    "REFERENCES",
-    "BIBLIOGRAPHY",
-    "SUPPLEMENTARY MATERIALS",
-    "SUPPORTING INFORMATION",
+    "results",
+    "discussion",
+    "conclusion",
+    "acknowledgments",
+    "acknowledgement",
+    "references",
+    "bibliography",
+    "supplementary materials",
+    "supporting information",
 ]
-
 
 def is_start_of_materials_methods(text):
     text = text.strip().lower()
@@ -28,7 +28,6 @@ def is_start_of_materials_methods(text):
             return True
     return False
 
-
 def is_end_of_materials_methods(text):
-    upper_text = text.strip().upper()
-    return any(keyword in upper_text for keyword in STOP_SECTION_TITLES)
+    lower_text = text.strip().lower()
+    return any(keyword in lower_text for keyword in STOP_SECTION_TITLES)
