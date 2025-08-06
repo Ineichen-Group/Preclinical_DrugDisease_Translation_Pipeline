@@ -1,0 +1,51 @@
+# envs/papermage.yaml
+channels:
+  - conda-forge
+  - pytorch
+
+dependencies:
+  - python=3.11
+  - pip
+  # Core scientific / NLP
+  - numpy
+  - pandas
+  - scikit-learn
+  - scipy
+  - regex
+  - nltk
+  - spacy
+  - sentencepiece          # useful for some HF models
+  - pysbd                  # papermage sentence splitter
+  - beautifulsoup4         # bs4
+  - requests
+  - rapidfuzz
+  - pyyaml
+  - networkx
+  - tqdm
+
+  # HF + Torch (CPU)
+  - tokenizers=0.13.3
+  - transformers=4.31.*
+  - pytorch=2.5.*
+  - torchvision=0.20.*
+  - torchaudio=2.5.*
+
+  # CV / PDF
+  - opencv                 # headless build via conda-forge
+  - pycocotools            # effdet sometimes expects it
+  - pdfplumber
+  - poppler
+  - poppler-data
+
+  # Pip-only bits
+  - pip:
+      - papermage==0.20.0
+      - smashed==0.1.10          
+      - vila==0.5.0              # papermage companion
+      - layoutparser==0.3.4
+      - effdet==0.3.0
+      - grobid-client-python==0.0.5
+      - pdf2image==1.17.0
+      - text2num                 # provides `from text_to_num import text2num`
+      - num2words
+      - ftfy

@@ -1,0 +1,24 @@
+# config.yaml
+cadmus_dir: "/shares/animalwelfare.crs.uzh/cadmus/cadmus_pd/output"
+wrong_csvs:
+  - "../03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
+  - "../03_IE_ner/check_study_type/animal_studies_review_publications.csv"
+  - "../03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
+output_base: "materials_methods/extracted"
+logs_base: "logs"
+
+combine:
+  base_dir: "materials_methods/extracted"
+  subfolders: ["html","xml","plain","bioc_json","pdf"]
+  inner_folders:
+    - null
+    - null
+    - null
+    - "MS_methods,alzheimer_methods,parkinson_methods"
+    - null
+  output_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
+
+sentence_extraction:
+  input_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
+  output_jsonl: "materials_methods/combined/combined_methods_sentences.jsonl"
+  text_col: "Text"

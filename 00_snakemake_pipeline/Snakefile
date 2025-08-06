@@ -1,0 +1,121 @@
+configfile: "config.yaml"
+
+import os, json, shlex
+
+# Snakemake automatically loads config.yaml into `config`
+cfg = config
+
+# ---------- helpers ----------
+def join_quoted(items):
+    """Join a list into a shell-safe string with each element quoted."""
+    items = items or []
+    return " ".join(shlex.quote(str(x)) for x in items)
+
+def opt_flag(flag, value):
+    """Return `--flag value` only if value is non-empty."""
+    return f"{flag} {value}" if value else ""
+
+# Pre-compute strings for shell commands (quoted safely)
+WRONG_CSVS_STR      = join_quoted(cfg.get("wrong_csvs", []))
+COMBINE_SUBFOLDERS  = join_quoted(cfg["combine"].get("subfolders", []))
+COMBINE_EXCLUDES    = join_quoted(cfg.get("wrong_csvs", []))
+COMBINE_INNERS_JSON = json.dumps(cfg["combine"].get("inner_folders", []))  # JSON uses double quotes -> safe to single-quote in shell
+
+# ---------- workflow ----------
+rule all:
+    input:
+        cfg["combine"]["output_jsonl"],
+        cfg["sentence_extraction"]["output_jsonl"]
+
+rule extract_methods:
+    output:
+        directory(cfg["output_base"])
+    params:
+        cadmus_dir = lambda wc: shlex.quote(cfg["cadmus_dir"]),
+        wrong_csvs = lambda wc: opt_flag("--wrong-csvs", WRONG_CSVS_STR),
+        output_base = lambda wc: shlex.quote(cfg["output_base"]),
+        logs_base   = lambda wc: shlex.quote(cfg["logs_base"])
+    log:
+        out=os.path.join(cfg["logs_base"], "extract_methods_out.log"),
+        err=os.path.join(cfg["logs_base"], "extract_methods_err.log")
+    threads: 4
+    resources:
+        cpus_per_task=4,
+        mem_mb=18000,
+        runtime="2h"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        # Prepare logs directory
+        mkdir -p {params.logs_base}
+
+        # Run extraction and redirect outputs
+        python ../07_full_text_retrieval/extract_methods_from_cadmus.py \
+          --cadmus-dir {params.cadmus_dir} \
+          {params.wrong_csvs} \
+          --output-base {params.output_base} \
+          --logs-base {params.logs_base} \
+        > {log.out} 2> {log.err}
+        """
+
+rule combine_methods:
+    input:
+        cfg["output_base"]
+    output:
+        cfg["combine"]["output_jsonl"]
+    params:
+        base_dir   = lambda wc: shlex.quote(cfg["combine"]["base_dir"]),
+        subfolders = lambda wc: opt_flag("--subfolders", COMBINE_SUBFOLDERS),
+        inner_folders = lambda wc: " ".join(
+            i if isinstance(i, str) else "None"
+            for i in cfg["combine"]["inner_folders"]
+        ),
+        excludes   = lambda wc: opt_flag("--exclude-csvs", COMBINE_EXCLUDES),
+        output_file = lambda wc: shlex.quote(cfg["combine"]["output_jsonl"])
+    log:
+        out=os.path.join("logs", "combine_methods_out.log"),
+        err=os.path.join("logs", "combine_methods_err.log")
+    threads: 2
+    resources:
+        cpus_per_task=2,
+        mem_mb=4000,
+        runtime="1h"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p logs
+
+        # Run combine and redirect outputs
+        python ../07_full_text_retrieval/combine_parsed_methods.py \
+          --base-dir {params.base_dir} \
+          {params.subfolders} \
+          {params.inner_folders} \
+          {params.excludes} \
+          --output-file {params.output_file} \
+        > {log.out} 2> {log.err}
+        """
+
+rule extract_sentences:
+    input:
+        cfg["sentence_extraction"]["input_jsonl"]
+    output:
+        cfg["sentence_extraction"]["output_jsonl"]
+    params:
+        text_col = cfg["sentence_extraction"]["text_col"]
+    log:
+        out = "logs/extract_sentences.out",
+        err = "logs/extract_sentences.err"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        """
+        python ../07_full_text_retrieval/extract_sentences.py \
+            --input_jsonl {input} \
+            --text_col {params.text_col} \
+            --output_jsonl {output} \
+            > {log.out} 2> {log.err}
+        """
