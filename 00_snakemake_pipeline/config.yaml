@@ -4,19 +4,25 @@ wrong_csvs:
   - "../03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_review_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
-output_base: "materials_methods/extracted"
+output_base: "materials_methods/extracted/cadmus"
 logs_base: "logs"
+
+extract_pmc_methods:
+  input_base: "../07_full_text_retrieval/pmc_fulltext"
+  output_base: "materials_methods/extracted/bioc_json"
+  logs_dir: "logs/pmc"
 
 combine:
   base_dir: "materials_methods/extracted"
-  subfolders: ["html","xml","plain","bioc_json","pdf"]
+  subfolders:
+    - cadmus
+    - bioc_json
   inner_folders:
-    - null
-    - null
-    - null
-    - "MS_methods,alzheimer_methods,parkinson_methods"
-    - null
+    # Must be the same length as subfolders; each item is either a list of inner dirs or null
+    - ["html", "xml", "plain", "pdf"]                 # for cadmus
+    - ["MS_methods", "alzheimer_methods", "parkinson_methods", "epilepsy_methods"]  # for bioc_json
   output_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
+
 
 sentence_extraction:
   input_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"

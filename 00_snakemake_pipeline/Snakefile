@@ -24,8 +24,41 @@ COMBINE_INNERS_JSON = json.dumps(cfg["combine"].get("inner_folders", []))  # JSO
 # ---------- workflow ----------
 rule all:
     input:
+        directory(cfg["extract_pmc_methods"]["output_base"]),
+        directory(cfg["output_base"]),
         cfg["combine"]["output_jsonl"],
         cfg["sentence_extraction"]["output_jsonl"]
+
+rule extract_methods_pmc:
+    output:
+        directory(cfg["extract_pmc_methods"]["output_base"])
+    params:
+        input_base  = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["input_base"]),
+        output_base = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["output_base"]),
+        logs_dir    = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["logs_dir"])
+    log:
+        out=os.path.join(cfg["extract_pmc_methods"]["logs_dir"], "extract_methods_pmc_out.log"),
+        err=os.path.join(cfg["extract_pmc_methods"]["logs_dir"], "extract_methods_pmc_err.log")
+    threads: 2
+    resources:
+        cpus_per_task=2,
+        mem_mb=8000,
+        runtime="1h"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.logs_dir}
+
+        # Run multi-folder PMC extraction
+        python ../07_full_text_retrieval/extract_methods_from_bioc_json.py \
+          --input_base {params.input_base} \
+          --output_base {params.output_base} \
+          --logs_dir {params.logs_dir} \
+        > {log.out} 2> {log.err}
+        """
+
 
 rule extract_methods:
     output:
@@ -60,43 +93,36 @@ rule extract_methods:
         > {log.out} 2> {log.err}
         """
 
+COMBINE_SUBFOLDERS_JSON = json.dumps(cfg["combine"]["subfolders"])
+COMBINE_INNERS_JSON     = json.dumps(cfg["combine"]["inner_folders"])
+
 rule combine_methods:
     input:
         cfg["output_base"]
     output:
         cfg["combine"]["output_jsonl"]
     params:
-        base_dir   = lambda wc: shlex.quote(cfg["combine"]["base_dir"]),
-        subfolders = lambda wc: opt_flag("--subfolders", COMBINE_SUBFOLDERS),
-        inner_folders = lambda wc: " ".join(
-            i if isinstance(i, str) else "None"
-            for i in cfg["combine"]["inner_folders"]
-        ),
-        excludes   = lambda wc: opt_flag("--exclude-csvs", COMBINE_EXCLUDES),
-        output_file = lambda wc: shlex.quote(cfg["combine"]["output_jsonl"])
+        base_dir     = shlex.quote(cfg["combine"]["base_dir"]),
+        subfolders_j = opt_flag("--subfolders-json", shlex.quote(COMBINE_SUBFOLDERS_JSON)),
+        inners_j     = opt_flag("--inner-folders-json", shlex.quote(COMBINE_INNERS_JSON)),
+        excludes     = opt_flag("--exclude-csvs", COMBINE_EXCLUDES),
+        output_file  = shlex.quote(cfg["combine"]["output_jsonl"])
     log:
-        out=os.path.join("logs", "combine_methods_out.log"),
-        err=os.path.join("logs", "combine_methods_err.log")
+        out = os.path.join("logs", "combine_methods_out.log"),
+        err = os.path.join("logs", "combine_methods_err.log")
     threads: 2
-    resources:
-        cpus_per_task=2,
-        mem_mb=4000,
-        runtime="1h"
     conda:
         "envs/papermage.yaml"
     shell:
         r"""
-        set -euo pipefail
         mkdir -p logs
-
-        # Run combine and redirect outputs
         python ../07_full_text_retrieval/combine_parsed_methods.py \
           --base-dir {params.base_dir} \
-          {params.subfolders} \
-          {params.inner_folders} \
+          {params.subfolders_j} \
+          {params.inners_j} \
           {params.excludes} \
           --output-file {params.output_file} \
-        > {log.out} 2> {log.err}
+          > {log.out} 2> {log.err}
         """
 
 rule extract_sentences:
