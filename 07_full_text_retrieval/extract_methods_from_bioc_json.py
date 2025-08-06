@@ -5,6 +5,7 @@ from typing import Tuple
 from cadmus_extractors.xml_extractor import (
     extract_methods as xml_extract,
 )
+import argparse
 
 def extract_methods_subtitles_to_csv(
     json_path: Path,
@@ -256,21 +257,60 @@ def process_each_json_or_xml_in_dir(
 
 def main() -> None:
     """
-    Example entry point to process PMC JSON files for a given disease.
-    Change 'disease' to match the folder names for your JSON input.
-    """
-    disease = "preclin_disease_filtered_pmids"  # or "parkinson", "alzheimer" # all_pmids
-    print(f"Processing '{disease}' methods extraction from PMC JSON files...")
+    CLI entry point to process PMC JSON/XML files for a given folder domain.
 
-    base_input = Path("07_full_text_retrieval/pmc_fulltext") / f"{disease}_fulltext"
-    base_output = Path("07_full_text_retrieval/materials_methods/bioc_json") / f"{disease}_methods"
-    logs_dir = Path("07_full_text_retrieval/materials_methods/logs/pmc")
+    Example:
+        --folder_domain parkinson will look in:
+          07_full_text_retrieval/pmc_fulltext/parkinson_fulltext
+
+        And write to:
+          07_full_text_retrieval/materials_methods/bioc_json/parkinson_methods
+    """
+    parser = argparse.ArgumentParser(
+        description="Extract Materials & Methods sections from PMC JSON/XML files."
+    )
+
+    parser.add_argument(
+        "--folder_domain",
+        type=str,
+        required=True,
+        help="Folder name prefix (e.g. 'parkinson', 'alzheimers', 'all_pmids')."
+    )
+
+    parser.add_argument(
+        "--input_base",
+        type=Path,
+        default=Path("07_full_text_retrieval/pmc_fulltext"),
+        help="Base input directory containing *_fulltext folders."
+    )
+
+    parser.add_argument(
+        "--output_base",
+        type=Path,
+        default=Path("07_full_text_retrieval/materials_methods/bioc_json"),
+        help="Base output directory to save *_methods folders."
+    )
+
+    parser.add_argument(
+        "--logs_dir",
+        type=Path,
+        default=Path("07_full_text_retrieval/materials_methods/logs/pmc"),
+        help="Directory to store logs and summaries."
+    )
+
+    args = parser.parse_args()
+
+    folder_domain = args.folder_domain
+    print(f"Processing materials & methods for folder domain: '{folder_domain}'")
+
+    base_input = args.input_base / f"{folder_domain}_fulltext"
+    base_output = args.output_base / f"{folder_domain}_methods"
 
     process_each_json_or_xml_in_dir(
         json_dir=base_input,
         output_dir=base_output,
-        logs_dir=logs_dir,
-        disease=disease
+        logs_dir=args.logs_dir,
+        disease=folder_domain  # still using this name internally for log file naming
     )
 
 if __name__ == "__main__":
