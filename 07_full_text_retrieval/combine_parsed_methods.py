@@ -66,23 +66,30 @@ def combine_all(
     subfolders: List[str],
     inner_folders: List[Union[None, str, List[str]]],
     exclude_pmids: Set[str],
-    output_path: Path
+    output_file: str
 ):
     base = Path(base_dir)
     all_frames = []
     folder_counts = {}
-
+    
+    if not base.exists():
+        print(f"Skipping base_dir '{base_dir}' because it doesn't exist.")
+        return
+    
     for sub, inner in zip(subfolders, inner_folders):
+        print(f"\nProcessing subfolder: {sub}")
+        print(f"inner = {inner} ({type(inner)})")
+    
         base_folder = base / sub
 
         # Handle single or multiple inner folders
         if inner is None:
             folders_to_process = [base_folder]
-        elif isinstance(inner, str):
-            folders_to_process = [base_folder / inner]
-        else:  # assume list of str
+        elif isinstance(inner, list):
             folders_to_process = [base_folder / i for i in inner]
-
+        else:  # string (not expected with the new JSON interface, but safe)
+            folders_to_process = [base_folder / inner]
+            
         total_pmids = 0
         for folder in folders_to_process:
             if not folder.is_dir():
@@ -115,79 +122,75 @@ def combine_all(
     combined = combined.drop_duplicates('PMID')
     print(f"Total after dedup : {combined['PMID'].nunique()} unique articles")
 
-    out = output_path / f"combined_materials_methods_{combined['PMID'].nunique()}.jsonl"
-
+    out = Path(output_file)
     out.parent.mkdir(parents=True, exist_ok=True)
+
     combined["Text"] = combined["Text"].map(normalize_text)
 
-    #combined.to_csv(
-      #  out,
-       # index=False,
-       # quoting=csv.QUOTE_ALL,
-       # escapechar="\\"
-    #)
     combined.to_json(out, orient="records", lines=True, force_ascii=False)
 
     print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
 
 if __name__ == '__main__':
+    import argparse, json
+    from pathlib import Path
+
     parser = argparse.ArgumentParser(
         description='Combine JSON article paragraphs into a single JSONL file.'
     )
-    parser.add_argument('--base-dir', type=str,
-                        default='07_full_text_retrieval/materials_methods',
-                        help='Root directory containing subfolders')
-    parser.add_argument('--subfolders', type=str, nargs='+',
-                        default=['html', 'xml', 'plain', 'bioc_json', 'pdf'],
-                        help='List of subfolders to process')
-    parser.add_argument('--inner-folders', type=str, nargs='+',
-                        default=[
-                            'None', 'None', 'None', json.dumps([
-                                'MS_methods', 'alzheimer_methods',
-                                'parkinson_methods', 'epilepsy_methods',
-                                'all_pmids_methods'
-                            ]), 'None'
-                        ],
-                        help='JSON strings or comma-separated names for inner folders; use "None" for no inner folder')
-    parser.add_argument('--exclude-csvs', type=str, nargs='+',
-                        default=[
-                            '03_IE_ner/check_study_type/animal_studies_case_report_publications.csv',
-                            '03_IE_ner/check_study_type/animal_studies_review_publications.csv',
-                            '03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv',
-                            '03_IE_ner/check_study_type/animal_studies_randomized_controlled_trial_publications.csv'
-                        ],
+    parser.add_argument('--base-dir', type=str, required=True,
+                        help='Root directory containing subfolders (base of inputs).')
+
+    # NEW: explicit JSON for the two parallel lists
+    parser.add_argument('--subfolders-json', type=str, required=True,
+                        help='JSON array of subfolder names, e.g. ["cadmus","bioc_json"].')
+    parser.add_argument('--inner-folders-json', type=str, required=True,
+                        help='JSON array, same length as subfolders; each item is null or a list of inner folder names.')
+
+    parser.add_argument('--exclude-csvs', type=str, nargs='*', default=[],
                         help='Paths to CSVs listing PMIDs to exclude')
-    parser.add_argument('--output-dir', type=str,
-                        help='Directory to save combined output; defaults to <base-dir>/combined')
+
+    parser.add_argument('--output-file', type=str, required=True,
+                        help='Path to save the combined output JSONL file')
 
     args = parser.parse_args()
 
-    # Process inner_folders argument
-    inner = []
-    for item in args.inner_folders:
-        if item == 'None':
-            inner.append(None)
+    # Parse JSON inputs
+    try:
+        subfolders = json.loads(args.subfolders_json)
+        inner = json.loads(args.inner_folders_json)
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"Failed to parse JSON arguments: {e}")
+
+    if not isinstance(subfolders, list) or not isinstance(inner, list):
+        raise SystemExit("--subfolders-json and --inner-folders-json must be JSON arrays.")
+
+    if len(subfolders) != len(inner):
+        raise SystemExit(
+            f"Length mismatch: subfolders ({len(subfolders)}) vs inner_folders ({len(inner)})."
+        )
+
+    # Validate inner structure (None or list[str])
+    norm_inner = []
+    for i, spec in enumerate(inner):
+        if spec is None:
+            norm_inner.append(None)
+        elif isinstance(spec, list) and all(isinstance(x, str) for x in spec):
+            norm_inner.append(spec)
         else:
-            try:
-                loaded = json.loads(item)
-                if isinstance(loaded, list):
-                    inner.append(loaded)
-                else:
-                    inner.append(str(loaded))
-            except json.JSONDecodeError:
-                inner.append(item.split(','))
+            raise SystemExit(
+                f"--inner-folders-json item {i} must be null or list[str]; got: {spec!r}"
+            )
 
     # Load exclusion PMIDs
     wrong_csv_paths = [Path(p) for p in args.exclude_csvs]
     exclude_pmids = load_wrong_pmids(wrong_csv_paths)
 
-    # Determine output path
-    output_path = Path(args.output_dir) if args.output_dir else Path(args.base_dir) / 'combined'
-
+    # Run combine
     combine_all(
         base_dir=args.base_dir,
-        subfolders=args.subfolders,
-        inner_folders=inner,
+        subfolders=subfolders,
+        inner_folders=norm_inner,
         exclude_pmids=exclude_pmids,
-        output_path=output_path
+        output_file=args.output_file
     )
