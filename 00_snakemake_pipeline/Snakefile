@@ -17,17 +17,24 @@ def opt_flag(flag, value):
 
 # Pre-compute strings for shell commands (quoted safely)
 WRONG_CSVS_STR      = join_quoted(cfg.get("wrong_csvs", []))
-COMBINE_SUBFOLDERS  = join_quoted(cfg["combine"].get("subfolders", []))
 COMBINE_EXCLUDES    = join_quoted(cfg.get("wrong_csvs", []))
 COMBINE_INNERS_JSON = json.dumps(cfg["combine"].get("inner_folders", []))  # JSON uses double quotes -> safe to single-quote in shell
+COMBINE_SUBFOLDERS_JSON = json.dumps(cfg["combine"]["subfolders"])
+COMBINE_INNERS_JSON     = json.dumps(cfg["combine"]["inner_folders"])
 
 # ---------- workflow ----------
 rule all:
     input:
-        directory(cfg["extract_pmc_methods"]["output_base"]),
-        directory(cfg["output_base"]),
+        cfg["extract_pmc_methods"]["output_base"],
+        cfg["extract_cadmus_methods"]["cadmus_output"],
         cfg["combine"]["output_jsonl"],
-        cfg["sentence_extraction"]["output_jsonl"]
+        cfg["sentence_extraction"]["output_jsonl"],
+        cfg["regex_classification"]["output_dir"],
+        expand(
+            "{dir}/{file}",
+            dir=cfg["regex_classification"]["output_dir"],
+            file=cfg["regex_doc_level"]["output_files"]
+        )
 
 rule extract_methods_pmc:
     output:
@@ -62,11 +69,11 @@ rule extract_methods_pmc:
 
 rule extract_methods:
     output:
-        directory(cfg["output_base"])
+        directory(cfg["extract_cadmus_methods"]["cadmus_output"])
     params:
-        cadmus_dir = lambda wc: shlex.quote(cfg["cadmus_dir"]),
+        cadmus_dir = lambda wc: shlex.quote(cfg["extract_cadmus_methods"]["cadmus_dir"]),
         wrong_csvs = lambda wc: opt_flag("--wrong-csvs", WRONG_CSVS_STR),
-        output_base = lambda wc: shlex.quote(cfg["output_base"]),
+        output_base = lambda wc: shlex.quote(cfg["extract_cadmus_methods"]["cadmus_output"]),
         logs_base   = lambda wc: shlex.quote(cfg["logs_base"])
     log:
         out=os.path.join(cfg["logs_base"], "extract_methods_out.log"),
@@ -93,20 +100,28 @@ rule extract_methods:
         > {log.out} 2> {log.err}
         """
 
-COMBINE_SUBFOLDERS_JSON = json.dumps(cfg["combine"]["subfolders"])
-COMBINE_INNERS_JSON     = json.dumps(cfg["combine"]["inner_folders"])
-
 rule combine_methods:
     input:
-        cfg["output_base"]
+        cfg["extract_cadmus_methods"]["cadmus_output"],
+        cfg["extract_pmc_methods"]["output_base"]
     output:
         cfg["combine"]["output_jsonl"]
     params:
-        base_dir     = shlex.quote(cfg["combine"]["base_dir"]),
-        subfolders_j = opt_flag("--subfolders-json", shlex.quote(COMBINE_SUBFOLDERS_JSON)),
-        inners_j     = opt_flag("--inner-folders-json", shlex.quote(COMBINE_INNERS_JSON)),
-        excludes     = opt_flag("--exclude-csvs", COMBINE_EXCLUDES),
-        output_file  = shlex.quote(cfg["combine"]["output_jsonl"])
+        # Define all parameter logic here for clarity and safety
+        base_dir       = shlex.quote(cfg["combine"]["base_dir"]),
+        output_file    = shlex.quote(cfg["combine"]["output_jsonl"]),
+        
+        # Build optional flags safely inside the params block
+        subfolders_j   = lambda wc: opt_flag(
+            "--subfolders-json", 
+            shlex.quote(json.dumps(cfg["combine"].get("subfolders", [])))
+        ),
+        inners_j       = lambda wc: opt_flag(
+            "--inner-folders-json",
+            shlex.quote(json.dumps(cfg["combine"].get("inner_folders", [])))
+        ),
+        excludes       = lambda wc: opt_flag("--exclude-csvs", WRONG_CSVS_STR),
+
     log:
         out = os.path.join("logs", "combine_methods_out.log"),
         err = os.path.join("logs", "combine_methods_err.log")
@@ -117,17 +132,17 @@ rule combine_methods:
         r"""
         mkdir -p logs
         python ../07_full_text_retrieval/combine_parsed_methods.py \
-          --base-dir {params.base_dir} \
-          {params.subfolders_j} \
-          {params.inners_j} \
-          {params.excludes} \
-          --output-file {params.output_file} \
-          > {log.out} 2> {log.err}
+            --base-dir {params.base_dir} \
+            {params.subfolders_j} \
+            {params.inners_j} \
+            {params.excludes} \
+            --output-file {params.output_file} \
+            > {log.out} 2> {log.err}
         """
 
 rule extract_sentences:
     input:
-        cfg["sentence_extraction"]["input_jsonl"]
+        cfg["combine"]["output_jsonl"] 
     output:
         cfg["sentence_extraction"]["output_jsonl"]
     params:
@@ -143,5 +158,61 @@ rule extract_sentences:
             --input_jsonl {input} \
             --text_col {params.text_col} \
             --output_jsonl {output} \
+            > {log.out} 2> {log.err}
+        """
+
+rule run_regex_classification:
+    input:
+        cfg["sentence_extraction"]["output_jsonl"]
+    output:
+        expand(
+            "{dir}/{file}",
+            dir=cfg["regex_classification"]["output_dir"],
+            file=cfg["regex_classification"]["prediction_files"]
+        )
+    params:
+        category   = cfg["regex_classification"]["category"],
+        text_col   = cfg["regex_classification"]["text_col"],
+        output_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
+    log:
+        out = "logs/regex_classification.out",
+        err = "logs/regex_classification.err"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p {params.output_dir}
+        python ../08_IE_full_text/regex_runner.py \
+            --df_path {input} \
+            --category {params.category} \
+            --text_col {params.text_col} \
+            --output_dir {params.output_dir} \
+            > {log.out} 2> {log.err}
+        """
+
+rule process_doc_level_predictions:
+    input:
+        expand(
+            "{dir}/{file}",
+            dir=cfg["regex_classification"]["output_dir"],
+            file=cfg["regex_classification"]["prediction_files"]
+        )
+    output:
+        expand(
+            "{dir}/{file}",
+            dir=cfg["regex_classification"]["output_dir"],
+            file=cfg["regex_doc_level"]["output_files"]
+        )
+    params:
+        input_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
+    log:
+        out = "logs/process_doc_level_predictions.out",
+        err = "logs/process_doc_level_predictions.err"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        python ../08_IE_full_text/clean_regex_predictions.py \
+            --input_dir {params.input_dir} \
             > {log.out} 2> {log.err}
         """

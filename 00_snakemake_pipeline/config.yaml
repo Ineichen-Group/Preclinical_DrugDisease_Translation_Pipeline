@@ -1,15 +1,17 @@
 # config.yaml
-cadmus_dir: "/shares/animalwelfare.crs.uzh/cadmus/cadmus_pd/output"
 wrong_csvs:
   - "../03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_review_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
-output_base: "materials_methods/extracted/cadmus"
 logs_base: "logs"
+
+extract_cadmus_methods:
+  cadmus_dir: "/shares/animalwelfare.crs.uzh/cadmus/cadmus_pd/output"
+  cadmus_output: "materials_methods/extracted/cadmus"
 
 extract_pmc_methods:
   input_base: "../07_full_text_retrieval/pmc_fulltext"
-  output_base: "materials_methods/extracted/bioc_json"
+  output_base: "materials_methods/extracted/bioc_json"  
   logs_dir: "logs/pmc"
 
 combine:
@@ -28,3 +30,24 @@ sentence_extraction:
   input_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
   output_jsonl: "materials_methods/combined/combined_methods_sentences.jsonl"
   text_col: "Text"
+
+regex_classification:
+  category: "all"
+  text_col: "sent_txt"
+  output_dir: "model_predictions/regex"
+  prediction_files:
+    - blinding_predictions.csv
+    - randomization_predictions.csv
+    - welfare_predictions.csv
+    - sex_predictions.csv
+    - species_predictions.csv
+    - assay_predictions.csv
+
+regex_doc_level:
+  output_files:
+    - blinding_doc_level_predictions.csv
+    - randomization_doc_level_predictions.csv
+    - welfare_doc_level_predictions.csv
+    - sex_doc_level_predictions.csv
+    - species_doc_level_predictions.csv
+    - assay_doc_level_predictions.csv
