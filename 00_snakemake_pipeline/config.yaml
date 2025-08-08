@@ -42,6 +42,7 @@ regex_classification:
     - sex_predictions.csv
     - species_predictions.csv
     - assay_predictions.csv
+    - age_predictions.csv
 
 regex_doc_level:
   output_files:
@@ -51,3 +52,30 @@ regex_doc_level:
     - sex_doc_level_predictions.csv
     - species_doc_level_predictions.csv
     - assay_doc_level_predictions.csv
+
+filter_age_sentences:
+  predictions_file: "model_predictions/regex/age_predictions.csv"
+  output_file: "model_predictions/age/regex_age_sentences.csv"
+
+split_combined_texts:
+  num_chunks: 10
+  output_dir: "materials_methods/combined/split_chunks"
+
+ner_inference:
+  model_types:
+    - animals_nr
+    - strain
+  shared:
+    chunk_input_dir: "materials_methods/combined/split_chunks"
+    chunk_prefix: "chunk_"
+    chunk_suffix: ".jsonl"
+    num_chunks: 10
+  models:
+    animals_nr:
+      model_name: "michiyasunaga/BioLinkBERT-base"
+      model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_animals_nr_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
+      output_dir: "model_predictions/animals_nr"
+    strain:
+      model_name: "michiyasunaga/BioLinkBERT-base"
+      model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_strain_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
+      output_dir: "model_predictions/strain"

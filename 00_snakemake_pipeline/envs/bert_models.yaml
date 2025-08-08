@@ -1,0 +1,55 @@
+name: torch-huggingface
+channels:
+  - pytorch        # meta-pkgs
+  - nvidia         # CUDA 12.1 libs
+  - conda-forge    # everything else
+  - defaults
+
+dependencies:
+  # ── core ───────────────────────────────────────────────
+  - python=3.11
+  - pip
+  - pytorch=2.1.2              # GPU build is chosen automatically
+  - pytorch-cuda=12.1          # pulls the full CUDA 12.1 runtime
+  - torchvision=0.16.2         # matches PyTorch 2.1
+  - torchaudio=2.1.2
+
+  # ── ML / NLP stack ────────────────────────────────────
+  - transformers=4.33.1
+  - datasets=2.14.5
+  - accelerate=0.21.0
+  - scikit-learn=1.3.0
+  - sentencepiece              # needed by some HF models
+  - safetensors==0.5.3
+
+  # ── science / plotting ────────────────────────────────
+  - numpy=1.25.*
+  - scipy=1.11.*
+  - pandas=2.1.*
+  - matplotlib=3.9.*
+
+  # ── Jupyter / dev ─────────────────────────────────────
+  - ipython
+  - ipykernel
+  - jupyterlab
+
+  # ── misc utils your list used ─────────────────────────
+  - aiohttp
+  - tqdm
+  - requests
+  - rich
+  - regex
+  - ujson
+  - pytz
+
+  # ── keep MKL but let solver choose its deps ───────────
+  - mkl
+
+  # ── pip-only packages ─────────────────────────────────
+  - pip:
+      - scispacy==0.5.5
+      - wandb==0.19.11
+      - conllu==6.0.0
+      - nmslib-metabrainz==2.1.3
+      - pysbd==0.3.4
+      - pybind11==3.0.0

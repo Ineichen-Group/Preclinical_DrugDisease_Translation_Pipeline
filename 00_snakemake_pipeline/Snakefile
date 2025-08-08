@@ -34,6 +34,12 @@ rule all:
             "{dir}/{file}",
             dir=cfg["regex_classification"]["output_dir"],
             file=cfg["regex_doc_level"]["output_files"]
+        ),
+        cfg["filter_age_sentences"]["output_file"],
+        expand(
+            "model_predictions/{model_type}/predictions_chunk_{chunk_id}.json",
+            model_type=cfg["ner_inference"]["model_types"],
+            chunk_id=range(1, cfg["ner_inference"]["shared"]["num_chunks"] + 1)
         )
 
 rule extract_methods_pmc:
@@ -161,6 +167,35 @@ rule extract_sentences:
             > {log.out} 2> {log.err}
         """
 
+rule split_texts_into_chunks:
+    input:
+        cfg["combine"]["output_jsonl"]
+    output:
+        expand(
+            "{dir}/{prefix}{chunk_id}{suffix}",
+            dir     = cfg["split_combined_texts"]["output_dir"],
+            prefix  = cfg["ner_inference"]["shared"]["chunk_prefix"],
+            chunk_id = range(1, cfg["split_combined_texts"]["num_chunks"] + 1),
+            suffix  = cfg["ner_inference"]["shared"]["chunk_suffix"],
+        )
+    params:
+        num_chunks = cfg["split_combined_texts"]["num_chunks"],
+        output_dir = cfg["split_combined_texts"]["output_dir"]
+    log:
+        out = "logs/split_combined_texts.out",
+        err = "logs/split_combined_texts.err"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p {params.output_dir}
+        python ../08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
+            --input_jsonl {input} \
+            --num_chunks {params.num_chunks} \
+            --output_dir {params.output_dir} \
+            > {log.out} 2> {log.err}
+        """
+
 rule run_regex_classification:
     input:
         cfg["sentence_extraction"]["output_jsonl"]
@@ -214,5 +249,74 @@ rule process_doc_level_predictions:
         r"""
         python ../08_IE_full_text/clean_regex_predictions.py \
             --input_dir {params.input_dir} \
+            > {log.out} 2> {log.err}
+        """
+
+rule filter_age_sentences:
+    input:
+        predictions_file = cfg["filter_age_sentences"]["predictions_file"],
+        sentences_file = cfg["sentence_extraction"]["output_jsonl"]
+    output:
+        cfg["filter_age_sentences"]["output_file"]
+    log:
+        out = "logs/filter_age_sentences.out",
+        err = "logs/filter_age_sentences.err"
+    conda:
+        "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p $(dirname {output})
+        python ../08_IE_full_text/extract_age_sentences.py \
+            {input.predictions_file} \
+            {input.sentences_file} \
+            {output} \
+            > {log.out} 2> {log.err}
+        """
+
+shared = cfg["ner_inference"]["shared"]
+chunk_pattern = (
+    f"{shared['chunk_input_dir']}/"
+    f"{shared['chunk_prefix']}" + "{chunk_id}"
+    f"{shared['chunk_suffix']}"
+)
+
+rule run_ner_inference:
+    input:
+        chunk=chunk_pattern
+    output:
+        "model_predictions/{model_type}/predictions_chunk_{chunk_id}.json"
+    params:
+        model_name=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_name"],
+        model_path=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_path"],
+        output_dir=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["output_dir"],
+        suffix=lambda wc: f"_chunk_{wc.chunk_id}"
+    log:
+        out = "logs/infer_{model_type}_chunk_{chunk_id}.out",
+        err = "logs/infer_{model_type}_chunk_{chunk_id}.err"
+    threads: 16
+    resources:
+        cpus_per_task=16,
+        gpus_per_task=1,
+        mem_mb=32000,
+        runtime=500
+    conda:
+        "envs/bert_models.yaml"
+    shell:
+        r"""
+        set -xeuo pipefail
+        exec > >(tee -a {log.out}) 2> >(tee -a {log.err} >&2)
+        export OMP_NUM_THREADS={threads}
+        export MKL_NUM_THREADS={threads}
+        export OPENBLAS_NUM_THREADS={threads}
+        export NUMEXPR_NUM_THREADS={threads}
+        export TOKENIZERS_PARALLELISM=true
+        export RAYON_NUM_THREADS={threads}
+        mkdir -p {params.output_dir}
+        python -u ../08_IE_full_text/run_bert_ner_annotations.py \
+            --test_data_input {input.chunk} \
+            --output_dir {params.output_dir} \
+            --output_file_suffix {params.suffix} \
+            --model_name "{params.model_name}" \
+            --model_path "{params.model_path}" \
             > {log.out} 2> {log.err}
         """
