@@ -157,63 +157,209 @@ US_STATES = {
 
 STATE_PATTERN = re.compile(r"\b(" + "|".join(map(re.escape, US_STATES.keys())) + r")\b", flags=re.I)
 
+def strip_accents(s: str) -> str:
+    """Strip accents/diacritics and return plain ASCII letters."""
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", s)
+        if not unicodedata.combining(c)
+    )
+
+def norm_text(s: str) -> str:
+    """Normalize: lowercase, strip accents, collapse spaces."""
+    s = strip_accents(s or "")
+    s = s.lower()
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def build_country_index() -> Dict[str, str]:
+    idx: Dict[str, str] = {}
+
+    def put(key: str, val: str):
+        """Add key to index in normalized form + ASCII fallback if needed."""
+        if not key:
+            return
+        norm_key = norm_text(key)
+        idx[norm_key] = val
+        # If key had accents, also add plain ASCII fallback
+        ascii_key = strip_accents(key).lower().strip()
+        if ascii_key and ascii_key != norm_key:
+            idx[ascii_key] = val
+
+    # 1) From pycountry: official, common, alpha codes
+    for c in pycountry.countries:
+        canonical = c.name
+        put(c.name, canonical)
+        if getattr(c, "official_name", None):
+            put(c.official_name, canonical)
+        if getattr(c, "common_name", None):
+            put(c.common_name, canonical)
+        if getattr(c, "alpha_2", None):
+            put(c.alpha_2, canonical)
+        if getattr(c, "alpha_3", None):
+            put(c.alpha_3, canonical)
+
+    # 2) Common aliases & tricky cases
+    aliases = {
+        # USA
+        "USA": "United States",
+        "U.S.A": "United States",
+        "U.S.A.": "United States",
+        "US": "United States",
+        "U.S.": "United States",
+        "United States of America": "United States",
+        # UK + home nations
+        "UK": "United Kingdom",
+        "U.K.": "United Kingdom",
+        "England": "United Kingdom",
+        "Scotland": "United Kingdom",
+        "Wales": "United Kingdom",
+        "Northern Ireland": "United Kingdom",
+        # Netherlands
+        "Netherlands": "Netherlands",
+        "The Netherlands": "Netherlands",
+        # Czechia
+        "Czech Republic": "Czechia",
+        # Russia
+        "Russian Federation": "Russia",
+        "Russia": "Russia",
+        # Korea
+        "South Korea": "Korea, Republic of",
+        "Republic of Korea": "Korea, Republic of",
+        "North Korea": "Korea, Democratic People's Republic of",
+        # Ivory Coast
+        "Ivory Coast": "Côte d'Ivoire",
+        # Eswatini
+        "Swaziland": "Eswatini",
+        # Turkey
+        "Türkiye": "Turkey",
+        "Turkey": "Turkey",
+        # Hong Kong, Macao
+        "Hong Kong": "China",
+        "Macau": "China",
+        "Macao": "China",
+        # Taiwan
+        "Taiwan": "Taiwan",
+        # Others
+        "Vatican City": "Holy See",
+        "Bolivia": "Bolivia, Plurinational State of",
+        "Venezuela": "Venezuela, Bolivarian Republic of",
+        "Moldova": "Moldova, Republic of",
+        "Syria": "Syrian Arab Republic",
+        "Laos": "Lao People's Democratic Republic",
+        "Brunei": "Brunei Darussalam",
+        "Cape Verde": "Cabo Verde",
+        "Palestine": "Palestine, State of",
+        "Iran": "Iran, Islamic Republic of",
+        "Vietnam": "Viet Nam",
+        "East Timor": "Timor-Leste",
+        "Micronesia": "Micronesia, Federated States of",
+        "São Tomé and Príncipe": "Sao Tome and Principe",
+        "Saint Kitts and Nevis": "Saint Kitts and Nevis",
+    }
+    for k, v in aliases.items():
+        put(k, v)
+
+    # 3) Local language forms
+    local = {
+        "Deutschland": "Germany",
+        "Österreich": "Austria",
+        "Suisse": "Switzerland",
+        "Schweiz": "Switzerland",
+        "Svizzerra": "Switzerland",
+        "España": "Spain",
+        "Brasil": "Brazil",
+        "Norge": "Norway",
+        "Sverige": "Sweden",
+        "Suomi": "Finland",
+        "Danmark": "Denmark",
+        "Ελλάδα": "Greece",
+        "Hellas": "Greece",
+        "日本": "Japan",
+        "Nippon": "Japan",
+        "中国": "China",
+        "Praha, Česká republika": "Czechia",
+    }
+    for k, v in local.items():
+        put(k, v)
+
+    return idx
+
+# Build index + word set
+COUNTRY_INDEX = build_country_index()
+COUNTRY_WORDSET = set(COUNTRY_INDEX.keys())
+ASCII_EXTRAS = {"turkey": "Turkey"}  # extend as needed
+COUNTRY_WORDSET_WITH_ASCII = set(COUNTRY_WORDSET) | set(ASCII_EXTRAS.keys())
+
+COUNTRY_PATTERN = re.compile(
+    r"\b(" + "|".join(sorted(map(re.escape, COUNTRY_WORDSET_WITH_ASCII), key=len, reverse=True)) + r")\b",
+    flags=re.IGNORECASE
+)
+
 def extract_country(geo):
     if not geo or pd.isna(geo):
         return None
     parts = str(geo).split(",")
     return parts[-1].strip() if parts else None
 
-def infer_countries_batched(
+def has_country_keyword(text: str) -> bool:
+    if not isinstance(text, str) or not text:
+        return False
+    return COUNTRY_PATTERN.search(text) is not None
+
+def has_us_state(text: str) -> bool:
+    if not isinstance(text, str) or not text:
+        return False
+    return STATE_PATTERN.search(text) is not None
+
+def spacy_gpe_flags(series: pd.Series, nlp, batch_size=256, n_process=1, show_progress=True) -> np.ndarray:
+    loc_labels = {"GPE", "LOC"}
+    texts = series.fillna("").astype(str).tolist()
+    pipe = nlp.pipe(texts, batch_size=batch_size, n_process=n_process)
+    if show_progress:
+        pipe = tqdm(pipe, total=len(texts), desc="spaCy NER")
+    flags = []
+    for doc in pipe:
+        flags.append(any(ent.label_ in loc_labels for ent in doc.ents))
+    return np.array(flags, dtype=bool)
+
+def infer_geolocation_batched(
     df: pd.DataFrame,
     text_col: str,
-    nlp,                        # spaCy Language object
-    vectorizer,                 # your loaded_vectorizer
-    model,                      # your loaded_model
+    nlp,                    # spaCy Language object (or None to disable spaCy)
+    vectorizer,             # loaded TfidfVectorizer (or Pipeline)
+    model,                  # loaded classifier (if vectorizer is separate); if Pipeline, pass it here and set vectorizer=None
     batch_size: int = 256,
     n_process: int = 1,
     show_progress: bool = True,
 ) -> pd.Series:
     """
-    For each row:
-      - if text contains a GPE/LOC (via spaCy) or a US state name -> use model prediction
-      - else -> 'unlabeled'
-    Returns a Series aligned to df.index.
+    Returns a Series 'first_author_geolocation':
+      - full predicted string from the model where any trigger hits (spaCy GPE/LOC OR country keyword OR US state)
+      - 'unlabeled' otherwise
     """
     s = df[text_col].fillna("").astype(str)
 
-    # 1) spaCy pass in batches (fast + streaming)
-    loc_labels = {"GPE", "LOC"}
-    has_loc_spacy = []
-    pipe = nlp.pipe(s.tolist(), batch_size=batch_size, n_process=n_process)
-    if show_progress:
-        pipe = tqdm(pipe, total=len(s), desc="spaCy NER")
+    # Triggers
+    trig_spacy = spacy_gpe_flags(s, nlp, batch_size, n_process, show_progress) if nlp else np.zeros(len(s), bool)
+    trig_country = s.apply(has_country_keyword).to_numpy()
+    trig_state = s.apply(has_us_state).to_numpy()
+    mask = trig_spacy | trig_country | trig_state
 
-    for doc in pipe:
-        found = any(ent.label_ in loc_labels for ent in doc.ents)
-        has_loc_spacy.append(found)
-    has_loc_spacy = np.array(has_loc_spacy, dtype=bool)
-
-    # 2) US state mention (word-bounded)
-    has_us_state = s.str.contains(STATE_PATTERN, na=False)
-
-    # 3) Combined mask of rows we’ll actually classify
-    has_location = has_loc_spacy | has_us_state.values
-
-    # 4) Initialize all as 'unlabeled'
     out = pd.Series("unlabeled", index=df.index, dtype=object)
 
-    # 5) Predict only where a location signal exists
-    idx = df.index[has_location]
+    idx = df.index[mask]
     if len(idx) > 0:
-        X = vectorizer.transform(s.loc[idx].tolist())
-        y_pred = model.predict(X)
-        # if your model returns numpy dtype, cast to py objects (strings) if needed
+        texts = s.loc[idx].tolist()
+        if vectorizer is not None:
+            X = vectorizer.transform(texts)
+            y_pred = model.predict(X)
+        else:
+            # model is a Pipeline (Vectorizer+Classifier)
+            y_pred = model.predict(texts)
         out.loc[idx] = pd.Series(y_pred, index=idx).astype(object)
 
     # Optional: quick stats
-    n_unlabeled = int((out == "unlabeled").sum())
-    print(f"Labeled: {len(out) - n_unlabeled} | Unlabeled: {n_unlabeled}")
-
+    print(f"Triggered rows: {mask.sum()} / {len(mask)} | Unlabeled: {(out == 'unlabeled').sum()}")
     return out
 
 # --- Main I/O ------------------------------------------------------------------
@@ -273,7 +419,7 @@ def process_csv(input_csv: str, output_csv: str, pmid_column: str, email: Option
     loaded_model = joblib.load('./data/affiliation-geoinference/geoinference_linearsvc_1mil.joblib.lzma')
     loaded_vectorizer = joblib.load('./data/affiliation-geoinference/geoinference_vectorizer_1mil.joblib.lzma')
     
-    df["first_author_geolocation"] = infer_countries_batched(
+    df["first_author_geolocation"] = infer_geolocation_batched(
         df,
         text_col="first_author_affiliation",
         nlp=spacy_obj,                         # e.g., spacy.load("en_core_web_sm")
