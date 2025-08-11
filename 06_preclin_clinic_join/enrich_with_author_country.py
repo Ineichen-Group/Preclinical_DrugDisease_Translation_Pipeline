@@ -14,8 +14,6 @@ import pycountry
 from tqdm import tqdm
 tqdm.pandas()
 import joblib
-import spacy
-import numpy as np
 
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 BATCH_SIZE = 200  # NCBI is fine with 200 ids per efetch call
@@ -311,43 +309,62 @@ def has_us_state(text: str) -> bool:
         return False
     return STATE_PATTERN.search(text) is not None
 
-def spacy_gpe_flags(series: pd.Series, nlp, batch_size=256, n_process=1, show_progress=True) -> np.ndarray:
-    loc_labels = {"GPE", "LOC"}
-    texts = series.fillna("").astype(str).tolist()
-    pipe = nlp.pipe(texts, batch_size=batch_size, n_process=n_process)
-    if show_progress:
-        pipe = tqdm(pipe, total=len(texts), desc="spaCy NER")
-    flags = []
-    for doc in pipe:
-        flags.append(any(ent.label_ in loc_labels for ent in doc.ents))
-    return np.array(flags, dtype=bool)
+
+# Generic department/clinic/hospital/etc. only
+DEPARTMENT_ONLY_RE = re.compile(
+    r"^\s*\d*\s*(department|departments|division|divisions|institute|institutes|clinic|hospital|center|centre|laboratory|lab|school|college)\b[^,]*\.?\s*$",
+    re.IGNORECASE
+)
+
+# Single-segment generic org names with ≤ 4 words
+SINGLE_SEGMENT_SHORT_RE = re.compile(
+    r"^[A-Za-zÀ-ÖØ-öø-ÿ'’\-\s\.]{1,100}$"
+)
+
+def is_skip_affiliation(aff: str, max_words: int = 4) -> bool:
+    """
+    Skip affiliations that are:
+      - Department-only or similar
+      - Single-segment (no commas), short name (≤ max_words)
+    """
+    if not aff or pd.isna(aff):
+        return True
+    aff = str(aff).strip()
+    
+    if has_country_keyword(aff):
+        return False
+    # Skip if department/etc. only
+    if DEPARTMENT_ONLY_RE.match(aff):
+        return True
+    # Skip if short single segment with no comma
+    if "," not in aff:
+        words = aff.split()
+        if len(words) <= max_words and SINGLE_SEGMENT_SHORT_RE.match(aff):
+            return True
+    return False
+
 
 def infer_geolocation_batched(
     df: pd.DataFrame,
     text_col: str,
-    nlp,                    # spaCy Language object (or None to disable spaCy)
-    vectorizer,             # loaded TfidfVectorizer (or Pipeline)
-    model,                  # loaded classifier (if vectorizer is separate); if Pipeline, pass it here and set vectorizer=None
-    batch_size: int = 256,
-    n_process: int = 1,
-    show_progress: bool = True,
+    vectorizer,             # TfidfVectorizer or None if model is a Pipeline
+    model,                  # classifier or Pipeline
 ) -> pd.Series:
     """
     Returns a Series 'first_author_geolocation':
-      - full predicted string from the model where any trigger hits (spaCy GPE/LOC OR country keyword OR US state)
-      - 'unlabeled' otherwise
+      - 'unlabeled' for department-only strings
+      - model prediction for all other rows (no spaCy/state/country filters)
     """
+
+    # 0) Mask department-only rows
     s = df[text_col].fillna("").astype(str)
+    dept_only = s.apply(is_skip_affiliation).to_numpy()
 
-    # Triggers
-    trig_spacy = spacy_gpe_flags(s, nlp, batch_size, n_process, show_progress) if nlp else np.zeros(len(s), bool)
-    trig_country = s.apply(has_country_keyword).to_numpy()
-    trig_state = s.apply(has_us_state).to_numpy()
-    mask = trig_spacy | trig_country | trig_state
-
+    # 1) Initialize output
     out = pd.Series("unlabeled", index=df.index, dtype=object)
 
-    idx = df.index[mask]
+    # 2) Predict for non-dept-only rows
+    idx = df.index[~dept_only]
     if len(idx) > 0:
         texts = s.loc[idx].tolist()
         if vectorizer is not None:
@@ -358,8 +375,9 @@ def infer_geolocation_batched(
             y_pred = model.predict(texts)
         out.loc[idx] = pd.Series(y_pred, index=idx).astype(object)
 
-    # Optional: quick stats
-    print(f"Triggered rows: {mask.sum()} / {len(mask)} | Unlabeled: {(out == 'unlabeled').sum()}")
+    # 3) Stats
+    print(f"Dept-only skipped: {int(dept_only.sum())} | Predicted: {int((~dept_only).sum())} | Unlabeled: {int((out == 'unlabeled').sum())}")
+
     return out
 
 # --- Main I/O ------------------------------------------------------------------
@@ -422,11 +440,8 @@ def process_csv(input_csv: str, output_csv: str, pmid_column: str, email: Option
     df["first_author_geolocation"] = infer_geolocation_batched(
         df,
         text_col="first_author_affiliation",
-        nlp=spacy_obj,                         # e.g., spacy.load("en_core_web_sm")
         vectorizer=loaded_vectorizer,
         model=loaded_model,
-        batch_size=256,
-        n_process=1,                           # bump if you want multi-process
     )
     df["first_author_country"] = df["first_author_geolocation"].apply(extract_country)
 
