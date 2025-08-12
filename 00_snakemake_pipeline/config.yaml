@@ -74,8 +74,19 @@ ner_inference:
     animals_nr:
       model_name: "michiyasunaga/BioLinkBERT-base"
       model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_animals_nr_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
-      output_dir: "model_predictions/animals_nr"
+      output_dir: "model_predictions/animals_nr/bert_predictions"
     strain:
       model_name: "michiyasunaga/BioLinkBERT-base"
       model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_strain_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
-      output_dir: "model_predictions/strain"
+      output_dir: "model_predictions/strain/bert_predictions"
+
+clean_ner:
+    strain:
+        input_prediction: "model_predictions/strain/bert_predictions"
+        output_clean: "model_predictions/strain/processed"
+    animals_nr:
+        input_prediction: "model_predictions/animals_nr/bert_predictions"
+        output_clean: "model_predictions/animals_nr/processed"
+        
+clean_animal_nr:
+  output_dir: "model_predictions/animals_nr/final_clean"
