@@ -62,6 +62,24 @@ predict_age_sent_bert:
   input_file: "model_predictions/age/regex_age_sentences.csv"
   output_file: "model_predictions/age/sentences_with_bert_age_predictions.csv"
 
+extract_age_unsloth:
+  # --- script args ---
+  model_dir: "/data/sdonev/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
+  input_file: "model_predictions/age/sentences_with_bert_age_predictions.csv"
+  output_file: "model_predictions/age/age_unsloth_llama31_8b.csv"
+
+  # columns
+  text_col: "sent_txt"
+  pmid_col: "PMID"
+  sentence_id_col: "sentence_id"
+
+  # optional pre-filter (predicted_label==1, keep only bert identified sentences)
+  filter_col: "predicted_label"
+  filter_eq: 1
+
+  # generation/runtime settings
+  log_path: "server_logs/llm_age_prediction.log"
+
 split_combined_texts:
   num_chunks: 10
   output_dir: "materials_methods/combined/split_chunks"

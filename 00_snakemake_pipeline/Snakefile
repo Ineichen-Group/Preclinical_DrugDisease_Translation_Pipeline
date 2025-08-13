@@ -47,7 +47,8 @@ rule all:
         cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv",
         cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv",
         cfg["map_strain_values"]["output_file"],
-        cfg["predict_age_sent_bert"]["output_file"]
+        cfg["predict_age_sent_bert"]["output_file"],
+        cfg["extract_age_unsloth"]["output_file"]
 
 rule extract_methods_pmc:
     output:
@@ -303,6 +304,46 @@ rule predict_age_sent_bert:
             {params.model_path} \
             {input} \
             {output} \
+            > {log.out} 2> {log.err}
+        """
+
+rule extract_age_llm_unsloth:
+    input:
+        cfg["extract_age_unsloth"]["input_file"]
+    output:
+        cfg["extract_age_unsloth"]["output_file"]
+    log:
+        out = "logs/extract_age_unsloth.out",
+        err = "logs/extract_age_unsloth.err"
+    params:
+        # script + required args from config
+        script_path     = "../08_IE_full_text/age_extraction_LLM.py",
+        model_dir       = cfg["extract_age_unsloth"]["model_dir"],
+        text_col        = cfg["extract_age_unsloth"]["text_col"],
+        pmid_col        = cfg["extract_age_unsloth"]["pmid_col"],
+        sentence_id_col = cfg["extract_age_unsloth"]["sentence_id_col"],
+        filter_col      = cfg["extract_age_unsloth"]["filter_col"],
+        filter_eq       = cfg["extract_age_unsloth"]["filter_eq"],
+        log_path        = cfg["extract_age_unsloth"]["log_path"],
+    threads: 16
+    resources:
+        mem_mb=32000,
+        runtime=500
+    conda:
+        "envs/unsloth.yaml"
+    shell:
+        r"""
+        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+        python -u {params.script_path} \
+            --model-dir "{params.model_dir}" \
+            --input-csv "{input}" \
+            --output-csv "{output}" \
+            --text-col "{params.text_col}" \
+            --pmid-col "{params.pmid_col}" \
+            --sentence-id-col "{params.sentence_id_col}" \
+            --filter-col "{params.filter_col}" \
+            --filter-eq "{params.filter_eq}" \
+            --log-path "{params.log_path}" \
             > {log.out} 2> {log.err}
         """
 
