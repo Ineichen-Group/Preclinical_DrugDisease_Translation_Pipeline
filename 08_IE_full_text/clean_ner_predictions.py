@@ -3,6 +3,7 @@ import ast
 import re
 from typing import Set
 import os
+import argparse
 
 def normalize_entity(text: str) -> str:
     """
@@ -129,11 +130,31 @@ def process_directory(
         else:
             print(f"Skipping file due to errors: {input_path}")
 
+def main():
+    parser = argparse.ArgumentParser(description="Process NER prediction files.")
+    parser.add_argument(
+        "--input_dir",
+        type=str,
+        default="08_IE_full_text/model_predictions/strain/",
+        help="Path to the input directory containing model predictions."
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="08_IE_full_text/model_predictions/strain/processed/",
+        help="Path to the output directory where processed files will be saved."
+    )
+    parser.add_argument(
+        "--ner_column",
+        type=str,
+        default="ner_prediction_BioLinkBERT-base_normalized",
+        help="Name of the NER prediction column to process."
+    )
+
+    args = parser.parse_args()
+
+    process_directory(args.input_dir, args.ner_column, args.output_dir)
+
 
 if __name__ == "__main__":
-    # Customize as needed
-    INPUT_DIR = "08_IE_full_text/model_predictions/strain/"
-    OUTPUT_DIR = "08_IE_full_text/model_predictions/strain/processed/"
-    NER_COLUMN = "ner_prediction_BioLinkBERT-base_normalized"
-
-    process_directory(INPUT_DIR, NER_COLUMN, OUTPUT_DIR)
+    main()
