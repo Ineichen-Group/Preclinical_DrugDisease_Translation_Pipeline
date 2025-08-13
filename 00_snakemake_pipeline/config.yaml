@@ -57,6 +57,11 @@ filter_age_sentences:
   predictions_file: "model_predictions/regex/age_predictions.csv"
   output_file: "model_predictions/age/regex_age_sentences.csv"
 
+predict_age_sent_bert:
+  model_path: "/shares/animalwelfare.crs.uzh/age_sentence_classifier_final/microsoft_BiomedNLP-BiomedBERT-large-uncased-abstract/best"
+  input_file: "model_predictions/age/regex_age_sentences.csv"
+  output_file: "model_predictions/age/sentences_with_bert_age_predictions.csv"
+
 split_combined_texts:
   num_chunks: 10
   output_dir: "materials_methods/combined/split_chunks"
@@ -90,3 +95,16 @@ clean_ner:
         
 clean_animal_nr:
   output_dir: "model_predictions/animals_nr/final_clean"
+
+map_animal_nr_to_numeric:
+  output_dir: "model_predictions/animals_nr"
+
+map_strain_values:
+  input_dir: "model_predictions/strain/processed"
+  output_file: "model_predictions/strain/strain_predictions_normalized.csv"
+  synonyms_file: "../08_IE_full_text//data/strain_normalization/combined_df_mice_rat.csv"
+  column: "prediction_encoded_label"
+  new_column: "animal_strain_norm"
+  delimiter: ","
+  post_column: "animal_strain_norm_family"
+  write_audit: "./logs/strain_norm_audit_map.csv"

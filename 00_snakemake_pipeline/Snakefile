@@ -44,7 +44,10 @@ rule all:
             chunk_id=range(1, cfg["ner_inference"]["shared"]["num_chunks"] + 1)
         ),
         [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS],
-        cfg["clean_animal_nr"]["output_dir"]
+        cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv",
+        cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv",
+        cfg["map_strain_values"]["output_file"],
+        cfg["predict_age_sent_bert"]["output_file"]
 
 rule extract_methods_pmc:
     output:
@@ -277,6 +280,32 @@ rule filter_age_sentences:
             > {log.out} 2> {log.err}
         """
 
+
+rule predict_age_sent_bert:
+    input:
+        cfg["predict_age_sent_bert"]["input_file"]
+    output:
+        cfg["predict_age_sent_bert"]["output_file"]
+    log:
+        out = "logs/predict_bert_age_sentences.out",
+        err = "logs/predict_bert_age_sentences.err"
+    params:
+        model_path = cfg["predict_age_sent_bert"]["model_path"]
+    resources:
+        mem_mb=32000,
+        runtime=500
+    conda:
+        "envs/bert_models.yaml"
+    shell:
+        r"""
+        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+        python -u ../08_IE_full_text/age_sent_classifier_bert.py \
+            {params.model_path} \
+            {input} \
+            {output} \
+            > {log.out} 2> {log.err}
+        """
+
 shared = cfg["ner_inference"]["shared"]
 chunk_pattern = (
     f"{shared['chunk_input_dir']}/"
@@ -365,5 +394,53 @@ rule clean_animal_nr:
             --ner_dir {input.ner_chunks_dir} \
             --text_file {params.methods_file} \
             --output_dir {output.output_dir} \
+            > {log.out} 2> {log.err}
+        """
+
+rule map_animal_nr_to_numeric:
+    input:
+        cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv"
+    output:
+        cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv"
+    log:
+        out = "logs/map_animal_nr_to_num.out",
+        err = "logs/map_animal_nr_to_num.err"
+    conda: "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p logs
+        python -u ../08_IE_full_text/convert_animal_nr_to_numeric.py \
+            --input_file {input} \
+            --output_file {output} \
+            > {log.out} 2> {log.err}
+        """
+rule map_strain_values:
+    input: 
+        "model_predictions/strain/processed"
+    output:
+        cfg["map_strain_values"]["output_file"]
+    log:
+        out = "logs/map_strain_values.out",
+        err = "logs/map_strain_values.err"
+    params:
+        syn_file = cfg["map_strain_values"]["synonyms_file"],
+        column = cfg["map_strain_values"]["column"],
+        new_column = cfg["map_strain_values"]["new_column"],
+        delim = cfg["map_strain_values"]["delimiter"],
+        post_column = cfg["map_strain_values"]["post_column"],
+        write_audit = cfg["map_strain_values"]["write_audit"]
+    conda: "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p logs
+        python -u ../08_IE_full_text/map_strain_values.py \
+            --input_dir {input} \
+            --output_csv {output} \
+            --synonyms_file {params.syn_file} \
+            --column {params.column} \
+            --new_column {params.new_column} \
+            --delimiter {params.delim} \
+            --post_column {params.post_column} \
+            --write_audit {params.write_audit} \
             > {log.out} 2> {log.err}
         """
