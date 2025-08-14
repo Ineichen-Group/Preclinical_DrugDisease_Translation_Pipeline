@@ -232,12 +232,12 @@ if __name__ == '__main__':
         description='Combine & clean age predictions (chunked).'
     )
     parser.add_argument(
-        '-i', '--input',
+        '-i', '--input_file',
         default='08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b.csv',
         help='Raw predictions CSV'
     )
     parser.add_argument(
-        '-o', '--output',
+        '-o', '--output_file',
         default=None,
         help='Output CSV (defaults to input + _doc_level_predictions)'
     )
