@@ -327,6 +327,7 @@ rule extract_age_llm_unsloth:
         log_path        = cfg["extract_age_unsloth"]["log_path"],
     threads: 16
     resources:
+        cpus_per_task=16,
         mem_mb=32000,
         runtime=500
     conda:
@@ -334,6 +335,10 @@ rule extract_age_llm_unsloth:
     shell:
         r"""
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+        # put Triton / Torch-Inductor caches on node-local or per-job dirs
+        export TRITON_CACHE_DIR="${{SLURM_TMPDIR:-/scratch/$USER/triton_cache}}/${{SLURM_JOB_ID:-$$}}"
+        export TORCHINDUCTOR_CACHE_DIR="${{SLURM_TMPDIR:-/scratch/$USER/torchinductor_cache}}/${{SLURM_JOB_ID:-$$}}"
+        mkdir -p "$TRITON_CACHE_DIR" "$TORCHINDUCTOR_CACHE_DIR"
         python -u {params.script_path} \
             --model-dir "{params.model_dir}" \
             --input-csv "{input}" \
