@@ -246,4 +246,4 @@ if __name__ == '__main__':
         help='Rows per chunk'
     )
     args = parser.parse_args()
-    main(args.input, args.output, args.chunksize)
+    main(args.input_file, args.output_file, args.chunksize)
