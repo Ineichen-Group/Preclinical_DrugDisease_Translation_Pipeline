@@ -80,9 +80,27 @@ extract_age_unsloth:
   # generation/runtime settings
   log_path: "server_logs/llm_age_prediction.log"
 
+clean_age_values:
+  output_file: "model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv"
+
+validate_age:
+  out_too_high: "model_predictions/age/post_processing/df_age_processed_too_high_values.csv"
+  out_pmcid_map: "model_predictions/age/post_processing/df_incl_pmcid.csv"
+  out_pmc_corrections: "model_predictions/age/post_processing/df_age_processed_via_pmc.csv"
+  out_publisher_corrections: "model_predictions/age/post_processing/df_age_processed_via_publisher.csv"
+  out_final: "model_predictions/age/df_age_predictions_verified.csv"
+  api_key_file: "../07_full_text_retrieval/api_keys.txt"
+  
+doc_level_age_mapping:
+  model_name_str: "age_unsloth_meta_llama_3.1_8b"
+  species_csv: "model_predictions/regex/species_predictions.csv"
+  pred_col_species: "prediction_encoded_label"
+  pred_col_age: "verified_prediction_encoded_label"
+  out_csv: "model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv"
+
 split_combined_texts:
   num_chunks: 10
-  output_dir: "materials_methods/combined/split_chunks"
+  output_dir: "materials_methods/combined/split_chunks"  
 
 ner_inference:
   model_types:

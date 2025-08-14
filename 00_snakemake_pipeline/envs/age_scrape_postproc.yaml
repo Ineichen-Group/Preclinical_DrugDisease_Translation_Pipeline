@@ -1,0 +1,21 @@
+name: scrape_postproc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - spacy=3.7.*            # matches scispacy 0.5.4
+  - nmslib                 # binary from conda-forge (avoids pip build)
+  - pandas>=2.2
+  - requests>=2.32
+  - beautifulsoup4>=4.12
+  - lxml>=4.9
+  - tqdm>=4.66
+  - selenium>=4.12
+  - num2words>=0.5
+  - libstdcxx-ng>=13
+  - libgcc-ng>=13
+  - pip
+  - pip:
+      - scispacy==0.5.4
+      - file:///scratch/sdonev/Preclinical_Pipeline/00_snakemake_pipeline/envs/en_core_sci_sm-0.5.4.tar.gz

@@ -48,7 +48,10 @@ rule all:
         cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv",
         cfg["map_strain_values"]["output_file"],
         cfg["predict_age_sent_bert"]["output_file"],
-        cfg["extract_age_unsloth"]["output_file"]
+        cfg["extract_age_unsloth"]["output_file"],
+        cfg["clean_age_values"]["output_file"],
+        cfg["validate_age"]["out_final"],
+        cfg["doc_level_age_mapping"]["out_csv"]
 
 rule extract_methods_pmc:
     output:
@@ -352,6 +355,88 @@ rule extract_age_llm_unsloth:
             > {log.out} 2> {log.err}
         """
 
+rule clean_age_values:
+    input:
+        cfg["extract_age_unsloth"]["output_file"]
+    output:
+        cfg["clean_age_values"]["output_file"]
+    log:
+        out = "logs/clean_age_values.out",
+        err = "logs/clean_age_values.err"
+    conda: "envs/papermage.yaml"
+    shell:
+        r"""
+        mkdir -p logs
+        python -u ../08_IE_full_text/clean_age_llm_predictions.py \
+            --input_file {input} \
+            --output_file {output} \
+            > {log.out} 2> {log.err}
+        """
+
+rule validate_age_values:
+    input:
+        cfg["clean_age_values"]["output_file"]
+    output:
+        out_final = cfg["validate_age"]["out_final"]
+    log:
+        out = "logs/validate_age_values.out",
+        err = "logs/validate_age_values.err"
+    params:
+        out_too_high = cfg["validate_age"]["out_too_high"],
+        out_pmcid_map = cfg["validate_age"]["out_pmcid_map"],
+        out_pmc_corrections = cfg["validate_age"]["out_pmc_corrections"],
+        out_publisher_corrections = cfg["validate_age"]["out_publisher_corrections"],
+        api_key_file = cfg["validate_age"]["api_key_file"]
+    conda: "envs/age_scrape_postproc.yaml"
+    shell:
+        r"""
+        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+        python -u ../08_IE_full_text/clean_age_validate_values.py \
+            --in-predictions "{input}" \
+            --out-too-high "{params.out_too_high}" \
+            --out-pmcid-map "{params.out_pmcid_map}" \
+            --out-pmc-corrections "{params.out_pmc_corrections}" \
+            --out-publisher-corrections "{params.out_publisher_corrections}" \
+            --out-final "{output.out_final}" \
+            --api-key-file "{params.api_key_file}" \
+            > {log.out} 2> {log.err}
+        """
+
+rule map_doc_level_age_predictions:
+    input:
+        in_verified = cfg["validate_age"]["out_final"],
+        species     = cfg["doc_level_age_mapping"]["species_csv"]
+    output:
+        cfg["doc_level_age_mapping"]["out_csv"]
+    log:
+        out = "logs/map_doc_level_age_predictions.out",
+        err = "logs/map_doc_level_age_predictions.err"
+    params:
+        script_path      = "../08_IE_full_text/classify_age_predictions.py",
+        model_name_str   = cfg["doc_level_age_mapping"]["model_name_str"],
+        pred_col_species = cfg["doc_level_age_mapping"]["pred_col_species"],
+        pred_col_age     = cfg["doc_level_age_mapping"]["pred_col_age"]
+    threads: 2
+    resources:
+        mem_mb = 8000,
+        runtime = 30   # minutes
+    conda:
+        "envs/papermage.yaml"   # or your preferred env file
+    shell:
+        r"""
+        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+
+        python -u {params.script_path} \
+          --model-name-str "{params.model_name_str}" \
+          --in-verified "{input.in_verified}" \
+          --species-csv "{input.species}" \
+          --pred-col-species "{params.pred_col_species}" \
+          --pred-col-age "{params.pred_col_age}" \
+          --out-csv "{output}" \
+          > {log.out} 2> {log.err}
+        """
+
+
 shared = cfg["ner_inference"]["shared"]
 chunk_pattern = (
     f"{shared['chunk_input_dir']}/"
@@ -460,6 +545,7 @@ rule map_animal_nr_to_numeric:
             --output_file {output} \
             > {log.out} 2> {log.err}
         """
+
 rule map_strain_values:
     input: 
         "model_predictions/strain/processed"
