@@ -1,6 +1,8 @@
 import pandas as pd
 import ast
 import re
+import argparse
+from pathlib import Path
 
 def classify_age(age_in_weeks_str):
     """
@@ -218,19 +220,78 @@ def classify_age_prediction(prediction_df, pred_col_species="prediction_encoded_
     
 
 def main():
-    model_name_str = "age_unsloth_meta_llama_3.1_8b"
-    input_file_name = f"./model_predictions/age/df_age_predictions_verified_20250722.csv"
-    predictions_df = pd.read_csv(input_file_name)
-    print(f"Loaded {len(predictions_df)} predictions")
-    if "verified_prediction_encoded_label" not in predictions_df.columns:    
-        raise ValueError(f"Input file '{input_file_name}' must contain 'verified_prediction_encoded_label' column.")
-    
-    species_df = pd.read_csv("./model_predictions/regex/server/species_predictions.csv")
-    predictions_df = classify_age_prediction(predictions_df, pred_col_species="prediction_encoded_label", pred_col_age="verified_prediction_encoded_label", species_df=species_df)
+    parser = argparse.ArgumentParser(
+        description="Classify + map age predictions with species context and write a doc-level CSV."
+    )
+    parser.add_argument(
+        "--model-name-str",
+        default="age_unsloth_meta_llama_3.1_8b",
+        help="Model name tag used in the output filename."
+    )
+    parser.add_argument(
+        "--in-verified",
+        default="./model_predictions/age/df_age_predictions_verified_20250722.csv",
+        help="Input CSV with verified age predictions (must contain 'verified_prediction_encoded_label')."
+    )
+    parser.add_argument(
+        "--species-csv",
+        default="./model_predictions/regex/server/species_predictions.csv",
+        help="CSV with species predictions used for mapping."
+    )
+    parser.add_argument(
+        "--pred-col-species",
+        default="prediction_encoded_label",
+        help="Column in the main predictions file containing the original encoded label to compare/keep."
+    )
+    parser.add_argument(
+        "--pred-col-age",
+        default="verified_prediction_encoded_label",
+        help="Column in the main predictions file containing the verified age label."
+    )
+    parser.add_argument(
+        "--out-csv",
+        default="./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped_20250722.csv",
+        help="Output CSV path for the mapped, doc-level predictions."
+    )
 
-    save_path= f"./model_predictions/age/{model_name_str}_doc_level_predictions_mapped_20250722.csv"
-    predictions_df.to_csv(save_path, index=False)
-    print(f"Processed {len(predictions_df)} documents with age predictions. Saved to {save_path}")
-    
+    args = parser.parse_args()
+
+    # Load inputs
+    in_path = Path(args.in_verified)
+    species_path = Path(args.species_csv)
+    if not in_path.is_file():
+        raise FileNotFoundError(f"Input file not found: {in_path}")
+    if not species_path.is_file():
+        raise FileNotFoundError(f"Species CSV not found: {species_path}")
+
+    predictions_df = pd.read_csv(in_path)
+    print(f"Loaded {len(predictions_df)} predictions from {in_path}")
+
+    # Validate required columns
+    if args.pred_col_age not in predictions_df.columns:
+        raise ValueError(
+            f"Input file '{in_path}' must contain '{args.pred_col_age}' column."
+        )
+
+    species_df = pd.read_csv(species_path)
+
+    # Do the classification/mapping
+    predictions_df = classify_age_prediction(
+        predictions_df,
+        pred_col_species=args.pred_col_species,
+        pred_col_age=args.pred_col_age,
+        species_df=species_df,
+    )
+
+    # Build/save output
+    out_path = Path(args.out_csv)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    predictions_df.to_csv(out_path, index=False)
+
+    print(
+        f"Processed {len(predictions_df)} documents with age predictions.\n"
+        f"Saved to {out_path}"
+    )
+
 if __name__ == "__main__":
     main()

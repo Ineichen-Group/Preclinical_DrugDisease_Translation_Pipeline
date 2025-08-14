@@ -15,10 +15,29 @@ tqdm.pandas()  # enables progress_apply on DataFrames
 import argparse
 from regex_classifiers.species_classifier import SpeciesClassifier
 from num2words import num2words
+from pathlib import Path
+from functools import lru_cache
 
 # Load SciSpacy model
 def load_nlp_model():
     return spacy.load("en_core_sci_sm")
+
+@lru_cache(maxsize=1)
+def _get_nlp():
+    return spacy.load("en_core_sci_sm")
+
+def _stringify_label(res) -> str:
+    """Coerce any return value to a single string."""
+    if res is None:
+        return ""
+    if hasattr(res, "to_dict"):  # pandas Series
+        d = res.to_dict()
+        return str(d.get("prediction_encoded_label_new") or d.get("label") or next(iter(d.values()), ""))
+    if isinstance(res, dict):
+        return str(res.get("prediction_encoded_label_new") or res.get("label") or next(iter(res.values()), ""))
+    if isinstance(res, (list, tuple)):
+        return "" if not res else str(res[0])
+    return str(res)
 
 # Common regex
 age_range_re = re.compile(r"\d+\s*[-–]\s*\d+", flags=re.IGNORECASE)
@@ -40,6 +59,7 @@ age_keywords_pattern = r"""
 
 # Compile the pattern once
 _age_week_regex = re.compile(age_keywords_pattern, flags=re.IGNORECASE | re.VERBOSE)
+
 
 def contains_week_age_expression(text: str) -> bool:
     """
@@ -195,7 +215,7 @@ def resolve_age_from_text(age_text_to_check: str, current_age: str, current_age_
 
 
 # Stage 2: Clean via PMC
-EMAIL = "youremail@example.com"
+EMAIL = "simona.doneva@uzh.ch"
 def pmid_to_pmcid(pmid: str) -> str:
     url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=age-cleaner&email={EMAIL}&ids={pmid}&format=json"
     data = requests.get(url).json()
@@ -438,7 +458,7 @@ def extract_springer_article_text(html_text):
     
     return None
 
-def get_content_with_selenium(url: str, wait_time: int = 5) -> str:
+def get_content_with_selenium(url: str, wait_time: int = 3) -> str:
     options = Options()
     options.add_argument("--headless")  # Run in headless mode
     options.add_argument("--disable-gpu")
@@ -466,68 +486,51 @@ def get_content_with_selenium(url: str, wait_time: int = 5) -> str:
         return None
     
 def get_normalized_age_from_publisher(pmid: str, current_age: str, current_age_time: str, api_key: str) -> str:
-    """
-    Retrieves article text from Elsevier API using PMID, finds age-related sentences,
-    and returns a normalized age label like "8-10 week".
-    """
-   
-    # Step 1: Get DOI
-    headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; DOI-fetcher/1.0; donevasimona@gmail.com)"
-    }
-    time.sleep(1.5)  # Delay for NCBI API
-    doi = pmid_to_doi(pmid)
-    if not doi:
-        print(f"no doi found for {pmid}")
-        return f"{current_age} {current_age_time}"
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; DOI-fetcher/1.0; donevasimona@gmail.com)"}
+        time.sleep(1.5)
+        doi = pmid_to_doi(pmid)
+        if not doi:
+            return f"{current_age} {current_age_time}"
 
-    # Step 2: Get ScienceDirect redirect URL
-    response = requests.get(doi_to_html_url(doi), headers=headers, allow_redirects=True)
-    sciencedirect_url = response.url
+        response = requests.get(doi_to_html_url(doi), headers=headers, allow_redirects=True, timeout=15)
+        sciencedirect_url = response.url
 
-    # Step 3: Extract PII if possible
-    match = re.search(r'/pii/([A-Z0-9]+)', sciencedirect_url)
-    
-    if not match:
-        # Step 4: Get full text directly
-        print(f"processing {pmid} with bsoup")
-        original_text = extract_springer_article_text(response.text)
+        match = re.search(r"/pii/([A-Z0-9]+)", sciencedirect_url)
+        if not match:
+            print(f"No PII found in URL: {sciencedirect_url}. Processing with Springer API.")
+            original_text = extract_springer_article_text(response.text)
+            if not original_text:
+                print(f"Failed to extract text from Springer article at {sciencedirect_url}. Using Selenium.")
+                original_text = get_content_with_selenium(response.url)
+        else:
+            print(f"Found PII in URL: {match.group(1)}. Processing with Elsevier API.")
+            pii = match.group(1)
+            original_text = get_elsevier_full_text(pii, api_key)
 
-        # try with selenium 
         if not original_text:
-            print(f"processing {pmid} with selenium {response.url}")
-            original_text = get_content_with_selenium(response.url)    
-    else:
-        # Step 4: Get full text from Elsevier API
-        pii = match.group(1)
-        print(f"processing  {pmid} with Elsevier {pii}")
-        original_text = get_elsevier_full_text(pii, api_key)
-        
-    if not original_text:
-        print(f"no original text found for: {pmid}")
+            print(f"Failed to fetch full text for PMID {pmid}. Using original age prediction.")
+            return f"{current_age} {current_age_time}"
+
+        nlp = _get_nlp()
+        doc = nlp(original_text)
+        age_sentences = []
+        for sent in doc.sents:
+            s = sent.text.strip()
+            if starts_with_cap_block(s) or is_numeric_metadata_line(s):
+                continue
+            if contains_week_age_expression(s) and contains_animal_expression(s):
+                age_sentences.append(s)
+
+        age_text_to_check = normalize_dashes(" ".join(age_sentences))
+        print(f"Processing PMID {pmid} → {age_text_to_check}, current_age={current_age}, current_age_time={current_age_time}")
+        label = resolve_age_from_text(age_text_to_check, current_age, current_age_time)
+        return _stringify_label(label)
+    except Exception as e:
+        # keep label column sane; you can log e if you want
+        print(f"Error processing PMID {pmid}: {e}")
         return f"{current_age} {current_age_time}"
 
-    # Step 5: Extract and classify age-related sentences
-    #print(original_text)
-    nlp = spacy.load("en_core_sci_sm")
-    doc = nlp(original_text)
-    age_sentences = []
-
-    for sent in doc.sents:
-        sentence_text = sent.text.strip()
-        if starts_with_cap_block(sentence_text):
-            continue
-        if is_numeric_metadata_line(sentence_text):
-            continue
-        #label, _ = age_clf.classify(sentence_text)
-        if contains_week_age_expression(sentence_text) and contains_animal_expression(sentence_text):
-            age_sentences.append(sentence_text)
-
-    # Step 6: Normalize and return
-    age_text_to_check = normalize_dashes(' '.join(age_sentences))
-    #print(age_text_to_check)
-    return resolve_age_from_text(age_text_to_check, current_age, current_age_time)
-    
 
 # Stage 4: Apply to original predictions
 def apply_mappings(df_orig: pd.DataFrame, *maps: dict) -> pd.DataFrame:
@@ -596,84 +599,128 @@ def create_pmid_mapping(df: pd.DataFrame, pmid_col: str = "PMID", flat_col: str 
     return mapping
 
 
-if __name__ == '__main__':
-    # Load original
-    #df_orig = pd.read_csv("./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv")
-    
-    parser = argparse.ArgumentParser(description="NER CSV prediction processor")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Post-process LLM age predictions (multi-stage).")
+
+    # Input (document-level predictions to clean)
     parser.add_argument(
-        "--input_csv",
+        "--in-predictions",
         default="./model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv",
-        help="Path to the input CSV file containing predictions. Default is age_unsloth_meta_llama_3.1_8b."
+        help="Input CSV with raw document-level age predictions."
     )
+
+    # Stage outputs (clear, purpose-based names)
+    parser.add_argument(
+        "--out-too-high",
+        default="./model_predictions/age/post_processing/df_age_processed_too_high_values_20250722.csv",
+        help="Stage 1 output: mappings after removing too-high ages."
+    )
+    parser.add_argument(
+        "--out-pmcid-map",
+        default="./model_predictions/age/post_processing/df_incl_pmcid_20250722.csv",
+        help="Aux file: PMID→PMCID map produced/used across stages."
+    )
+    parser.add_argument(
+        "--out-pmc-corrections",
+        default="./model_predictions/age/post_processing/df_age_processed_via_pmc_20250722.csv",
+        help="Stage 2 output: corrections derived from PMCID full-text."
+    )
+    parser.add_argument(
+        "--out-publisher-corrections",
+        default="./model_predictions/age/post_processing/df_age_processed_via_publisher_20250722.csv",
+        help="Stage 3 output: corrections from publisher APIs (Elsevier); reused if exists."
+    )
+    parser.add_argument(
+        "--out-final",
+        default="./model_predictions/age/df_age_predictions_verified_20250722.csv",
+        help="Stage 4 (final) output: cleaned/verified predictions."
+    )
+
+    # API key path for Stage 3
+    parser.add_argument(
+        "--api-key-file",
+        default="../07_full_text_retrieval/api_keys.txt",
+        help="Elsevier API key file used in Stage 3."
+    )
+
     args = parser.parse_args()
 
-    # Load the input CSV from the argument
-    df_orig = pd.read_csv(args.input_csv)
-    
+    # Ensure all output dirs exist
+    for p in [
+        args.out_too_high,
+        args.out_pmcid_map,
+        args.out_pmc_corrections,
+        args.out_publisher_corrections,
+        args.out_final,
+    ]:
+        Path(p).parent.mkdir(parents=True, exist_ok=True)
+
+    # Load input
+    df_orig = pd.read_csv(args.in_predictions)
     print(f"Loaded {len(df_orig)} original age predictions.")
-    # Preprocess flat data
+
+    # Preprocess to flat (weekly) form
     df_flat = extract_weekly_ages(df_orig)
-    
-    # Stage 1
+
+    # ---------------- Stage 1: too-high cleanup ----------------
     map1 = clean_too_high(df_flat)
     df_map1 = mapping_to_df(map1)
-    save_path = "./model_predictions/age/post_processing/df_age_processed_too_high_values_20250722.csv"
-    df_map1.to_csv(
-        save_path,
-        index=False
-    )
-    print(f"Stage 1 mappings saved to {save_path}")
-    
-    # Stage 2
-    path_mapping_to_pmc = "./model_predictions/age/post_processing/df_incl_pmcid_20250722.csv"
-    map2, df_with_pmcid = clean_via_pmc(df_flat, pmcid_file=path_mapping_to_pmc, map1=map1)
+    df_map1.to_csv(args.out_too_high, index=False)
+    print(f"Stage 1 mappings saved to {args.out_too_high}")
+
+    # ---------------- Stage 2: PMCID-based corrections ----------------
+    map2, df_with_pmcid = clean_via_pmc(df_flat, pmcid_file=args.out_pmcid_map, map1=map1)
     df_map2 = mapping_to_df(map2)
-    save_path2 = "./model_predictions/age/post_processing/df_age_processed_via_pmc_20250722.csv"
-    
-    df_map2.to_csv(
-        save_path2,
-        index=False
-    )
-    df_with_pmcid.to_csv(
-        path_mapping_to_pmc,
-        index=False)
-    print(f"Stage 2 mappings saved to {save_path2}")
-    
-    # Stage 3 (need API key loaded)
-    API_KEY = load_elsevier_api_key("../07_full_text_retrieval/api_keys.txt")
-    save_path3 = "./model_predictions/age/post_processing/df_age_processed_via_publisher_20250722.csv"
-    
-    if save_path3 and os.path.isfile(save_path3):
-        df_age_to_validate_no_pmc = pd.read_csv(save_path3)
-        print(f"Loaded existing Stage 3 data from {save_path3}")
+    df_map2.to_csv(args.out_pmc_corrections, index=False)
+    df_with_pmcid.to_csv(args.out_pmcid_map, index=False)
+    print(f"Stage 2 mappings saved to {args.out_pmc_corrections}")
+    print(f"PMCID map written to {args.out_pmcid_map}")
+
+    # ---------------- Stage 3: publisher API corrections ----------------
+    API_KEY = load_elsevier_api_key(args.api_key_file)
+    stage3_path = Path(args.out_publisher_corrections)
+    # Only rows without PMCID
+    df_age_to_validate_no_pmc = df_with_pmcid[~df_with_pmcid["PMCID"].notna()].copy()
+
+    if stage3_path.exists():
+        df_age_to_validate_no_pmc = pd.read_csv(stage3_path)
+        print(f"Loaded existing Stage 3 data from {stage3_path}")
+    elif df_age_to_validate_no_pmc.empty:
+        # Nothing to do; create an empty frame with expected cols so downstream is happy
+        print("No rows without PMCID — skipping Stage 3.")
+        df_age_to_validate_no_pmc = pd.DataFrame(columns=["PMID", "flat", "prediction_encoded_label_new"])
     else:
-        print(f"Creating new Stage 3 data, saving to {save_path3}")
-        df_age_to_validate_no_pmc = df_with_pmcid[~df_with_pmcid['PMCID'].notna()].copy()
-        df_age_to_validate_no_pmc["prediction_encoded_label_new"] = df_age_to_validate_no_pmc.progress_apply(
+        print(f"Creating new Stage 3 data, saving to {stage3_path}")
+        print(f"Found {len(df_age_to_validate_no_pmc)} rows without PMCID for Stage 3.")
+        res = df_age_to_validate_no_pmc.progress_apply(
             lambda row: get_normalized_age_from_publisher(
                 pmid=row["PMID"],
                 current_age=str(int(row["age_num"])),
                 current_age_time=row["age_unit"],
-                api_key=API_KEY
+                api_key=API_KEY,
             ),
-            axis=1
+            axis=1,
+            result_type="reduce",   # <-- tell pandas to keep a Series, not expand into columns
         )
-        
-        df_age_to_validate_no_pmc.to_csv(
-            save_path3,
-            index=False
-        )
-        print(f"Stage 3 mappings saved to {save_path3}")
-    
-    # Stage 4
+
+        # If some path still returned a dict/Series and pandas upcasted to DataFrame, collapse it:
+        if isinstance(res, pd.DataFrame):
+            if "prediction_encoded_label_new" in res.columns:
+                res = res["prediction_encoded_label_new"]
+            else:
+                res = res.apply(lambda r: _stringify_label(r.to_dict()), axis=1)
+
+        df_age_to_validate_no_pmc["prediction_encoded_label_new"] = res.astype(str)
+        df_age_to_validate_no_pmc.to_csv(stage3_path, index=False)
+        print(f"Stage 3 mappings saved to {stage3_path}")
+
+    # ---------------- Stage 4: final merge ----------------
     map3 = create_pmid_mapping(
         df_age_to_validate_no_pmc,
         pmid_col="PMID",
         flat_col="flat",
-        new_col="prediction_encoded_label_new"
+        new_col="prediction_encoded_label_new",
     )
-    df_final = apply_mappings(df_orig, map1, map2, map3)  # add map3 when available
-    save_path_final = "./model_predictions/age/df_age_predictions_verified_20250722.csv"
-    df_final.to_csv(save_path_final, index=False)
-    print(f"Cleaned predictions saved to {save_path_final}")
+    df_final = apply_mappings(df_orig, map1, map2, map3)
+    df_final.to_csv(args.out_final, index=False)
+    print(f"Cleaned predictions saved to {args.out_final}")
