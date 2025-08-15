@@ -235,53 +235,48 @@ def process_each_json_or_xml_in_dir(
     success_rate = (success / total) * 100 if total else 0.0
     avg_subtitles = (sum(subtitle_counts) / len(subtitle_counts)) if subtitle_counts else 0.0
 
-    print(f"\nSummary Statistics ({disease}):")
-    print(f"  Total files processed      : {total}")
-    print(f"    JSON files               : {json_total}")
-    print(f"    XML files                : {xml_total}")
-    print(f"  Successful extractions     : {success}")
-    print(f"  Success rate               : {success_rate:.2f}%")
-    print(f"  Avg. unique subtitles      : {avg_subtitles:.2f}")
+    summary_text = (
+        f"\nSummary Statistics ({disease}):\n"
+        f"  Total files processed      : {total}\n"
+        f"    JSON files               : {json_total}\n"
+        f"    XML files                : {xml_total}\n"
+        f"  Successful extractions     : {success}\n"
+        f"  Success rate               : {success_rate:.2f}%\n"
+        f"  Avg. unique subtitles      : {avg_subtitles:.2f}\n"
+    )
 
-    # Write summary to log
-    summary_path = logs_dir / f"summary_stats_pmc_methods_{disease}.txt"
-    with summary_path.open("w") as f:
-        f.write("Summary Statistics:\n")
-        f.write(f"Total files processed      : {total}\n")
-        f.write(f"  JSON files               : {json_total}\n")
-        f.write(f"  XML files                : {xml_total}\n")
-        f.write(f"Successful extractions     : {success}\n")
-        f.write(f"Success rate               : {success_rate:.2f}%\n")
-        f.write(f"Avg. unique subtitles      : {avg_subtitles:.2f}\n")
+    # (optional) still print if you like
+    print(summary_text, end="")
+
+    return summary_text
 
 
 def main() -> None:
     """
-    CLI entry point to process PMC JSON/XML files for a given folder domain.
+    CLI entry point to process all *_fulltext folders inside a given input base directory.
 
     Example:
-        --folder_domain parkinson will look in:
-          07_full_text_retrieval/pmc_fulltext/parkinson_fulltext
+        --input_base 07_full_text_retrieval/pmc_fulltext
+
+        Will process:
+            - 07_full_text_retrieval/pmc_fulltext/parkinson_fulltext
+            - 07_full_text_retrieval/pmc_fulltext/alzheimer_fulltext
+            - etc.
 
         And write to:
-          07_full_text_retrieval/materials_methods/bioc_json/parkinson_methods
+            - 07_full_text_retrieval/materials_methods/bioc_json/parkinson_methods
+            - 07_full_text_retrieval/materials_methods/bioc_json/alzheimer_methods
+            ...
     """
     parser = argparse.ArgumentParser(
-        description="Extract Materials & Methods sections from PMC JSON/XML files."
-    )
-
-    parser.add_argument(
-        "--folder_domain",
-        type=str,
-        required=True,
-        help="Folder name prefix (e.g. 'parkinson', 'alzheimers', 'all_pmids')."
+        description="Extract Materials & Methods sections from all *_fulltext folders."
     )
 
     parser.add_argument(
         "--input_base",
         type=Path,
         default=Path("07_full_text_retrieval/pmc_fulltext"),
-        help="Base input directory containing *_fulltext folders."
+        help="Base input directory containing *_fulltext subfolders."
     )
 
     parser.add_argument(
@@ -300,18 +295,32 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    folder_domain = args.folder_domain
-    print(f"Processing materials & methods for folder domain: '{folder_domain}'")
+    input_base = args.input_base
+    print(f"Scanning for *_fulltext folders in: {input_base}")
+    summaries = []
 
-    base_input = args.input_base / f"{folder_domain}_fulltext"
-    base_output = args.output_base / f"{folder_domain}_methods"
+    for subfolder in sorted(input_base.glob("*_fulltext")):
+        if not subfolder.is_dir():
+            continue
 
-    process_each_json_or_xml_in_dir(
-        json_dir=base_input,
-        output_dir=base_output,
-        logs_dir=args.logs_dir,
-        disease=folder_domain  # still using this name internally for log file naming
-    )
+        folder_domain = subfolder.name.replace("_fulltext", "")
+        print(f"\nProcessing domain: {folder_domain}")
+
+        input_path = subfolder
+        output_path = args.output_base / f"{folder_domain}_methods"
+
+        summary_text = process_each_json_or_xml_in_dir(
+            json_dir=input_path,
+            output_dir=output_path,
+            logs_dir=args.logs_dir,
+            disease=folder_domain  # used internally for log naming
+        )
+        summaries.append(summary_text)
+        
+    combined = args.logs_dir / f"summary_stats_pmc_methods_all.txt"
+    combined.write_text("\n".join(summaries))
+    
+    print(f"\nWrote combined summary: {combined}")
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from typing import Optional
+import pandas as pd
 
 from cadmus_extractors.utils import (
     read_retrieved_dataframe,
@@ -78,11 +79,13 @@ def process_cadmus_output(
     df_all = read_retrieved_dataframe(cadmus_base_dir / "retrieved_df" / "retrieved_df2.json.zip")
     wrong_pmids = load_wrong_pmids(wrong_csvs)
     df_filtered = df_all[~df_all["pmid"].isin(wrong_pmids)]
-
+    print(f"Loaded {df_filtered.shape[0]} records from file {cadmus_base_dir} after excluding {len(wrong_pmids)} wrong PMIDs")
+    
     # keep only rows with at least one format-flag
     formats = ["xml", "html", "pdf", "plain"]
     mask_any = df_filtered[formats].any(axis=1)
     df_filtered = df_filtered[mask_any]
+    print(f"Filtered to {df_filtered.shape[0]} records with at least one format")
 
     # --- parameterized select_format logic ---
     if select_format is not None:
@@ -169,10 +172,13 @@ def process_cadmus_output(
             with open(missing_log, "a") as f:
                 f.write(f"{pmid}\n")
             logger.warning(f"No format succeeded for PMID {pmid}")
+        else:
+            logger.info(f"Successfully processed PMID {pmid} with {fmt_name.upper()} format")
 
     # 7) Write per-format summary stats
+    timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M")
     for fmt_name, stats in format_stats.items():
-        summary_path = logs_base / fmt_name / f"summary_stats_{fmt_name}.txt"
+        summary_path = logs_base / fmt_name / f"summary_stats_{fmt_name}_{timestamp}.txt"
         write_summary_stats(
             out_path=summary_path,
             total=stats["total"],
@@ -182,7 +188,7 @@ def process_cadmus_output(
         logger.info(f"Wrote {fmt_name.upper()} summary to {summary_path}")
 
     # 8) Write overall summary
-    overall_summary = logs_base / "overall_summary_stats.txt"
+    overall_summary = logs_base / f"overall_summary_stats_{timestamp}.txt"
     write_summary_stats(
         out_path=overall_summary,
         total=overall_total,
@@ -200,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cadmus-dir",
         type=Path,
-        default=Path("07_full_text_retrieval/cadmus/output_UoZ"),
+        default=Path("07_full_text_retrieval/cadmus/output_UoE"),
         help="Base directory where CADMUS placed its output (contains retrieved_df2.json.zip)",
     )
     parser.add_argument(
