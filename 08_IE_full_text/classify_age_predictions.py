@@ -28,21 +28,21 @@ def map_to_weeks(pred_str, time_base):
     if time_base == "days" or time_base == "day" or time_base == "d":
         # Convert days to weeks
         try:
-            days = int(pred_str)
-            return str(days // 7)  # Convert days to weeks
+            days = float(pred_str)
+            return str(int(days // 7))  # Convert days to weeks
         except ValueError:
             return "unknown"
     elif time_base == "months" or time_base == "month" or time_base == "mo":
         # Convert months to weeks (approx. 4.345 weeks per month)
         try:
-            months = int(pred_str)
+            months = float(pred_str)
             return str(int(months * 4.345))  # Convert months to weeks
         except ValueError:
             return "unknown"
     elif time_base == "years" or time_base == "year":  
         # Convert years to weeks (52 weeks per year)
         try:
-            years = int(pred_str)
+            years = float(pred_str)
             return str(years * 52)  # Convert years to weeks
         except ValueError:
             return "unknown"
@@ -65,8 +65,79 @@ def normalize_age_string(age: str) -> str:
     # Normalize dashes and spaces
     age = age.replace('–', '-').replace('—', '-').replace('~', '-')
     age = re.sub(r'\s*-\s*', '-', age)
-
+    DASH = r"[-\u2010\u2011\u2012\u2013\u2014\u2015\u2212]"  # hyphen, hyphen/nb-hyphen/figure/en/em/minus
+    age = re.sub(DASH, "-", age)
+    APPROX_SET = r"[\u223C\u301C\uFF5E\u2053\u223D\u2248\u2245~]"
+    age = re.sub(APPROX_SET, "", age)
     return age
+
+def _join_or_default(values, default):
+    # Accept a single string or an iterable
+    if values is None:
+        values = []
+    elif isinstance(values, (str, bytes)):
+        values = [values]
+
+    cleaned = {
+        str(v).strip()
+        for v in values
+        if v is not None and str(v).strip() != ""
+    }
+    return ", ".join(sorted(cleaned, key=str.lower)) if cleaned else default
+
+_UNIT_MAP = {
+    "wk":"weeks","wks":"weeks","week":"weeks","weeks":"weeks",
+    "mo":"months","mos":"months","month":"months","months":"months",
+    "yr":"years","yrs":"years","year":"years","years":"years",
+    "d":"days","day":"days","days":"days",
+}
+
+def plusminus_to_range(s: str, ndigits: int = 2, clamp_zero: bool = True) -> str | None:
+    """
+    Convert '55.26 ± 6.44 weeks' (thin spaces) → '48.82, 61.70 weeks'
+
+    - Accepts Unicode thin/non-breaking spaces.
+    - Accepts '±' or '+/-'.
+    - If unit is missing next to the numbers, searches the string for one.
+    - Returns None if the pattern isn't found.
+    """
+    if not isinstance(s, str):
+        return None
+
+    t = s.strip()
+    # Normalize common Unicode spaces to normal spaces
+    t = t.replace("\u2009", " ").replace("\xa0", " ")
+
+    # Find mean, error, optional unit right after
+    m = re.search(
+        r"(?P<mean>\d+(?:\.\d+)?)\s*(?:±|\+/?-)\s*(?P<err>\d+(?:\.\d+)?)\s*(?P<unit>[A-Za-z]+)?",
+        t
+    )
+    if not m:
+        return None
+
+    mean = float(m.group("mean"))
+    err  = float(m.group("err"))
+    unit = (m.group("unit") or "").lower()
+
+    # If unit wasn't right there, try anywhere in the string
+    if not unit:
+        u2 = re.search(r"\b(weeks?|wks?|months?|mos?|days?|yrs?|years?)\b", t, flags=re.I)
+        unit = (u2.group(0).lower() if u2 else "")
+
+    # Canonicalize unit
+    unit = _UNIT_MAP.get(unit, unit)
+
+    lower = mean - err
+    upper = mean + err
+    if clamp_zero and lower < 0:
+        lower = 0.0
+
+    def fmt(x: float) -> str:
+        return f"{x:.{ndigits}f}"
+
+    return f"{fmt(lower)}{(' ' + unit) if unit else ''}, {fmt(upper)}{(' ' + unit) if unit else ''}"
+
 
 def process_age_predictions(pmid, pred_str):
     """
@@ -85,6 +156,11 @@ def process_age_predictions(pmid, pred_str):
     if pred_str == "age not specified":
         return "age not specified"
     
+    converted = plusminus_to_range(pred_str)
+    if converted:
+        print(f"Converting prediction: {pred_str} → {converted}")
+        pred_str = converted
+    
     # Handle cases with multiple predictions
     predictions = pred_str.split(",")
     print(f"Processing predictions: {predictions}")
@@ -93,13 +169,19 @@ def process_age_predictions(pmid, pred_str):
     normalized_age = []
     for pred in predictions:
         pred = pred.strip().lower()
-        if pred == "adult":
+        if pred == "adult" or pred == "young adult":
             classifications.append("adult")
+            normalized_age.append("adult")
             continue
         if pred == "age not specified":
             continue
-        if pred == "juvenile":
+        if ("juvenile" in pred) or ("neonatal" in pred) or ("postnatal day" in pred):
             classifications.append("young")
+            normalized_age.append("young")
+            continue
+        if "aged" in pred or "old" in pred:
+            classifications.append("aged")
+            normalized_age.append("aged")
             continue
         try:
             if len(pred.split(" ")) != 2:
@@ -112,10 +194,9 @@ def process_age_predictions(pmid, pred_str):
             print(f"Skipping malformed prediction: {pred}")
             continue
         
-        #age = age.replace("–", "-").replace("~", "-")  # Normalize dash characters
         age = normalize_age_string(age)
-        if age.count('.') > 1 or re.search(r"[^\d.\s\-]", age):
-            print(f"Skipping malformed prediction with multiple dots or invalid characters: {pred}")
+        if re.search(r"[^\d.\s\-]", age):
+            print(f"Skipping malformed prediction with invalid characters: {pred}")
             continue
         if time_base == "weeks":
             if "-" not in age:
@@ -145,9 +226,13 @@ def process_age_predictions(pmid, pred_str):
                     age_classification = classify_age(age_in_weeks)
                     classifications.append(age_classification)
                     normalized_age.append(age_in_weeks + " weeks")
-    mapped_classifications = ", ".join(sorted({c for c in classifications if c is not None}))
-    mapped_normalized_age = ", ".join(sorted({c for c in normalized_age if c is not None}))
-    print(f"Mapped classifications: {mapped_classifications}")
+
+    DEFAULT_CLASS = "age classification not possible"
+    DEFAULT_AGE   = pred_str # Original prediction string
+
+    mapped_classifications = _join_or_default(classifications, DEFAULT_CLASS)
+    mapped_normalized_age  = _join_or_default(normalized_age,  DEFAULT_AGE)
+    print(f"Mapped age ||| classification: {mapped_normalized_age} ||| {mapped_classifications}")
     return mapped_classifications, mapped_normalized_age
     
     
@@ -188,8 +273,8 @@ def classify_age_prediction(prediction_df, pred_col_species="prediction_encoded_
             for sid in sentence_ids:
                 labels = sentence_species_map.get(sid, [])
                 # Exclude "species-other"
-                filtered = [label for label in labels if label != 'species-other']
-                all_species.update(filtered)
+                #filtered = [label for label in labels if label != 'species-other']
+                all_species.update(labels)
 
             # Allow only if remaining species are in {mouse, rat}
             return all_species.issubset({'mouse', 'rat'})
@@ -211,7 +296,7 @@ def classify_age_prediction(prediction_df, pred_col_species="prediction_encoded_
     )
 
     # Fill in unprocessed rows
-    prediction_df['age_classification'] = prediction_df['age_classification'].fillna("not processed")
+    prediction_df['age_classification'] = prediction_df['age_classification'].fillna("different species")
     prediction_df['prediction_normalized_age'] = prediction_df['prediction_normalized_age'].fillna(prediction_df[pred_col_age])
 
     prediction_df.drop(columns=["is_mouse_or_rat_only"], inplace=True)
