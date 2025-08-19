@@ -1,5 +1,6 @@
 configfile: "config.yaml"
 
+from pathlib import Path
 import os, json, shlex
 
 # Snakemake automatically loads config.yaml into `config`
@@ -17,19 +18,53 @@ def opt_flag(flag, value):
 
 # Pre-compute strings for shell commands (quoted safely)
 WRONG_CSVS_STR      = join_quoted(cfg.get("wrong_csvs", []))
+WRONG_CSVS = cfg.get("wrong_csvs", [])
 COMBINE_EXCLUDES    = join_quoted(cfg.get("wrong_csvs", []))
 COMBINE_INNERS_JSON = json.dumps(cfg["combine"].get("inner_folders", []))  # JSON uses double quotes -> safe to single-quote in shell
 COMBINE_SUBFOLDERS_JSON = json.dumps(cfg["combine"]["subfolders"])
 COMBINE_INNERS_JSON     = json.dumps(cfg["combine"]["inner_folders"])
+
+# --- CADMUS patterns ---
+CADMUS_ROOT = Path(cfg["extract_cadmus_methods"]["cadmus_root"])
+CADMUS_GLOB = cfg["extract_cadmus_methods"].get("cadmus_glob", "*/output")
+CADMUS_DIRS = sorted(str(p) for p in CADMUS_ROOT.glob(CADMUS_GLOB) if p.is_dir())
+
+# derive stable labels (use the parent dir name, e.g. "cadmus_pd")
+def _label_for(p: str) -> str:
+    return Path(p).parent.name
+
+CADMUS_LABELS = [_label_for(p) for p in CADMUS_DIRS]
+CADMUS_MAP    = dict(zip(CADMUS_LABELS, CADMUS_DIRS))
+
+# shared output base (same dir for all jobs) + per-input marker to enable parallelism
+OUT_BASE        = cfg["extract_cadmus_methods"]["cadmus_output"]
+CADMUS_MARKER_PATTERN  = os.path.join(OUT_BASE, "job_done_{label}.flag")
+
+# --- PMC patterns ---
+def _label_for_pmc(p: str) -> str:
+    return Path(p).name  
+
+PMC_ROOT = Path(cfg["extract_pmc_methods"]["pmc_root"])
+PMC_GLOB = cfg["extract_pmc_methods"].get("pmc_glob", "*_fulltext")
+PMC_DIRS = sorted(str(p) for p in PMC_ROOT.glob(PMC_GLOB) if p.is_dir())
+
+PMC_LABELS = [_label_for_pmc(p) for p in PMC_DIRS]
+PMC_MAP    = dict(zip(PMC_LABELS, PMC_DIRS))
+
+# shared output base (same dir for all jobs) + per-input marker to enable parallelism
+PMC_OUT_BASE        = cfg["extract_pmc_methods"]["pmc_output"]
+PMC_MARKER_PATTERN  = os.path.join(PMC_OUT_BASE, "job_done_{label}.flag")
+
+# Optional helper if you use it; otherwise make wrong_csvs empty
+def opt_flag(name, value):
+    return f"{name} {shlex.quote(value)}" if value else ""
 
 NER_DATASETS = ["strain", "animals_nr"]
 
 # ---------- workflow ----------
 rule all:
     input:
-        cfg["extract_pmc_methods"]["output_base"],
-        cfg["extract_cadmus_methods"]["cadmus_output"],
-        cfg["combine"]["output_jsonl"],
+        cfg["combine"]["output_jsonl"], 
         cfg["sentence_extraction"]["output_jsonl"],
         cfg["regex_classification"]["output_dir"],
         expand(
@@ -52,22 +87,23 @@ rule all:
         cfg["clean_age_values"]["output_file"],
         cfg["validate_age"]["out_final"],
         cfg["doc_level_age_mapping"]["out_csv"]
+        
 
 rule extract_methods_pmc:
     output:
-        directory(cfg["extract_pmc_methods"]["output_base"])
+        done = PMC_MARKER_PATTERN  
     params:
-        input_base  = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["input_base"]),
-        output_base = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["output_base"]),
-        logs_dir    = lambda wc: shlex.quote(cfg["extract_pmc_methods"]["logs_dir"])
+        pmc_dir  = lambda wc: shlex.quote(PMC_MAP[wc.label]),
+        output_base = lambda wc: shlex.quote(PMC_OUT_BASE),
+        logs_dir    = lambda wc: shlex.quote(os.path.join(cfg["logs_base"], f"pmc_{wc.label}"))
     log:
-        out=os.path.join(cfg["extract_pmc_methods"]["logs_dir"], "extract_methods_pmc_out.log"),
-        err=os.path.join(cfg["extract_pmc_methods"]["logs_dir"], "extract_methods_pmc_err.log")
+        out = os.path.join(cfg["logs_base"], "extract_methods_pmc_{label}.out"),
+        err = os.path.join(cfg["logs_base"], "extract_methods_pmc_{label}.err")
     threads: 2
     resources:
-        cpus_per_task=2,
+        cpus_per_task=8,
         mem_mb=8000,
-        runtime="1h"
+        runtime="39h"
     conda:
         "envs/papermage.yaml"
     shell:
@@ -77,50 +113,54 @@ rule extract_methods_pmc:
 
         # Run multi-folder PMC extraction
         python ../07_full_text_retrieval/extract_methods_from_bioc_json.py \
-          --input_base {params.input_base} \
+          --input_base {params.pmc_dir} \
           --output_base {params.output_base} \
           --logs_dir {params.logs_dir} \
         > {log.out} 2> {log.err}
+        touch {output.done}
         """
 
-
-rule extract_methods:
+rule extract_methods_cadmus:
     output:
-        directory(cfg["extract_cadmus_methods"]["cadmus_output"])
+        marker = CADMUS_MARKER_PATTERN
     params:
-        cadmus_dir = lambda wc: shlex.quote(cfg["extract_cadmus_methods"]["cadmus_dir"]),
-        wrong_csvs = lambda wc: opt_flag("--wrong-csvs", WRONG_CSVS_STR),
-        output_base = lambda wc: shlex.quote(cfg["extract_cadmus_methods"]["cadmus_output"]),
-        logs_base   = lambda wc: shlex.quote(cfg["logs_base"])
+        cadmus_dir  = lambda wc: shlex.quote(CADMUS_MAP[wc.label]),
+        wrong_csvs  = lambda wc: (
+            "--wrong-csvs " + " ".join(shlex.quote(str(p)) for p in WRONG_CSVS)
+            if WRONG_CSVS else ""
+        ),
+        output_base = lambda wc: shlex.quote(OUT_BASE),  # same target dir for all
+        logs_base   = lambda wc: shlex.quote(os.path.join(cfg["logs_base"], f"cadmus_{wc.label}"))
     log:
-        out=os.path.join(cfg["logs_base"], "extract_methods_out.log"),
-        err=os.path.join(cfg["logs_base"], "extract_methods_err.log")
-    threads: 4
+        out = os.path.join(cfg["logs_base"], "extract_methods_cadmus_{label}.out"),
+        err = os.path.join(cfg["logs_base"], "extract_methods_cadmus_{label}.err")
+    threads: 8
     resources:
-        cpus_per_task=4,
-        mem_mb=18000,
-        runtime="2h"
+        cpus_per_task = 8,
+        mem_mb        = 18000,
+        runtime       = "39h"
     conda:
         "envs/papermage.yaml"
     shell:
-        r"""
+        """
         set -euo pipefail
-        # Prepare logs directory
-        mkdir -p {params.logs_base}
-
-        # Run extraction and redirect outputs
+        mkdir -p {params.logs_base} {params.output_base}
+    
         python ../07_full_text_retrieval/extract_methods_from_cadmus.py \
           --cadmus-dir {params.cadmus_dir} \
           {params.wrong_csvs} \
           --output-base {params.output_base} \
           --logs-base {params.logs_base} \
-        > {log.out} 2> {log.err}
+          > {log.out} 2> {log.err}
+    
+        # per-input completion marker
+        touch {output.marker}
         """
 
 rule combine_methods:
     input:
-        cfg["extract_cadmus_methods"]["cadmus_output"],
-        cfg["extract_pmc_methods"]["output_base"]
+        cadmus_done = expand(CADMUS_MARKER_PATTERN, label=CADMUS_LABELS),
+        pmc_done    = expand(PMC_MARKER_PATTERN, label=PMC_LABELS)
     output:
         cfg["combine"]["output_jsonl"]
     params:

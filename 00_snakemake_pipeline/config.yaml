@@ -6,35 +6,36 @@ wrong_csvs:
 logs_base: "logs"
 
 extract_cadmus_methods:
-  cadmus_dir: "/shares/animalwelfare.crs.uzh/cadmus/cadmus_pd/output"
-  cadmus_output: "materials_methods/extracted/cadmus"
+  cadmus_root: "/shares/animalwelfare.crs.uzh/cadmus"      # <- parent folder
+  cadmus_glob: "*/output"                                  # optional; defaults to this
+  cadmus_output: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/extracted/cadmus"
 
 extract_pmc_methods:
-  input_base: "../07_full_text_retrieval/pmc_fulltext"
-  output_base: "materials_methods/extracted/bioc_json"  
+  pmc_root: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/pmc_fulltext"
+  pmc_glob: "*_fulltext"
+  pmc_output: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/extracted/bioc_json"  
   logs_dir: "logs/pmc"
 
 combine:
-  base_dir: "materials_methods/extracted"
+  base_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/extracted"
   subfolders:
     - cadmus
     - bioc_json
   inner_folders:
     # Must be the same length as subfolders; each item is either a list of inner dirs or null
     - ["html", "xml", "plain", "pdf"]                 # for cadmus
-    - ["MS_methods", "alzheimer_methods", "parkinson_methods", "epilepsy_methods"]  # for bioc_json
-  output_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
+    - ["MS_methods", "alzheimer_methods", "parkinson_methods", "epilepsy_methods", "all_pmids_methods", "all_remaining_pmids_methods", "preclin_disease_filtered_pmids_methods"]  # for bioc_json
+  output_jsonl: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/combined_materials_methods.jsonl"
 
 
 sentence_extraction:
-  input_jsonl: "materials_methods/combined/combined_materials_methods.jsonl"
-  output_jsonl: "materials_methods/combined/combined_methods_sentences.jsonl"
+  output_jsonl: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/combined_methods_sentences.jsonl"
   text_col: "Text"
 
 regex_classification:
   category: "all"
   text_col: "sent_txt"
-  output_dir: "model_predictions/regex"
+  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/regex"
   prediction_files:
     - blinding_predictions.csv
     - randomization_predictions.csv
@@ -54,19 +55,19 @@ regex_doc_level:
     - assay_doc_level_predictions.csv
 
 filter_age_sentences:
-  predictions_file: "model_predictions/regex/age_predictions.csv"
-  output_file: "model_predictions/age/regex_age_sentences.csv"
+  predictions_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/regex/age_predictions.csv"
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/regex_age_sentences.csv"
 
 predict_age_sent_bert:
   model_path: "/shares/animalwelfare.crs.uzh/age_sentence_classifier_final/microsoft_BiomedNLP-BiomedBERT-large-uncased-abstract/best"
-  input_file: "model_predictions/age/regex_age_sentences.csv"
-  output_file: "model_predictions/age/sentences_with_bert_age_predictions.csv"
+  input_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/regex_age_sentences.csv"
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/sentences_with_bert_age_predictions.csv"
 
 extract_age_unsloth:
   # --- script args ---
   model_dir: "/data/sdonev/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
-  input_file: "model_predictions/age/sentences_with_bert_age_predictions.csv"
-  output_file: "model_predictions/age/age_unsloth_llama31_8b.csv"
+  input_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/sentences_with_bert_age_predictions.csv"
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/age_unsloth_llama31_8b.csv"
 
   # columns
   text_col: "sent_txt"
@@ -81,33 +82,33 @@ extract_age_unsloth:
   log_path: "server_logs/llm_age_prediction.log"
 
 clean_age_values:
-  output_file: "model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv"
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions.csv"
 
 validate_age:
-  out_too_high: "model_predictions/age/post_processing/df_age_processed_too_high_values.csv"
-  out_pmcid_map: "model_predictions/age/post_processing/df_incl_pmcid.csv"
-  out_pmc_corrections: "model_predictions/age/post_processing/df_age_processed_via_pmc.csv"
-  out_publisher_corrections: "model_predictions/age/post_processing/df_age_processed_via_publisher.csv"
-  out_final: "model_predictions/age/df_age_predictions_verified.csv"
+  out_too_high: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/post_processing/df_age_processed_too_high_values.csv"
+  out_pmcid_map: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/post_processing/df_incl_pmcid.csv"
+  out_pmc_corrections: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/post_processing/df_age_processed_via_pmc.csv"
+  out_publisher_corrections: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/post_processing/df_age_processed_via_publisher.csv"
+  out_final: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/df_age_predictions_verified.csv"
   api_key_file: "../07_full_text_retrieval/api_keys.txt"
   
 doc_level_age_mapping:
   model_name_str: "age_unsloth_meta_llama_3.1_8b"
-  species_csv: "model_predictions/regex/species_predictions.csv"
+  species_csv: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/regex/species_predictions.csv"
   pred_col_species: "prediction_encoded_label"
   pred_col_age: "verified_prediction_encoded_label"
-  out_csv: "model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv"
+  out_csv: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/age_unsloth_meta_llama_3.1_8b_doc_level_predictions_mapped.csv"
 
 split_combined_texts:
   num_chunks: 10
-  output_dir: "materials_methods/combined/split_chunks"  
+  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks"  
 
 ner_inference:
   model_types:
     - animals_nr
     - strain
   shared:
-    chunk_input_dir: "materials_methods/combined/split_chunks"
+    chunk_input_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks"
     chunk_prefix: "chunk_"
     chunk_suffix: ".jsonl"
     num_chunks: 10
@@ -115,30 +116,30 @@ ner_inference:
     animals_nr:
       model_name: "michiyasunaga/BioLinkBERT-base"
       model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_animals_nr_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
-      output_dir: "model_predictions/animals_nr/bert_predictions"
+      output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/bert_predictions"
     strain:
       model_name: "michiyasunaga/BioLinkBERT-base"
       model_path: "/shares/animalwelfare.crs.uzh/preclin_ner_models/out_strain_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
-      output_dir: "model_predictions/strain/bert_predictions"
+      output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/bert_predictions"
 
 clean_ner:
     strain:
-        input_prediction: "model_predictions/strain/bert_predictions"
-        output_clean: "model_predictions/strain/processed"
+        input_prediction: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/bert_predictions"
+        output_clean: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/processed"
     animals_nr:
-        input_prediction: "model_predictions/animals_nr/bert_predictions"
-        output_clean: "model_predictions/animals_nr/processed"
+        input_prediction: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/bert_predictions"
+        output_clean: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/processed"
         
 clean_animal_nr:
-  output_dir: "model_predictions/animals_nr/final_clean"
+  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/final_clean"
 
 map_animal_nr_to_numeric:
-  output_dir: "model_predictions/animals_nr"
+  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr"
 
 map_strain_values:
-  input_dir: "model_predictions/strain/processed"
-  output_file: "model_predictions/strain/strain_predictions_normalized.csv"
-  synonyms_file: "../08_IE_full_text//data/strain_normalization/combined_df_mice_rat.csv"
+  input_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/processed"
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/strain_predictions_normalized.csv"
+  synonyms_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/data/strain_normalization/combined_df_mice_rat.csv"
   column: "prediction_encoded_label"
   new_column: "animal_strain_norm"
   delimiter: ","
