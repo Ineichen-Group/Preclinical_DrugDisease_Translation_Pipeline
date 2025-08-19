@@ -253,74 +253,93 @@ def process_each_json_or_xml_in_dir(
 
 def main() -> None:
     """
-    CLI entry point to process all *_fulltext folders inside a given input base directory.
-
-    Example:
-        --input_base 07_full_text_retrieval/pmc_fulltext
-
-        Will process:
-            - 07_full_text_retrieval/pmc_fulltext/parkinson_fulltext
-            - 07_full_text_retrieval/pmc_fulltext/alzheimer_fulltext
-            - etc.
-
-        And write to:
-            - 07_full_text_retrieval/materials_methods/bioc_json/parkinson_methods
-            - 07_full_text_retrieval/materials_methods/bioc_json/alzheimer_methods
-            ...
+    If --input_base points to a directory that *contains* multiple *_fulltext subfolders,
+    process each subfolder. If --input_base *itself* is a *_fulltext folder (or contains
+    JSON/XML files directly), process it as a single domain.
     """
     parser = argparse.ArgumentParser(
-        description="Extract Materials & Methods sections from all *_fulltext folders."
+        description="Extract Materials & Methods sections from PMC JSON/XML."
     )
-
     parser.add_argument(
         "--input_base",
         type=Path,
         default=Path("07_full_text_retrieval/pmc_fulltext"),
-        help="Base input directory containing *_fulltext subfolders."
+        help="Either a directory containing multiple *_fulltext subfolders, or a single *_fulltext folder itself.",
     )
-
     parser.add_argument(
         "--output_base",
         type=Path,
         default=Path("07_full_text_retrieval/materials_methods/bioc_json"),
-        help="Base output directory to save *_methods folders."
+        help="Base output directory to save *_methods folders.",
     )
-
     parser.add_argument(
         "--logs_dir",
         type=Path,
         default=Path("07_full_text_retrieval/materials_methods/logs/pmc"),
-        help="Directory to store logs and summaries."
+        help="Directory to store logs and summaries.",
     )
-
     args = parser.parse_args()
 
-    input_base = args.input_base
-    print(f"Scanning for *_fulltext folders in: {input_base}")
+    args.logs_dir.mkdir(parents=True, exist_ok=True)
+
+    input_base: Path = args.input_base
+    print(f"Scanning: {input_base}")
+
+    # Helper to decide if this path is a single *_fulltext folder with files to process
+    def _looks_like_single_fulltext_dir(p: Path) -> bool:
+        if not p.is_dir():
+            return False
+        if p.name.endswith("_fulltext"):
+            return True
+        # Also treat as single if it directly contains JSON/XML
+        if any(p.glob("*.json")) or any(p.glob("*.xml")):
+            return True
+        return False
+
     summaries = []
 
-    for subfolder in sorted(input_base.glob("*_fulltext")):
-        if not subfolder.is_dir():
-            continue
+    # Case 1: input_base is a single *_fulltext folder (or contains files directly)
+    if _looks_like_single_fulltext_dir(input_base):
+        folder_domain = input_base.name.replace("_fulltext", "")
+        print(f"\nProcessing single domain: {folder_domain}")
 
-        folder_domain = subfolder.name.replace("_fulltext", "")
-        print(f"\nProcessing domain: {folder_domain}")
-
-        input_path = subfolder
         output_path = args.output_base / f"{folder_domain}_methods"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         summary_text = process_each_json_or_xml_in_dir(
-            json_dir=input_path,
+            json_dir=input_base,
             output_dir=output_path,
             logs_dir=args.logs_dir,
-            disease=folder_domain  # used internally for log naming
+            disease=folder_domain,
         )
         summaries.append(summary_text)
-        
-    combined = args.logs_dir / f"summary_stats_pmc_methods_all.txt"
-    combined.write_text("\n".join(summaries))
-    
-    print(f"\nWrote combined summary: {combined}")
 
+    # Case 2: input_base contains multiple *_fulltext subfolders
+    else:
+        subdirs = [d for d in sorted(input_base.glob("*_fulltext")) if d.is_dir()]
+        if not subdirs:
+            raise FileNotFoundError(
+                f"No '*_fulltext' subfolders or JSON/XML files found under: {input_base}"
+            )
+        for subfolder in subdirs:
+            folder_domain = subfolder.name.replace("_fulltext", "")
+            print(f"\nProcessing domain: {folder_domain}")
+
+            output_path = args.output_base / f"{folder_domain}_methods"
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            summary_text = process_each_json_or_xml_in_dir(
+                json_dir=subfolder,
+                output_dir=output_path,
+                logs_dir=args.logs_dir,
+                disease=folder_domain,
+            )
+            summaries.append(summary_text)
+
+    # Write combined summary (works for both single and multi cases)
+    combined = args.logs_dir / "summary_stats_pmc_methods_all.txt"
+    combined.write_text("\n".join(summaries))
+    print(f"\nWrote combined summary: {combined}")
+    
 if __name__ == "__main__":
     main()
