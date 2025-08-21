@@ -232,10 +232,40 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_json: str = None, l
         next_text = text[start_idx:]
         for stop_match in stop_section_regex.finditer(next_text):
             end_candidate_start = start_idx + stop_match.start()
-            context_before_stop = text_lower[max(0, end_candidate_start - 10):end_candidate_start]
-            if not re.search(r'\bthe\s+$', context_before_stop):
-                end_idx = end_candidate_start
-                break
+
+            # 1) Skip if the stop section title is preceded by a context that suggests it’s not a section
+            context_before_stop = text_lower[max(0, end_candidate_start - 30): end_candidate_start]
+            if re.search(
+                r'\b(?:the|this|that|these|those|our|their|its|and|of|all|in|'
+                r'similar|reliable|significant|preliminary|previous|current|presented|further|recorded|unpublished)\s+$',
+                context_before_stop,
+            ):
+                continue
+
+            # 2) skip if the title is "results" or "references" and followed by a passive or active verb
+            title = stop_match.group(2).lower()
+            after = next_text[stop_match.end(): stop_match.end() + 30].lower()
+            if title == "results" or title == "references":
+                if re.match(r'\s*,', after):
+                    continue
+                # most common passives: are/were + participle
+                if re.match(
+                    r'\s*(?:are|were)\s+(?:shown|presented|reported|provided|expressed|'
+                    r'described|listed|summarized|summarised|compared|indicated|given|'
+                    r'displayed|illustrated|obtained|observed|analysed|analyzed)\b',
+                    after,
+                ):
+                    continue
+                # very common actives immediately after "results"
+                if re.match(r'\s*(?:show|shows|showed|indicate|indicates|indicated|'
+                            r'suggest|suggests|suggested)\b', after):
+                    continue
+                # frequent noun-phrase starts
+                if re.match(r'\s*(?:of|from|for|in)\b', after):
+                    continue
+
+            end_idx = end_candidate_start
+            break
 
         # Extract from start to valid end (or to end of text)
         section_text = (text[start_idx:end_idx].strip() if end_idx
