@@ -27,8 +27,21 @@ class SpeciesClassifier:
     # Raw regex patterns for each species label
     RAW_PATTERNS: dict[str, List[str]] = {
         "rat": [r"\brats?\b"],
-        "mouse": [r"\bmouse\b", r"\bmice\b"],
-        "cat": [r"\bcats?\b"],
+        "mouse": [
+            r"\bmouse\b(?!\s+MOG)",   # "mouse", but not "mouse MOG"
+            r"\bmice\b",
+        ],
+        "cat": [
+            # Match cat/cats as animals, but NOT:
+            # - catalog refs (Cat., Cat#, Cat No./Nr./Num./Number)
+            # - author initials/surnames context (e.g., "A. Cats", "Cats J.")
+            # - enzyme acronym contexts: "CAT, EC …", "CAT activity", "CAT assay", "CAT enzyme"
+            r"(?<![A-Z]\.\s)\bcat(?:s)?\b"
+            r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number)\b)"     # not catalog
+            r"(?!\s*[A-Z]\.)"                                     # not 'Cats J.'
+            r"(?!\s*,\s*EC\b)"                                    # not 'CAT, EC …'
+            r"(?!\s+(?:activity|assay|enzyme)\b)",                # not 'CAT activity/assay/enzyme'
+        ],
         "dog": [r"\bdogs?\b"],
         "guinea pig": [r"\bguinea pigs?\b"],
         "monkey": [
@@ -40,28 +53,62 @@ class SpeciesClassifier:
             r"\bgibbons?\b",
         ],
         "pig": [r"\bpigs?\b", r"\bswines?\b", r"\bpiglets?\b"],
-        "rabbit": [r"\brabbits?\b"],
+        "rabbit": [
+            # match rabbit/rabbits, but not when followed by Ig (IgG, IgM, IgA, etc.)
+            r"\brabbits?\b(?!\s+Ig[GMDAE]?\b)",
+        ],
         "species-other": [],  # fallback
     }
 
     # False context terms that invalidate a species match if found in proximity
     FALSE_CONTEXT_TERMS: str = r"""
+        (?ix)
         \b(
-            antibody|antibodies|antiserum|antigens?|tissues?|
+            antibody|antibodies|
+            antiserum|antisera|antigens?|tissues?|dilution|
             monoclonal|polyclonal|wako|Wako|peptides?|
-            Ig\s*[A-Z]{1,2}|
+            Ig\s*[A-Z]{1,2}|Ig-?coated|
             mAb|pAb|HRP|APC|FITC|PE|MBP|Cy\d+|myelin\s+basic\s+protein|
             ELISA|immunoblot|western\s+blot|immunostaining|
-            conjugated|biotinylated|fluorescent-labeled|
-            GAPDH|tubulin|β-actin|emulsified|immunized\s+with|emulsion|
-            isolated\s+from|purified\s+from|emulsified\s+in|injections?\s+of|activated\s+by|
+            conjugated|biotinylated|fluorescent-?labeled|
+            GAPDH|tubulin|β-actin|emulsified|emulsion|
+            emulsified\s+in|injections?\s+of|activated\s+by|primary\s+cultures?|
             luciferase|peroxidase|polymerase|qPCR|RT-PCR|Taq|
             serum|lysate|recombinant|TG2|anti|OX\d+|CD\d+
         )\b
+        |
+        # ---- Antibody reagent cues (no vendor handling) ----
+    
+        # Species – α/anti – target   e.g., "rabbit–α-human von Willebrand Factor", "mouse-α-smooth muscle actin clone 1A4"
+        \b(?:rabbit|mouse|goat|rat|sheep|hamster|donkey|chicken|guinea\s*pig|llama|alpaca|human)
+          \s*(?:[–-]\s*)?(?:α|anti[-\s]?)
+          \s*[^\),;]{2,80}                                   # up to a comma/paren/semicolon boundary
+        |
+        # Citation tail style A: Journal + volume + year + pages
+        \b(?:[A-Z][a-z]+\.?\s?){1,6}
+        [\s,;:]+
+        \d{1,4}
+        (?:\s*\(\s*\d{1,4}\s*\))?
+        [\s,;:]+
+        (?:19\d{2}|20\d{2}|21\d{2})
+        [\s,;:]+
+        \d{1,6}(?:[-–]\d{1,6})?
+        |
+        # Citation tail style B: Journal + year ; volume : pages
+        \b(?:[A-Z][a-z]+\.?\s?){1,6}
+        \s+
+        (?:19\d{2}|20\d{2}|21\d{2})
+        \s*;\s*
+        \d{1,4}
+        \s*:\s*
+        \d{1,6}(?:[-–]\d{1,6})?
+        |
+        # ---- Donor tissue cues ----
+        \b(?:obtained|purified|isolated|harvested|derived)\s+from\b
     """
 
     # How many word‐tokens on each side of the matched token to look at
-    WINDOW: int = 10
+    WINDOW: int = 12
 
     def __init__(self):
         # Compile species‐patterns and false‐context pattern once

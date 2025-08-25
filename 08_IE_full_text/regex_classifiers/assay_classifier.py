@@ -2,7 +2,11 @@ import re
 import csv
 from typing import Dict, List, Tuple
 from collections import defaultdict
-from regex_base import RegexClassifier
+from .regex_base import RegexClassifier
+import unicodedata
+
+def normalize(text):
+    return unicodedata.normalize("NFKC", text).lower()
 
 class AssayClassifier(RegexClassifier):
     """Classifier to detect assays by category using CSV-driven canonical/synonym mapping."""
@@ -67,10 +71,17 @@ class AssayClassifier(RegexClassifier):
                 vector[self._label_to_index[label]] = 1
                 found_labels.append(label)
             
-                canonicals = [
-                   self._synonym_to_canonical[label][m.group(0).lower()]
-                    for m in set(matches)
-                ]
+            canonicals = []
+            for m in set(matches):
+                match_text = normalize(m.group(0).lower())
+                canonical = self._synonym_to_canonical[label].get(match_text)
+                if canonical:
+                    canonicals.append(canonical)
+                else:
+                    canonicals.append(match_text)
+                    # If no canonical found, keep the match as is
+                    print(f"Warning: unmatched synonym '{match_text}' under label '{label}'")
+
                 canonicals = list(dict.fromkeys(canonicals)) # Remove duplicates while preserving order
                 matches_text_pos = [
                     f"{m.group(0)} ({m.start()}-{m.end()})"

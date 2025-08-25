@@ -1,7 +1,7 @@
 # classifiers/sex_classifier.py
 
 import re
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 
 class SexClassifier:
     """
@@ -9,8 +9,8 @@ class SexClassifier:
     Returns a tuple: (numeric_code, label_str).
     """
 
-    def __init__(self):
-        # Compile all patterns once at instantiation
+    def __init__(self, window: int = 12):
+        self.window = window  # number of tokens on each side for false-context check
         self.compile_patterns()
 
     def compile_patterns(self) -> None:
@@ -18,7 +18,16 @@ class SexClassifier:
         Build self._patterns as a dict: label → [re.Pattern, …]
         and define self._label_to_code mapping.
         """
-        # Raw regex patterns for each label, hard‐coded here:
+        # -------- FALSE CONTEXT TERMS (hardcoded, multiline) --------
+        FALSE_CONTEXT_TERMS: str = r"""(?ix)
+        \b(
+            patients?              # 'patient'/'patients'
+          | females?\s+versus\s+males?   # 'females versus males'
+        )\b
+        """
+        self._false_context = re.compile(FALSE_CONTEXT_TERMS, re.IGNORECASE | re.VERBOSE)
+
+
         raw_patterns: Dict[str, List[str]] = {
             "sex-female": [
                 r"\bfemales?\b",
@@ -38,14 +47,11 @@ class SexClassifier:
             ],
         }
 
-        # Compile each raw pattern into a re.Pattern (IGNORECASE)
-        self._patterns: Dict[str, List[re.Pattern]] = {}
-        for label, patt_list in raw_patterns.items():
-            self._patterns[label] = [
-                re.compile(p, flags=re.IGNORECASE) for p in patt_list
-            ]
+        self._patterns: Dict[str, List[re.Pattern]] = {
+            label: [re.compile(p, re.IGNORECASE) for p in patt_list]
+            for label, patt_list in raw_patterns.items()
+        }
 
-        # Define a mapping from label strings to numeric codes
         self._label_to_code: Dict[str, int] = {
             "sex-both": 3,
             "sex-female": 1,
@@ -53,21 +59,43 @@ class SexClassifier:
             "sex-not-reported": 0,
         }
 
-    def _find_first_match(self, regex_obj: re.Pattern, text: str) -> re.Match:
-        """
-        Convenience method: return the first match object or None.
-        """
-        return regex_obj.search(text)
+    def _find_first_match(self, regex_obj: re.Pattern, text: str, context: int = 50) -> Optional[re.Match]:
+
+        match = regex_obj.search(text)
+        if not match:
+            return None
+
+        start, end = match.start(), match.end()
+
+        # show context snippet
+        snippet_start = max(0, start - context)
+        snippet_end = min(len(text), end + context)
+        snippet = text[snippet_start:snippet_end]
+        print(f"Found match: {match.group(0)!r}")
+        print(f"Context: ...{snippet}...")
+
+        # ---- false-context window check ----
+        tokens = list(re.finditer(r"\b\w+\b", text))
+        overlapping_indices = [
+            i for i, tok in enumerate(tokens)
+            if (tok.start() < end and tok.end() > start)
+        ]
+        if overlapping_indices:
+            for idx in overlapping_indices:
+                start_idx = max(0, idx - self.window)
+                end_idx = min(len(tokens), idx + self.window + 1)
+
+                char_start = tokens[start_idx].start()
+                char_end = tokens[end_idx - 1].end()
+                window_snippet = text[char_start:char_end]
+                
+                if self._false_context.search(window_snippet):
+                    print("→ Skipped: FALSE_CONTEXT_TERMS found within token window.")
+                    return None
+
+        return match
 
     def classify(self, text: str) -> Tuple[int, str]:
-        """
-        Check each label’s compiled patterns against `text`.
-        If both female & male matched → 'sex-both'
-        If only female → 'sex-female'
-        If only male → 'sex-male'
-        Else → 'sex-not-reported'
-        Then look up the numeric code in self._label_to_code and return (code, label).
-        """
         found: Dict[str, bool] = {label: False for label in self._patterns}
 
         for label, compiled_list in self._patterns.items():
@@ -76,11 +104,11 @@ class SexClassifier:
                     found[label] = True
                     break
 
-        if found.get("sex-female", False) and found.get("sex-male", False):
+        if found["sex-female"] and found["sex-male"]:
             final_label = "sex-both"
-        elif found.get("sex-female", False):
+        elif found["sex-female"]:
             final_label = "sex-female"
-        elif found.get("sex-male", False):
+        elif found["sex-male"]:
             final_label = "sex-male"
         else:
             final_label = "sex-not-reported"
