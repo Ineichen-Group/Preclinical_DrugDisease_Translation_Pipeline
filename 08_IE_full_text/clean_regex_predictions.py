@@ -21,7 +21,8 @@ def document_level_strict_zero_fallback(df):
 
         # Use max prediction from selected
         max_num = selected['prediction_encoded_num'].max()
-        label = selected.iloc[0]['prediction_encoded_label']
+        top = selected[selected["prediction_encoded_num"] == max_num]
+        label = top.iloc[0]['prediction_encoded_label']
         support_ids = selected['sentence_id'].tolist()
 
         records.append({
