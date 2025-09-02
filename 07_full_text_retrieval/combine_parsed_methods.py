@@ -5,38 +5,20 @@ from cadmus_extractors.utils import load_wrong_pmids
 import csv
 import re
 import argparse
-import json
+import json, os, logging
 
-def process_json_folder(
-    folder: Path,
-    exclude_pmids: Set[str],
-    source_label: str,
-    pattern: str = '*.json'
-) -> pd.DataFrame:
-    """Return one big DataFrame of grouped articles from JSON files."""
-    frames = []
-    for json_path in folder.glob(pattern):
-        df = pd.read_json(json_path)
-        if 'doc_id' not in df.columns or 'paragraph' not in df.columns:
-            print(f"Skipping {json_path}: missing doc_id or paragraph")
-            continue
-        df = df.rename(columns={'doc_id': 'pmid'})
-        df['pmid'] = df['pmid'].astype(str)
-        if df['pmid'].iloc[0] in exclude_pmids:
-            continue
-        df['subtitle_paragraph'] = (
-            df.get('subtitle', '').fillna('') + ' ' +
-            df.get('paragraph', '').fillna('')
-        )
-        merged = (
-            df.groupby('pmid')['subtitle_paragraph']
-              .apply(' '.join)
-              .reset_index(name='Text')
-              .rename(columns={'pmid': 'PMID'})
-        )
-        merged['Source'] = source_label
-        frames.append(merged)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=['PMID', 'Text', 'Source'])
+
+# Configure a module-level logger once
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# If no handlers are set, add a basic one (so it works stand-alone too)
+if not logger.hasHandlers():
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
 
 def normalize_text(text):
     """
@@ -63,81 +45,95 @@ def normalize_text(text):
 
 def iter_json_file(path: Path) -> Iterable[Dict[str, Any]]:
     """
-    Yields records from a JSON or JSONL file without loading whole file.
-    - If file is JSON Lines: one JSON per line.
-    - If file is a list[...] JSON: stream it line-by-line (fallback: small load).
+    Stream records from either a JSON array file or JSON Lines (JSONL).
+    Uses ijson for arrays if available; otherwise falls back to loading the file.
     """
-    # Try JSON Lines first
-    with path.open("r", encoding="utf-8") as f:
-        first = f.read(2048)
-        if first.lstrip().startswith("["):
-            # Probably a JSON array; fall back to a small-load approach
-            # If files are very large arrays, consider `ijson` instead.
-            obj = json.loads(first + f.read())  # <— if this is too big, switch to ijson
-            if isinstance(obj, list):
-                for rec in obj:
+    try:
+        import ijson  # pip install ijson
+    except Exception:
+        ijson = None
+
+    with path.open("rb") as f:
+        head = f.read(2048)
+        f.seek(0)
+        if head.lstrip().startswith(b"["):  # JSON array
+            if ijson is None:
+                # Fallback only OK if files are not huge
+                for rec in json.load(f):
                     yield rec
             else:
-                yield obj
-        else:
-            # JSONL
-            # Re-open and stream properly from the start
-            f.seek(0)
+                for rec in ijson.items(f, "item"):
+                    yield rec
+        else:  # JSONL
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 yield json.loads(line)
 
+def aggregate_one_file(json_path: Path, include_subtitles: bool = True) -> Dict[str, str]:
+    """
+    Read ONE JSON file, group by doc_id/pmid, and return {pmid: concatenated_text}.
+    Keeps only in-memory buckets for this single file.
+    """
+    buckets: Dict[str, list] = {}
+    n_records = 0
+
+    for rec in iter_json_file(json_path):
+        n_records += 1
+        pmid = str(rec.get("PMID") or rec.get("pmid") or rec.get("doc_id") or "").strip()
+        if not pmid:
+            continue
+        para = (rec.get("paragraph") or rec.get("Text") or rec.get("text") or "").strip()
+        if not para:
+            continue
+        if include_subtitles:
+            sub = (rec.get("subtitle") or "").strip()
+            chunk = f"{sub}\n{para}" if sub else para
+        else:
+            chunk = para
+        buckets.setdefault(pmid, []).append(chunk)
+
+    doc_texts = {pmid: "\n\n".join(chunks) for pmid, chunks in buckets.items()}
+    logger.info(f"{json_path.name}: read {n_records:,} rows; aggregated {len(doc_texts):,} docs")
+    return doc_texts
+
+# --------------- main combiner -----------------
 def combine_all(
     base_dir: str,
     subfolders: List[str],
     inner_folders: List[Union[None, str, List[str]]],
     exclude_pmids: Set[str],
     output_file: str,
+    flush_every: int = 5000,
+    include_subtitles: bool = True,
 ):
     """
-    Combine JSON/JSONL records from multiple sub- and inner-folders into a single JSONL file.
-    Memory-optimized: streams input and deduplicates on the fly by PMID.
-
-    Args:
-        base_dir (str): Root directory that contains the subfolders with JSON files.
-        subfolders (List[str]): Names of top-level subfolders to process (e.g. ["cadmus", "bioc_json"]).
-        inner_folders (List[Union[None, str, List[str]]]): For each subfolder, which inner directories
-            to process. Can be:
-                - None → just process the subfolder itself
-                - str  → process exactly that inner folder
-                - list[str] → process multiple inner folders
-        exclude_pmids (Set[str]): Set of PMIDs to skip completely.
-        output_file (str): Path to the combined JSONL file to write.
-    
-    Behavior:
-        - Iterates over all specified sub- and inner-folders.
-        - For each JSON/JSONL file, streams records line by line (via `iter_json_file`).
-        - Skips records with missing PMIDs or PMIDs in `exclude_pmids`.
-        - Deduplicates globally: if a PMID was already written, skips further occurrences.
-        - Normalizes text fields with `normalize_text()`.
-        - Writes results directly to `output_file` in JSONL format.
-        - Tracks and prints per-subfolder statistics: total records seen vs. unique records written.
+    File-by-file processing:
+      - For each JSON file, aggregate paragraphs per doc_id.
+      - Append aggregated docs to output JSONL immediately.
+      - Continue to the next file (low memory).
+    Output schema per line: {"PMID": <str>, "Text": <str>, "source_label": <str>}
     """
     base = Path(base_dir)
     out = Path(output_file)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    # Bail out early if the base directory is missing
     if not base.exists():
-        print(f"Skipping base_dir '{base_dir}' because it doesn't exist.")
+        logger.warning(f"Skipping base_dir '{base_dir}' because it doesn't exist.")
         return
 
-    seen_pmids: Set[str] = set()   # Tracks global uniqueness
-    folder_counts = {}             # Stats per subfolder
+    seen_pmids: Set[str] = set()
+    total_written = 0
+    per_folder_stats: Dict[str, Dict[str, int]] = {}
 
+    logger.info(f"Writing to: {out}")
+    # Open once in "w" (fresh file), then append per record
     with out.open("w", encoding="utf-8") as w:
         for sub, inner in zip(subfolders, inner_folders):
-            print(f"\nProcessing subfolder: {sub}")
             base_folder = base / sub
+            logger.info(f"Processing subfolder: {sub}")
 
-            # Normalize inner_folders to a list of Path objects
             if inner is None:
                 folders_to_process = [base_folder]
             elif isinstance(inner, list):
@@ -145,57 +141,64 @@ def combine_all(
             else:
                 folders_to_process = [base_folder / inner]
 
+            found_docs_for_sub = 0
             written_for_sub = 0
-            total_found_for_sub = 0
 
-            # Walk through each inner folder
             for folder in folders_to_process:
+                logger.info(f"  Scanning folder: {folder}")
                 if not folder.is_dir():
-                    print(f"Warning: {folder} missing")
+                    logger.warning(f"Folder missing: {folder}")
                     continue
 
-                json_files = list(folder.glob("*.json"))
+                json_files = sorted(folder.glob("*.json"))
                 if not json_files:
-                    print(f"Warning: No JSON files found in {folder}")
+                    logger.warning(f"No JSON files found in {folder}")
                     continue
 
-                # Process each JSON file in the folder
                 for jf in json_files:
-                    for rec in iter_json_file(jf):
-                        # Extract PMID (normalize to string)
-                        pmid = str(rec.get("PMID") or rec.get("pmid") or "")
-                        if not pmid or pmid in exclude_pmids:
+                    try:
+                        doc_texts = aggregate_one_file(jf, include_subtitles=include_subtitles)
+                    except Exception as e:
+                        logger.warning(f"Skipping {jf} due to error: {e}")
+                        continue
+
+                    found_docs_for_sub += len(doc_texts)
+
+                    # Write each aggregated doc from this file, deduping globally
+                    for pmid, text in doc_texts.items():
+                        if pmid in exclude_pmids or pmid in seen_pmids:
                             continue
-
-                        total_found_for_sub += 1
-
-                        # Global deduplication: skip already seen PMIDs
-                        if pmid in seen_pmids:
-                            continue
-
-                        # Normalize and prepare record
-                        txt = rec.get("Text") or rec.get("text") or ""
-                        rec["PMID"] = pmid  # normalize key name
-                        rec["Text"] = normalize_text(txt)
-                        rec["source_label"] = sub  # provenance info
-
-                        # Stream out as JSONL
+                        rec = {
+                            "PMID": pmid,
+                            "Text": normalize_text(text),
+                            "source_label": sub,
+                        }
                         w.write(json.dumps(rec, ensure_ascii=False) + "\n")
-
-                        # Track uniqueness
                         seen_pmids.add(pmid)
                         written_for_sub += 1
+                        total_written += 1
 
-            # Store stats for this subfolder
-            folder_counts[sub] = (total_found_for_sub, written_for_sub)
+                        if total_written % flush_every == 0:
+                            w.flush()
+                            os.fsync(w.fileno())
+                            logger.info(f"Wrote {total_written:,} total records so far...")
 
-    # Print summary statistics
-    print("\n--- Per-folder counts (found → written unique) ---")
-    for sub, (found, written) in folder_counts.items():
-        print(f"{sub:12s}: {found} → {written}")
+            per_folder_stats[sub] = {
+                "found_docs": found_docs_for_sub,
+                "written_unique": written_for_sub,
+            }
 
-    print(f"\nSaved combined JSONL to {out}")
+        # final flush
+        w.flush()
+        os.fsync(w.fileno())
 
+    # Summary
+    logger.info("--- Per-folder (aggregated docs → written unique) ---")
+    for sub, stats in per_folder_stats.items():
+        logger.info(f"{sub:12s}: {stats['found_docs']:,} → {stats['written_unique']:,}")
+    logger.info(f"Total written: {total_written:,}")
+    logger.info(f"Saved combined JSONL to {out}")
+    
 if __name__ == '__main__':
     import argparse, json
     from pathlib import Path
