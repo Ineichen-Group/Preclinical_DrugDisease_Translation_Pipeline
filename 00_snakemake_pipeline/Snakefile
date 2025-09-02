@@ -2,6 +2,7 @@ configfile: "config.yaml"
 
 from pathlib import Path
 import os, json, shlex
+from os.path import join
 
 # Snakemake automatically loads config.yaml into `config`
 cfg = config
@@ -61,6 +62,16 @@ def opt_flag(name, value):
 
 NER_DATASETS = ["strain", "animals_nr"]
 
+MODEL_TYPES = cfg["ner_inference"]["model_types"]
+NUM_CHUNKS  = int(cfg["ner_inference"]["shared"]["num_chunks"])
+CHUNK_PREFIX = cfg["ner_inference"]["shared"]["chunk_prefix"]
+
+INFERENCE_TARGETS = [
+    join(cfg["ner_inference"]["models"][mt]["output_dir"],
+         f"annotated_BioLinkBERT-base_tuples_{CHUNK_PREFIX}{cid}.csv")
+    for mt in MODEL_TYPES
+    for cid in range(1, NUM_CHUNKS + 1)
+]
 # ---------- workflow ----------
 rule all:
     input:
@@ -73,11 +84,7 @@ rule all:
             file=cfg["regex_doc_level"]["output_files"]
         ),
         cfg["filter_age_sentences"]["output_file"],
-        expand(
-            "model_predictions/{model_type}/bert_predictions/test_annotated_BioLinkBERT-base_tuples_chunk_{chunk_id}.csv",
-            model_type=cfg["ner_inference"]["model_types"],
-            chunk_id=range(1, cfg["ner_inference"]["shared"]["num_chunks"] + 1)
-        ),
+        INFERENCE_TARGETS,
         [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS],
         cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv",
         cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv",
@@ -137,8 +144,8 @@ rule extract_methods_cadmus:
     threads: 8
     resources:
         cpus_per_task = 8,
-        mem_mb        = 18000,
-        runtime       = "39h"
+        mem_mb        = 32000,
+        runtime       = "96h"
     conda:
         "envs/papermage.yaml"
     shell:
@@ -164,38 +171,35 @@ rule combine_methods:
     output:
         cfg["combine"]["output_jsonl"]
     params:
-        # Define all parameter logic here for clarity and safety
-        base_dir       = shlex.quote(cfg["combine"]["base_dir"]),
-        output_file    = shlex.quote(cfg["combine"]["output_jsonl"]),
-        
-        # Build optional flags safely inside the params block
-        subfolders_j   = lambda wc: opt_flag(
-            "--subfolders-json", 
-            shlex.quote(json.dumps(cfg["combine"].get("subfolders", [])))
-        ),
-        inners_j       = lambda wc: opt_flag(
-            "--inner-folders-json",
-            shlex.quote(json.dumps(cfg["combine"].get("inner_folders", [])))
-        ),
-        excludes       = lambda wc: opt_flag("--exclude-csvs", WRONG_CSVS_STR),
-
+        base_dir            = cfg["combine"]["base_dir"],
+        output_file         = cfg["combine"]["output_jsonl"],
+        subfolders_json     = json.dumps(cfg["combine"].get("subfolders", [])),
+        inner_folders_json  = json.dumps(cfg["combine"].get("inner_folders", [])),
+        # make sure this points to the right key in your config:
+        exclude_csvs        = cfg["combine"].get("wrong_csvs", []),
+        # pre-join and shell-quote each path
+        exclude_csvs_joined = lambda wc: " ".join(shlex.quote(str(p)) for p in cfg["combine"].get("wrong_csvs", [])),
     log:
         out = os.path.join("logs", "combine_methods_out.log"),
         err = os.path.join("logs", "combine_methods_err.log")
     threads: 2
+    resources:
+        runtime       = "10h",
+        mem_mb        = 32000,
     conda:
         "envs/papermage.yaml"
     shell:
         r"""
         mkdir -p logs
         python ../07_full_text_retrieval/combine_parsed_methods.py \
-            --base-dir {params.base_dir} \
-            {params.subfolders_j} \
-            {params.inners_j} \
-            {params.excludes} \
-            --output-file {params.output_file} \
-            > {log.out} 2> {log.err}
+          --base-dir {params.base_dir:q} \
+          --subfolders-json {params.subfolders_json:q} \
+          --inner-folders-json {params.inner_folders_json:q} \
+          --exclude-csvs {params.exclude_csvs_joined} \
+          --output-file {params.output_file:q} \
+          > {log.out} 2> {log.err}
         """
+
 
 rule extract_sentences:
     input:
@@ -484,11 +488,23 @@ chunk_pattern = (
     f"{shared['chunk_suffix']}"
 )
 
+OUTDIRS_BY_MODEL = {mt: cfg["ner_inference"]["models"][mt]["output_dir"] for mt in MODEL_TYPES}
+PRED_BASE = os.path.commonpath(OUTDIRS_BY_MODEL.values())
+# e.g. "/shares/.../08_IE_full_text/model_predictions"
+
+# build a STRING pattern for outputs (note the literal {model_type} and {chunk_id})
+INFER_OUTPUT_PATTERN = os.path.join(
+    PRED_BASE,
+    "{model_type}",
+    "bert_predictions",
+    f"annotated_BioLinkBERT-base_tuples_{CHUNK_PREFIX}" + "{chunk_id}.csv",
+)
+
 rule run_ner_inference:
     input:
         chunk=chunk_pattern
     output:
-        "model_predictions/{model_type}/bert_predictions/test_annotated_BioLinkBERT-base_tuples_chunk_{chunk_id}.csv"
+        INFER_OUTPUT_PATTERN
     params:
         model_name=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_name"],
         model_path=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_path"],
@@ -525,11 +541,15 @@ rule run_ner_inference:
             > {log.out} 2> {log.err}
         """
 
+# --- Clean-ner output pattern (string) ---
+CLEAN_OUTDIRS = [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS]
+CLEAN_BASE = os.path.commonpath(CLEAN_OUTDIRS)
+CLEAN_OUTPUT_PATTERN = os.path.join(CLEAN_BASE, "{dataset}", "processed")
 rule clean_ner:
     input:
         ner_chunks_dir=lambda wc: cfg["clean_ner"][wc.dataset]["input_prediction"]
     output:
-        directory("model_predictions/{dataset}/processed")
+        directory(CLEAN_OUTPUT_PATTERN)
     params:
         ner_column=cfg["clean_ner"].get("ner_column", "ner_prediction_BioLinkBERT-base_normalized")
     log:
@@ -548,22 +568,21 @@ rule clean_ner:
 
 rule clean_animal_nr:
     input:
-        ner_chunks_dir = "model_predictions/animals_nr/processed"
+        ner_chunks_dir = cfg["clean_ner"]["animals_nr"]["output_clean"],
+        methods_file = cfg["combine"]["output_jsonl"]
     output:
         output_dir = directory(cfg["clean_animal_nr"]["output_dir"]),
         output_file = cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv"
     log:
         out = "logs/clean_animal_nr.out",
-        err = "logs/clean_animal_nr.err"
-    params:
-        methods_file = cfg["combine"]["output_jsonl"]
+        err = "logs/clean_animal_nr.err"        
     conda: "envs/papermage.yaml"
     shell:
         r"""
         mkdir -p logs
         python -u ../08_IE_full_text/clean_animal_nr.py \
             --ner_dir {input.ner_chunks_dir} \
-            --text_file {params.methods_file} \
+            --text_file {input.methods_file} \
             --output_dir {output.output_dir} \
             > {log.out} 2> {log.err}
         """

@@ -3,6 +3,7 @@ wrong_csvs:
   - "../03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_review_publications.csv"
   - "../03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
+  #- "../03_IE_ner/check_study_type/animal_studies_randomized_controlled_trial_publications.csv"
 logs_base: "logs"
 
 extract_cadmus_methods:

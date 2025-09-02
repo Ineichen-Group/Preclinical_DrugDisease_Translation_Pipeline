@@ -1,6 +1,6 @@
 from pathlib import Path
 import pandas as pd
-from typing import List, Optional, Set, Union
+from typing import List, Union, Set, Iterable, Dict, Any
 from cadmus_extractors.utils import load_wrong_pmids
 import csv
 import re
@@ -61,75 +61,140 @@ def normalize_text(text):
 
     return text.strip()
 
+def iter_json_file(path: Path) -> Iterable[Dict[str, Any]]:
+    """
+    Yields records from a JSON or JSONL file without loading whole file.
+    - If file is JSON Lines: one JSON per line.
+    - If file is a list[...] JSON: stream it line-by-line (fallback: small load).
+    """
+    # Try JSON Lines first
+    with path.open("r", encoding="utf-8") as f:
+        first = f.read(2048)
+        if first.lstrip().startswith("["):
+            # Probably a JSON array; fall back to a small-load approach
+            # If files are very large arrays, consider `ijson` instead.
+            obj = json.loads(first + f.read())  # <— if this is too big, switch to ijson
+            if isinstance(obj, list):
+                for rec in obj:
+                    yield rec
+            else:
+                yield obj
+        else:
+            # JSONL
+            # Re-open and stream properly from the start
+            f.seek(0)
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                yield json.loads(line)
+
 def combine_all(
     base_dir: str,
     subfolders: List[str],
     inner_folders: List[Union[None, str, List[str]]],
     exclude_pmids: Set[str],
-    output_file: str
+    output_file: str,
 ):
+    """
+    Combine JSON/JSONL records from multiple sub- and inner-folders into a single JSONL file.
+    Memory-optimized: streams input and deduplicates on the fly by PMID.
+
+    Args:
+        base_dir (str): Root directory that contains the subfolders with JSON files.
+        subfolders (List[str]): Names of top-level subfolders to process (e.g. ["cadmus", "bioc_json"]).
+        inner_folders (List[Union[None, str, List[str]]]): For each subfolder, which inner directories
+            to process. Can be:
+                - None → just process the subfolder itself
+                - str  → process exactly that inner folder
+                - list[str] → process multiple inner folders
+        exclude_pmids (Set[str]): Set of PMIDs to skip completely.
+        output_file (str): Path to the combined JSONL file to write.
+    
+    Behavior:
+        - Iterates over all specified sub- and inner-folders.
+        - For each JSON/JSONL file, streams records line by line (via `iter_json_file`).
+        - Skips records with missing PMIDs or PMIDs in `exclude_pmids`.
+        - Deduplicates globally: if a PMID was already written, skips further occurrences.
+        - Normalizes text fields with `normalize_text()`.
+        - Writes results directly to `output_file` in JSONL format.
+        - Tracks and prints per-subfolder statistics: total records seen vs. unique records written.
+    """
     base = Path(base_dir)
-    all_frames = []
-    folder_counts = {}
-    
-    if not base.exists():
-        print(f"Skipping base_dir '{base_dir}' because it doesn't exist.")
-        return
-    
-    for sub, inner in zip(subfolders, inner_folders):
-        print(f"\nProcessing subfolder: {sub}")
-        print(f"inner = {inner} ({type(inner)})")
-    
-        base_folder = base / sub
-
-        # Handle single or multiple inner folders
-        if inner is None:
-            folders_to_process = [base_folder]
-        elif isinstance(inner, list):
-            folders_to_process = [base_folder / i for i in inner]
-        else:  # string (not expected with the new JSON interface, but safe)
-            folders_to_process = [base_folder / inner]
-            
-        total_pmids = 0
-        for folder in folders_to_process:
-            if not folder.is_dir():
-                print(f"Warning: {folder} missing")
-                continue
-
-            json_files = list(folder.glob("*.json"))
-            if not json_files:
-                print(f"Warning: No JSON files found in {folder}")
-                continue
-
-            df = process_json_folder(folder, exclude_pmids, source_label=sub)
-            count = df['PMID'].nunique()
-            total_pmids += count
-            all_frames.append(df)
-
-        folder_counts[sub] = total_pmids
-
-    if not all_frames:
-        print("No data found in any folder.")
-        return
-
-    combined = pd.concat(all_frames, ignore_index=True)
-
-    print("\n--- Per-folder document counts ---")
-    for sub, cnt in folder_counts.items():
-        print(f"{sub:12s}: {cnt}")
-
-    print(f"\nTotal before dedup: {combined['PMID'].nunique()} unique articles")
-    combined = combined.drop_duplicates('PMID')
-    print(f"Total after dedup : {combined['PMID'].nunique()} unique articles")
-
     out = Path(output_file)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    combined["Text"] = combined["Text"].map(normalize_text)
+    # Bail out early if the base directory is missing
+    if not base.exists():
+        print(f"Skipping base_dir '{base_dir}' because it doesn't exist.")
+        return
 
-    combined.to_json(out, orient="records", lines=True, force_ascii=False)
+    seen_pmids: Set[str] = set()   # Tracks global uniqueness
+    folder_counts = {}             # Stats per subfolder
 
-    print(f"\nSaved combined CSV to {out}, shape: {combined.shape}")
+    with out.open("w", encoding="utf-8") as w:
+        for sub, inner in zip(subfolders, inner_folders):
+            print(f"\nProcessing subfolder: {sub}")
+            base_folder = base / sub
+
+            # Normalize inner_folders to a list of Path objects
+            if inner is None:
+                folders_to_process = [base_folder]
+            elif isinstance(inner, list):
+                folders_to_process = [base_folder / i for i in inner]
+            else:
+                folders_to_process = [base_folder / inner]
+
+            written_for_sub = 0
+            total_found_for_sub = 0
+
+            # Walk through each inner folder
+            for folder in folders_to_process:
+                if not folder.is_dir():
+                    print(f"Warning: {folder} missing")
+                    continue
+
+                json_files = list(folder.glob("*.json"))
+                if not json_files:
+                    print(f"Warning: No JSON files found in {folder}")
+                    continue
+
+                # Process each JSON file in the folder
+                for jf in json_files:
+                    for rec in iter_json_file(jf):
+                        # Extract PMID (normalize to string)
+                        pmid = str(rec.get("PMID") or rec.get("pmid") or "")
+                        if not pmid or pmid in exclude_pmids:
+                            continue
+
+                        total_found_for_sub += 1
+
+                        # Global deduplication: skip already seen PMIDs
+                        if pmid in seen_pmids:
+                            continue
+
+                        # Normalize and prepare record
+                        txt = rec.get("Text") or rec.get("text") or ""
+                        rec["PMID"] = pmid  # normalize key name
+                        rec["Text"] = normalize_text(txt)
+                        rec["source_label"] = sub  # provenance info
+
+                        # Stream out as JSONL
+                        w.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+                        # Track uniqueness
+                        seen_pmids.add(pmid)
+                        written_for_sub += 1
+
+            # Store stats for this subfolder
+            folder_counts[sub] = (total_found_for_sub, written_for_sub)
+
+    # Print summary statistics
+    print("\n--- Per-folder counts (found → written unique) ---")
+    for sub, (found, written) in folder_counts.items():
+        print(f"{sub:12s}: {found} → {written}")
+
+    print(f"\nSaved combined JSONL to {out}")
 
 if __name__ == '__main__':
     import argparse, json
