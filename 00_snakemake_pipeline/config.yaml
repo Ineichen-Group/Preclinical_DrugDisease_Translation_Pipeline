@@ -34,18 +34,18 @@ sentence_extraction:
   text_col: "Text"
 
 regex_classification:
-  category: "all"
   text_col: "sent_txt"
   output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/regex"
-  prediction_files:
-    - blinding_predictions.csv
-    - randomization_predictions.csv
-    - welfare_predictions.csv
-    - sex_predictions.csv
-    - species_predictions.csv
-    - assay_predictions.csv
-    - age_predictions.csv
-
+  categories:
+    - blinding
+    - randomization
+    - welfare
+    - sex
+    - species
+    - assay
+    - age
+    - sample_size
+    
 regex_doc_level:
   output_files:
     - blinding_doc_level_predictions.csv

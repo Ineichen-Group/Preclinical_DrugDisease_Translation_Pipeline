@@ -72,6 +72,9 @@ INFERENCE_TARGETS = [
     for mt in MODEL_TYPES
     for cid in range(1, NUM_CHUNKS + 1)
 ]
+
+REGEX_CATEGORIES = config["regex_classification"]["categories"]
+
 # ---------- workflow ----------
 rule all:
     input:
@@ -79,9 +82,8 @@ rule all:
         cfg["sentence_extraction"]["output_jsonl"],
         cfg["regex_classification"]["output_dir"],
         expand(
-            "{dir}/{file}",
-            dir=cfg["regex_classification"]["output_dir"],
-            file=cfg["regex_doc_level"]["output_files"]
+            os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv"),
+            category=REGEX_CATEGORIES
         ),
         cfg["filter_age_sentences"]["output_file"],
         INFERENCE_TARGETS,
@@ -190,16 +192,21 @@ rule combine_methods:
         "envs/papermage.yaml"
     shell:
         r"""
-        mkdir -p logs
-        python ../07_full_text_retrieval/combine_parsed_methods.py \
+        set -euo pipefail
+        mkdir -p "$(dirname {log.out})"; touch {log.out} {log.err}
+        exec > >(stdbuf -oL tee -a {log.out}) 2> >(stdbuf -oL tee -a {log.err} >&2)
+        echo "[START] $(date -Is) PWD=$(pwd) Host=$(hostname)"
+    
+        # your commands below all get logged:
+        python -u ../07_full_text_retrieval/combine_parsed_methods.py \
           --base-dir {params.base_dir:q} \
           --subfolders-json {params.subfolders_json:q} \
           --inner-folders-json {params.inner_folders_json:q} \
           --exclude-csvs {params.exclude_csvs_joined} \
-          --output-file {params.output_file:q} \
-          > {log.out} 2> {log.err}
+          --output-file {params.output_file:q}
+    
+        echo "[END] $(date -Is)"
         """
-
 
 rule extract_sentences:
     input:
@@ -236,6 +243,9 @@ rule split_texts_into_chunks:
     params:
         num_chunks = cfg["split_combined_texts"]["num_chunks"],
         output_dir = cfg["split_combined_texts"]["output_dir"]
+    resources:
+        runtime       = "2h",
+        mem_mb        = 68000,
     log:
         out = "logs/split_combined_texts.out",
         err = "logs/split_combined_texts.err"
@@ -251,42 +261,41 @@ rule split_texts_into_chunks:
             > {log.out} 2> {log.err}
         """
 
+
 rule run_regex_classification:
     input:
         cfg["sentence_extraction"]["output_jsonl"]
     output:
-        expand(
-            "{dir}/{file}",
-            dir=cfg["regex_classification"]["output_dir"],
-            file=cfg["regex_classification"]["prediction_files"]
-        )
+        os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv")
     params:
-        category   = cfg["regex_classification"]["category"],
         text_col   = cfg["regex_classification"]["text_col"],
         output_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
     log:
-        out = "logs/regex_classification.out",
-        err = "logs/regex_classification.err"
+        out = "logs/regex_classification.{category}.out",
+        err = "logs/regex_classification.{category}.err"
     conda:
         "envs/papermage.yaml"
+    resources:
+        runtime = "12h",
+        mem_mb  = 65000
+    threads: 1
     shell:
         r"""
         mkdir -p {params.output_dir}
         python ../08_IE_full_text/regex_runner.py \
             --df_path {input} \
-            --category {params.category} \
+            --category {wildcards.category} \
             --text_col {params.text_col} \
             --output_dir {params.output_dir} \
+            --chunksize 50000 \
+            --progress \
             > {log.out} 2> {log.err}
         """
 
 rule process_doc_level_predictions:
     input:
-        expand(
-            "{dir}/{file}",
-            dir=cfg["regex_classification"]["output_dir"],
-            file=cfg["regex_classification"]["prediction_files"]
-        )
+        expand(os.path.join(config["regex_classification"]["output_dir"], "{category}_predictions.csv"),
+               category=REGEX_CATEGORIES)
     output:
         expand(
             "{dir}/{file}",
