@@ -78,8 +78,30 @@ def match_doc_level_predictions(row, species_clf, context_window=50):
 def process_predictions(ner_df, text_df, output_dir):
     print(f"Processing {len(ner_df)} NER predictions with {len(text_df)} full-text entries...")
 
-    merged_df = ner_df.merge(text_df[['PMID', 'Text']], on='PMID', how='left')
+    if "PMID" not in ner_df.columns:
+        raise KeyError("ner_df is missing column 'PMID'")
+    if not {"PMID", "Text"}.issubset(text_df.columns):
+        raise KeyError("text_df must contain columns 'PMID' and 'Text'")
 
+    # --- normalize PMIDs to string in both dataframes ---
+    def _normalize_pmid(s: pd.Series) -> pd.Series:
+        if pd.api.types.is_numeric_dtype(s):
+            s = s.astype("Int64").astype("string")
+        else:
+            s = s.astype("string")
+        # strip whitespace and drop accidental trailing '.0'
+        return s.str.strip()
+
+    ner = ner_df.copy()
+    txt = text_df[["PMID", "Text"]].copy()
+    print(f"Normalizing PMIDs and merging data for ner={len(ner)} and text={len(txt)}...")
+
+    ner["PMID"] = _normalize_pmid(ner["PMID"])
+    txt["PMID"] = _normalize_pmid(txt["PMID"])
+    txt["Text"] = txt["Text"].astype("string")
+    merged_df = ner.merge(txt, on="PMID", how="left")
+    print(f"Merged data has {len(merged_df)} rows after joining on PMID.")
+    
     species_clf = SpeciesClassifier()
     print("Matching and classifying predictions...")
     merged_df['extracted_spans'] = merged_df.apply(match_doc_level_predictions, axis=1, species_clf=species_clf)
