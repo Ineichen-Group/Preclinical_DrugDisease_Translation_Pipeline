@@ -80,14 +80,14 @@ def process_ner_entities_from_file(
 ) -> pd.DataFrame:
     """
     Read a CSV, extract and normalize unique NER entities from a specified column,
-    and return a DataFrame with only ['PMID', 'Source', 'prediction_encoded_label'].
+    and return a DataFrame with only ['PMID', 'source_label', 'prediction_encoded_label'].
 
     Parameters:
         input_file (str): Path to the CSV containing the raw NER predictions.
         ner_column (str): Column name in the CSV that holds the raw entity tuples.
 
     Returns:
-        pd.DataFrame: Columns ['PMID', 'Source', 'prediction_encoded_label'] where
+        pd.DataFrame: Columns ['PMID', 'source_label', 'prediction_encoded_label'] where
                       'prediction_encoded_label' is the cleaned, comma-separated entities.
     """
     df = pd.read_csv(input_file)
@@ -98,7 +98,7 @@ def process_ner_entities_from_file(
     df["prediction_encoded_label"] = df[ner_column].apply(extract_unique_entities)
 
     # Keep only the needed columns
-    result_df = df[["PMID", "Source", "prediction_encoded_label"]]
+    result_df = df[["PMID", "source_label", "prediction_encoded_label"]]
 
     return result_df
 
