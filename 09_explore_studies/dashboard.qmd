@@ -22,11 +22,18 @@ from shinywidgets import render_widget
 import re
 import ast
 import plotly.express as px
+import plotly.graph_objects as go
+
 from matplotlib.ticker import PercentFormatter
 
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 import pyarrow as pa
+
+from datetime import datetime
+from pathlib import Path
+import os, sys, time, tracemalloc, functools, threading, logging
+from logging.handlers import RotatingFileHandler
 
 ```
 
@@ -65,33 +72,145 @@ drug_options = ["Show All (P)"] + all_drugs
 ```
 
 ```{python}
-def category_bar_chart(df, category_col, title, top_n=30):
-    counts = df[category_col].value_counts().nlargest(top_n).reset_index()
-    counts.columns = [category_col, "Document Count"]
-    counts[category_col] = pd.Categorical(counts[category_col], categories=counts[category_col], ordered=True)
+ENABLE_PROF = os.getenv("PROFILE", "1") == "1"
 
-    max_count = counts["Document Count"].max()
-    padded_max = max_count * 1.3  # 10% padding
+# configure logger once
+_logger = logging.getLogger("prof")
+if not _logger.handlers:  # avoid duplicate handlers on reload
+    _logger.setLevel(logging.INFO)
 
-    fig = px.bar(
-        counts,
-        x="Document Count",
-        y=category_col,
-        orientation="h",
-        text="Document Count",
+    # log format
+    fmt = logging.Formatter(
+        "%(asctime)s %(process)d %(levelname)s %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S"
+    )
+
+    # stdout (so you still see logs in console)
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(fmt)
+    _logger.addHandler(sh)
+
+    # file (local)
+    log_path = Path(os.getenv("PROFILE_FILE", "logs/profiler.log"))
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    fh = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3, encoding="utf-8")
+    fh.setFormatter(fmt)
+    _logger.addHandler(fh)
+
+_prof_lock = threading.Lock()
+
+def _log_profile(name, ms, cur_kb, peak_kb, extra=""):
+    # single place to write the message
+    _logger.info(
+        "[PROF] %s | %-32s | %8.1f ms | py_cur %7.2f MB | py_peak %7.2f MB %s",
+        datetime.utcnow().isoformat(),
+        name,
+        ms,
+        cur_kb/1024,     # tracemalloc current
+        peak_kb/1024,    # tracemalloc peak during call
+        extra,
+    )
+
+def profiled(name=None):
+    """Decorate any function/reactive to log wall time + Python-alloc peak."""
+    def deco(fn):
+        label = name or fn.__name__
+        if not ENABLE_PROF:
+            return fn
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            tracemalloc.start()
+            t0 = time.perf_counter()
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                dt = (time.perf_counter() - t0) * 1000.0
+                cur, peak = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+                with _prof_lock:
+                    _log_profile(label, dt, cur/1024, peak/1024)
+        return wrapper
+    return deco
+
+class span:
+    """Context manager to time labeled sub-steps inside a function."""
+    def __init__(self, label): self.label = label
+    def __enter__(self):
+        if ENABLE_PROF:
+            tracemalloc.start()
+            self.t0 = time.perf_counter()
+    def __exit__(self, exc_type, exc, tb):
+        if not ENABLE_PROF:
+            return
+        dt = (time.perf_counter() - self.t0) * 1000.0
+        cur, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        _log_profile(self.label, dt, cur/1024, peak/1024)
+```
+
+
+```{python}
+def category_bar_chart(
+    data, 
+    category_col: str | None, 
+    title: str, 
+    top_n: int = 30,
+    dropna: bool = True,
+    na_label: str = "NA",
+):
+    """
+    If `data` is a DataFrame, it will aggregate counts on `category_col`.
+    If `data` is a Series of counts (index=category, values=count), it uses it directly.
+    """
+
+    # --- get counts --------------------------------------------------------
+    if isinstance(data, pd.Series) and category_col is None:
+        counts = data
+    else:
+        s = data[category_col]
+        if not dropna:
+            s = s.fillna(na_label)
+        counts = s.value_counts(dropna=dropna)
+
+    if counts.empty:
+        # Return an empty figure with a friendly title
+        fig = go.Figure()
+        fig.update_layout(title=title, template="plotly_white", height=400)
+        return fig
+
+    counts = counts.nlargest(top_n)
+    cats = counts.index.tolist()
+    vals = counts.values
+
+    # --- padding (30% headroom) -------------------------------------------
+    padded_max = float(vals.max()) * 1.3
+
+    # --- plot --------------------------------------------------------------
+    fig = go.Figure(
+        go.Bar(
+            x=vals,
+            y=cats,
+            orientation="h",
+            text=vals,
+            textposition="outside",
+            textfont=dict(size=11),
+            cliponaxis=False,  # let labels render outside the axis bounds
+        )
+    )
+
+    # --- layout ------------------------------------------------------------
+    # Use categoryorder/array to lock the order without creating Categoricals
+    fig.update_layout(
         title=title,
         template="plotly_white",
-        color_discrete_sequence=px.colors.qualitative.Safe
+        height=600,
+        xaxis_title="Document Count",
+        yaxis_title=(category_col or "category").replace("_", " ").title(),
+        xaxis=dict(range=[0, padded_max]),
+        yaxis=dict(autorange="reversed", categoryorder="array", categoryarray=cats),
+        margin=dict(l=120, r=40, t=60, b=60),  # room for long labels + outside text
     )
 
-    fig.update_layout(
-        xaxis_title="Document Count",
-        yaxis_title=category_col.replace("_", " ").title(),
-        height=600,
-        yaxis=dict(autorange="reversed"),
-        xaxis_range=[0, padded_max]
-    )
-    fig.update_traces(textposition="outside", textfont_size=11)
     return fig
 
 ```
@@ -110,7 +229,8 @@ ui.input_radio_buttons(
 
 ```{python}
 @reactive.calc
-def filtered_documents():
+@profiled()
+def filtered_document_ids():
     disease = input.disease_name()
     drug = input.drug_name()
     exclude_fulltext = input.exclude_no_fulltext()  # "Yes" or "No"
@@ -152,7 +272,15 @@ def filtered_documents():
     else:
         pmids = []
 
-    # ---- Filter clinical/preclinical tables by IDs ------------------------
+    # Return pandas only at the edge for UI
+    return mapped_tbl.to_pandas(), nctids, pmids
+```
+
+```{python}
+@reactive.calc
+@profiled()
+def filtered_clinical():
+    _, nctids, pmids = filtered_document_ids()
     # Clinical
     clin_tbl = clin_ds.to_table()  # column-prune if you like
     if nctids:
@@ -161,74 +289,140 @@ def filtered_documents():
     else:
         clin_tbl = clin_tbl.slice(0, 0)  # empty table
 
-    # Preclinical
-    pre_tbl = pre_ds.to_table()
+    return clin_tbl.to_pandas()
+```
+
+```{python}
+PRECLIN_COLS = [
+    "PMID","title","journal_name","year","publication_type","first_author_country",
+    "linkbert_mapped_conditions","disease",
+    "linkbert_mapped_drugs","drug",
+    "animal_species","animal_sex","animal_strain","animal_number", "animal_strain_norm_family",
+    "animal_age","animal_age_class",
+    "assay_type","rigor_blinding","rigor_randomization","rigor_welfare",
+]
+
+LIST_TO_STRING = {
+    "linkbert_mapped_conditions": "; ",
+    "linkbert_mapped_drugs": "; ",
+}
+
+MAX_ROWS_GRID = 5000  # tune as you like
+
+@reactive.calc
+@profiled()
+def preclinical_view_df():
+    # pull inputs if needed (only if your filtered_documents is Arrow-first)
+    disease = input.disease_name()
+    drug    = input.drug_name()
+    exclude_fulltext = input.exclude_no_fulltext()
+
+    # ---- get PMIDs (from your mapped_ds) ----
+    _, _, pmids = filtered_document_ids()
+
+    # ---- filter preclinical dataset by PMID and project only needed cols ---
+    pre_tbl = pre_ds.to_table(columns=[c for c in PRECLIN_COLS if c in pre_ds.schema.names])
     if pmids:
-        pre_mask = pc.is_in(pre_tbl["PMID"], value_set=pa.array(pmids))
-        pre_tbl = pre_tbl.filter(pre_mask)
+        pre_tbl = pre_tbl.filter(pc.is_in(pre_tbl["PMID"], value_set=pa.array(pmids)))
     else:
         pre_tbl = pre_tbl.slice(0, 0)
 
-    # Optional post-filter in pandas (for trim/normalize convenience)
-    pre_df = pre_tbl.to_pandas()
-    if exclude_fulltext == "Yes" and "animal_strain" in pre_df.columns:
-        pre_df = pre_df[pre_df["animal_strain"].fillna("").str.strip().str.lower() != "no full text"]
+    # optional: exclude 'no full text'
+    if exclude_fulltext == "Yes" and "animal_strain" in pre_tbl.column_names:
+        keep_mask = pc.not_equal(
+            pc.utf8_lower(pc.utf8_trim_whitespace(pc.fill_null(pre_tbl["animal_strain"], ""))),
+            "no full text"
+        )
+        pre_tbl = pre_tbl.filter(keep_mask)
 
-    # Return pandas only at the edge for UI
-    return mapped_tbl.to_pandas(), clin_tbl.to_pandas(), pre_df
+    # ---- Arrow-side transforms: join lists to strings ---------------------
+    for col, sep in LIST_TO_STRING.items():
+        if col in pre_tbl.column_names and pa.types.is_list(pre_tbl.schema.field(col).type):
+            pre_tbl = pre_tbl.set_column(
+                pre_tbl.column_names.index(col),
+                col,
+                pc.list_join(pre_tbl[col], sep)
+            )
+
+    # ---- order and limit rows BEFORE pandas -------------------------------
+    if "year" in pre_tbl.column_names:
+        # sort by year desc, then PMID desc (stable) for deterministic top-N
+        sort_keys = [("year", "descending")]
+        if "PMID" in pre_tbl.column_names:
+            sort_keys.append(("PMID", "descending"))
+        pre_tbl = pre_tbl.sort_by(sort_keys)
+
+    #if len(pre_tbl) > MAX_ROWS_GRID:
+       # pre_tbl = pre_tbl.slice(0, MAX_ROWS_GRID)
+
+    # ---- convert a small, clean table to pandas ---------------------------
+    pre_df = pre_tbl.to_pandas()
+    return pre_df
 ```
 
 # Mapped Studies
 
-## Row {height=120px}
+## Row {height=85px}
 
 ```{python}
-#| id: articles-box
-@render.plot
+@reactive.calc
+def clinical_count():
+    df = filtered_clinical()                 # your existing function
+    return int(df["nct_id"].nunique())
+
+@reactive.calc
+def preclinical_count():
+    df = preclinical_view_df()               # your existing function
+    return int(df["PMID"].nunique())
+
+@reactive.calc
+def disease_count():
+    filtered_df, _, _ = filtered_document_ids()  # your existing function
+    return int(filtered_df["disease"].nunique())
+
+@reactive.calc
+def drug_count():
+    filtered_df, _, _ = filtered_document_ids()
+    return int(filtered_df["drug"].nunique())
+
+# --- lightweight renders (no plotting) ------------------------------------
+
+def _kpi_box(label: str, value: int):
+    # small styled box — tweak to taste or keep @render.text if you prefer
+    return ui.div(
+        {"style": "font-size:22px;font-weight:600;text-align:center;padding:8px;"
+                  "border:1px solid #eee;border-radius:10px;background:#fafafa;"},
+        f"{value:,} {label}"
+    )
+```
+
+### Column
+```{python}
+@render.ui
 def clinical_text():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
-    num_articles = len(set(clinical_df['nct_id']))
-    fig, ax = plt.subplots(figsize=(3, 1))
-    ax.text(0.5, 0.5, f"{num_articles} Clinical", fontsize=16, ha='center', va='center')
-    ax.axis('off')
-    return fig
+    return _kpi_box("Clinical", clinical_count())
 ```
 
+### Column
 ```{python}
-#| id: count-preclinical-box
-@render.plot
+@render.ui
 def preclinical_text():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
-    num_articles = len(set(preclinical_df['PMID']))
-    fig, ax = plt.subplots(figsize=(3, 1))
-    ax.text(0.5, 0.5, f"{num_articles} Preclinical", fontsize=16, ha='center', va='center')
-    ax.axis('off')
-    return fig
+    return _kpi_box("Preclinical", preclinical_count())
 ```
-
+### Column
 ```{python}
-#| id: diseases-box
-@render.plot
+@render.ui
 def diseases_text():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
-    num_articles = len(set(filtered_df['disease']))
-    fig, ax = plt.subplots(figsize=(3, 1))
-    ax.text(0.5, 0.5, f"{num_articles} Diseases", fontsize=16, ha='center', va='center')
-    ax.axis('off')
-    return fig
+    return _kpi_box("Diseases", disease_count())
+  
+```
+### Column
+```{python}
+@render.ui
+def drugs_text():
+    return _kpi_box("Drugs", drug_count())
 ```
 
-```{python}
-#| id: drugs-box
-@render.plot
-def drugs_text():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
-    num_articles = len(set(filtered_df['drug']))
-    fig, ax = plt.subplots(figsize=(3, 1))
-    ax.text(0.5, 0.5, f"{num_articles} Drugs", fontsize=16, ha='center', va='center')
-    ax.axis('off')
-    return fig
-```
 
 ## Row {height=40%}
 
@@ -239,7 +433,7 @@ def drugs_text():
 
 @render.data_frame
 def datagrid():
-    filtered_df, _, _ = filtered_documents()
+    filtered_df, _, _ = filtered_document_ids()
     df_to_show = filtered_df[['disease', 'drug', 'clinical_count','preclinical_count','max_phase']]
 
     return render.DataGrid(
@@ -255,7 +449,7 @@ def datagrid():
 ```{python}
 @render_widget
 def drug_bar_chart():
-    filtered_df, _, _ = filtered_documents()
+    filtered_df, _, _ = filtered_document_ids()
 
     # Group and summarize
     drug_counts = filtered_df.groupby("drug")[["preclinical_count", "clinical_count"]].sum()
@@ -308,7 +502,8 @@ def drug_bar_chart():
 ```{python}
 @render_widget
 def study_over_time_chart():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
+    clinical_df = filtered_clinical()
+    preclinical_df = preclinical_view_df()
     # Count studies by year
     preclinical_by_year = preclinical_df["year"].value_counts().sort_index().astype(int)
     clinical_by_year = clinical_df["start_year"].value_counts().sort_index().astype(int)
@@ -542,8 +737,8 @@ def plot_prevalence_over_time_plotly(
 #| title: Preclinical
 @render.data_frame
 def datagrid_preclinical():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
-    to_show = preclinical_df[['PMID','title','journal_name','year','publication_type','linkbert_mapped_conditions','disease','linkbert_mapped_drugs','drug','animal_species', 'animal_sex', 'animal_strain', 'animal_number','animal_age','animal_age_class', 'assay_type','rigor_blinding','rigor_randomization','rigor_welfare']]
+    preclinical_df = preclinical_view_df()
+    to_show = preclinical_df[[c for c in PRECLIN_COLS if c in preclinical_df.columns]]
     return render.DataGrid(
         to_show,
         width="100%",
@@ -557,7 +752,7 @@ def datagrid_preclinical():
 @render_widget
 
 def plot_disease_number():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   preclinical_df_flat = preprocess_multilabel_columns(preclinical_df)
   
   return plot_top_entity_bar_plotly(
@@ -573,7 +768,7 @@ def plot_disease_number():
 @render_widget
 
 def plot_drug_number():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   preclinical_df_flat = preprocess_multilabel_columns(preclinical_df)
   
   return plot_top_entity_bar_plotly(
@@ -591,8 +786,8 @@ def plot_drug_number():
 @render_widget
 
 def plot_first_author_country():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
-
+  preclinical_df = preclinical_view_df()
+  
   return plot_top_entity_bar_plotly(preclinical_df, id_column="PMID", entity_column="first_author_country", title_label="First Author Country")
 
 ```
@@ -602,8 +797,7 @@ def plot_first_author_country():
 @render_widget
 
 def plot_first_author_country_over_time():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
-
+  preclinical_df = preclinical_view_df()
   return plot_prevalence_over_time_plotly(
         preclinical_df, "first_author_country", include_rest=False
     )
@@ -617,7 +811,7 @@ def plot_first_author_country_over_time():
 @render_widget
 
 def plot_animal_species():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "animal_species", "Document Count by Animal Species")
 
 ```
@@ -627,7 +821,7 @@ def plot_animal_species():
 @render_widget
 
 def plot_animal_species_trend():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return plot_prevalence_over_time_plotly(preclinical_df, "animal_species")
 
 ```
@@ -639,7 +833,7 @@ def plot_animal_species_trend():
 @render_widget
 
 def plot_animal_strain():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "animal_strain_norm_family", "Document Count by Animal Strain")
 
 ```
@@ -649,7 +843,7 @@ def plot_animal_strain():
 @render_widget
 
 def plot_animal_strain_trend():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return plot_prevalence_over_time_plotly(preclinical_df, "animal_strain_norm_family")
 
 ```
@@ -661,7 +855,7 @@ def plot_animal_strain_trend():
 @render_widget
 
 def plot_animal_sex():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "animal_sex", "Document Count by Animal Sex")
 
 ```
@@ -671,7 +865,7 @@ def plot_animal_sex():
 @render_widget
 
 def plot_animal_sex_trend():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return plot_prevalence_over_time_plotly(preclinical_df, "animal_sex")
 
 ```
@@ -683,7 +877,7 @@ def plot_animal_sex_trend():
 @render_widget
 
 def plot_assay_evaluated():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "assay_type", "Document Count by Assay Type")
 
 ```
@@ -693,7 +887,7 @@ def plot_assay_evaluated():
 @render_widget
 
 def plot_assay_evaluated_trend():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return plot_prevalence_over_time_plotly(preclinical_df, "assay_type")
 
 ```
@@ -706,7 +900,7 @@ def plot_assay_evaluated_trend():
 @render_widget
 
 def plot_rigor_welfare():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "rigor_welfare", "Document Count by Welfare Statement")
 
 ```
@@ -717,7 +911,7 @@ def plot_rigor_welfare():
 @render_widget
 
 def plot_rigor_blinding():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "rigor_blinding", "Document Count by Masking Statement")
 
 ```
@@ -728,7 +922,7 @@ def plot_rigor_blinding():
 @render_widget
 
 def plot_rigor_randomization():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "rigor_randomization", "Document Count by Randomization Statement")
 
 ```
@@ -741,7 +935,7 @@ def plot_rigor_randomization():
 @render_widget
 
 def plot_animal_number():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "animal_number", "Document Count by Animal Number")
 
 ```
@@ -753,7 +947,7 @@ def plot_animal_number():
 @render_widget
 
 def plot_animal_age():
-  filtered_df, clinical_df, preclinical_df = filtered_documents()
+  preclinical_df = preclinical_view_df()
   return category_bar_chart(preclinical_df, "animal_age", "Document Count by Animal Age")
 
 ```
@@ -765,7 +959,7 @@ def plot_animal_age():
 #| title: Clinical
 @render.data_frame
 def datagrid_clinical():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
+    clinical_df = filtered_clinical()
     to_show = clinical_df[["nct_id","study_official_title","start_date","phase","study_type","overall_status","disease","drug","Disease Class"
 ]]
     return render.DataGrid(
@@ -782,7 +976,7 @@ def datagrid_clinical():
 ```{python}
 @render_widget  
 def phase_bar_chart():  
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
+    clinical_df = filtered_clinical()
 
     phase_order = [
         'Early Phase 1',
@@ -820,7 +1014,7 @@ def phase_bar_chart():
 ```{python}
 @render_widget
 def status_bar_chart():
-    filtered_df, clinical_df, preclinical_df = filtered_documents()
+    clinical_df = filtered_clinical()
 
     # Count the occurrences of each overall status
     status_counts = clinical_df['overall_status'].value_counts().reset_index()
