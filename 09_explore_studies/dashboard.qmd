@@ -34,6 +34,7 @@ from datetime import datetime
 from pathlib import Path
 import os, sys, time, tracemalloc, functools, threading, logging
 from logging.handlers import RotatingFileHandler
+import sys, psutil, pyarrow as pa, resource
 
 ```
 
@@ -99,16 +100,33 @@ if not _logger.handlers:  # avoid duplicate handlers on reload
 
 _prof_lock = threading.Lock()
 
+def _proc_mem():
+    p = psutil.Process(os.getpid())
+    mi = p.memory_info()
+    rss = mi.rss
+    vms = mi.vms
+    # peak RSS best-effort (KB on Linux, bytes on macOS)
+    ru = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    peak_rss = ru if sys.platform == "darwin" else ru * 1024
+    return rss, vms, peak_rss
+
+def _arrow_bytes():
+    try:
+        return pa.default_memory_pool().bytes_allocated()
+    except Exception:
+        return None
+
+def _mb(x): return f"{(x or 0)/1024/1024:7.2f} MB"
+
+# replace your _log_profile with:
 def _log_profile(name, ms, cur_kb, peak_kb, extra=""):
-    # single place to write the message
-    _logger.info(
-        "[PROF] %s | %-32s | %8.1f ms | py_cur %7.2f MB | py_peak %7.2f MB %s",
-        datetime.utcnow().isoformat(),
-        name,
-        ms,
-        cur_kb/1024,     # tracemalloc current
-        peak_kb/1024,    # tracemalloc peak during call
-        extra,
+    rss, vms, peak_rss = _proc_mem()
+    ab = _arrow_bytes()
+    print(
+        f"[PROF] {datetime.utcnow().isoformat()} | {name:<32} | "
+        f"{ms:8.1f} ms | py_cur {_mb(cur_kb*1024)} | py_peak {_mb(peak_kb*1024)} | "
+        f"rss {_mb(rss)} | peak_rss {_mb(peak_rss)} | arrow {_mb(ab)} {extra}",
+        flush=True,
     )
 
 def profiled(name=None):
