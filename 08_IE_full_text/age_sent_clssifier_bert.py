@@ -56,7 +56,7 @@ def main():
         sys.exit(1)
 
     # 3) Read the CSV into a DataFrame and check required columns
-    df = pd.read_csv(args.input_csv)
+    df = pd.read_csv(args.input_csv, dtype={"PMID": "string"})
     log_memory("After loading CSV")
 
     required_cols = ["PMID", "sentence_id", "sent_txt"]
