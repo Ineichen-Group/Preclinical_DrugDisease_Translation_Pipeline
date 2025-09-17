@@ -1,6 +1,6 @@
 # classifiers/species_classifier.py
 
-import re
+import regex as re
 from typing import List, Tuple, Optional, Match
 
 
@@ -162,9 +162,10 @@ class SpeciesClassifier:
         If `self._false_context` matches anywhere in that snippet, return True.
         Otherwise, return False.
         """
+        
         # 1. Tokenize entire text into word tokens (match objects)
         tokens = list(re.finditer(r"\b\w+\b", text))
-
+        
         # 2. Find token indices overlapping [match_start, match_end)
         overlapping_indices = [
             i
@@ -188,8 +189,13 @@ class SpeciesClassifier:
             snippet = text[char_start:char_end]
 
             # 5. If any FALSE_CONTEXT_TERMS match anywhere in that snippet, return True
-            if self._false_context.search(snippet):
-                return True
+            try:
+                if self._false_context.search(snippet, timeout=10.0):
+                    return True
+            except:
+                # Treat as NOT in false context on timeout (fail-open),
+                print("WARNING: Context processing timeout.")
+                return False
 
         return False
 
