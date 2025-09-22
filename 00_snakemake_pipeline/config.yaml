@@ -102,7 +102,9 @@ doc_level_age_mapping:
 
 split_combined_texts:
   num_chunks: 10
-  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks"  
+  num_chunks_sent: 20
+  output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks" 
+  output_dir_sent: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks_sent"  
 
 ner_inference:
   model_types:

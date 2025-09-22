@@ -85,6 +85,11 @@ rule all:
             os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv"),
             category=REGEX_CATEGORIES
         ),
+        expand(
+            "{dir}/{file}",
+            dir=cfg["regex_classification"]["output_dir"],
+            file=cfg["regex_doc_level"]["output_files"]
+        ),
         cfg["filter_age_sentences"]["output_file"],
         INFERENCE_TARGETS,
         [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS],
@@ -261,35 +266,136 @@ rule split_texts_into_chunks:
             > {log.out} 2> {log.err}
         """
 
+CHUNK_DIR   = cfg["split_combined_texts"]["output_dir_sent"]
+CHUNK_PREF  = cfg["ner_inference"]["shared"]["chunk_prefix"]
+CHUNK_SUF   = cfg["ner_inference"]["shared"]["chunk_suffix"]
+NUM_CHUNKS  = cfg["split_combined_texts"]["num_chunks_sent"]
 
-rule run_regex_classification:
+CHUNK_FILES = expand(
+    "{dir}/{prefix}{chunk_id}{suffix}",
+    dir=CHUNK_DIR, prefix=CHUNK_PREF,
+    chunk_id=range(1, NUM_CHUNKS + 1),
+    suffix=CHUNK_SUF,
+)
+
+rule split_sent_into_chunks:
     input:
         cfg["sentence_extraction"]["output_jsonl"]
     output:
-        os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv")
+        CHUNK_FILES
     params:
-        text_col   = cfg["regex_classification"]["text_col"],
-        output_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
+        num_chunks = cfg["split_combined_texts"]["num_chunks_sent"],
+        output_dir = cfg["split_combined_texts"]["output_dir_sent"]
+    resources:
+        runtime = "2h",
+        mem_mb  = 128000
     log:
-        out = "logs/regex_classification.{category}.out",
-        err = "logs/regex_classification.{category}.err"
+        out = "logs/split_combined_sents.out",
+        err = "logs/split_combined_sents.err"
     conda:
         "envs/papermage.yaml"
-    resources:
-        runtime = "12h",
-        mem_mb  = 65000
-    threads: 1
     shell:
         r"""
         mkdir -p {params.output_dir}
+        python ../08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
+            --input_jsonl {input} \
+            --num_chunks {params.num_chunks} \
+            --output_dir {params.output_dir} \
+            > {log.out} 2> {log.err}
+        """
+
+wildcard_constraints:
+    category = r"[^/]+",
+    chunk_id = r"\d+"
+
+rule run_regex_classification_chunk:
+    """
+    Run regex classification on ONE sentence chunk for ONE category.
+    Writes a per-chunk CSV that will be merged later.
+    """
+    input:
+        chunk=f"{CHUNK_DIR}/{CHUNK_PREF}{{chunk_id}}{CHUNK_SUF}"
+    output:
+        # e.g. regex_out/<category>/chunk_17/<category>_predictions.csv
+        chunk_csv=os.path.join(
+            cfg["regex_classification"]["output_dir"],
+            "{category}",
+            "chunk_{chunk_id}",
+            "{category}_predictions.csv",
+        )
+    params:
+        text_col   = cfg["regex_classification"]["text_col"],
+        # per-chunk temp dir to isolate regex_runner's output
+        tmp_dir=lambda wildcards: os.path.join(
+            cfg["regex_classification"]["output_dir"],
+            wildcards.category,
+            f"chunk_{wildcards.chunk_id}"
+        ),
+        output_dir_root = shlex.quote(cfg["regex_classification"]["output_dir"])
+    log:
+        out = "logs/regex_classification.{category}.chunk_{chunk_id}.out",
+        err = "logs/regex_classification.{category}.chunk_{chunk_id}.err"
+    conda:
+        "envs/papermage.yaml"
+    resources:
+        runtime = "72h",   # much smaller than 120h since we split
+        mem_mb  = 32000    # per-job memory; tune as needed
+    threads: 1
+    shell:
+        r"""
+        mkdir -p {params.tmp_dir}
+        # Run regex on the chunk into the per-chunk dir
         python ../08_IE_full_text/regex_runner.py \
-            --df_path {input} \
+            --df_path {input.chunk} \
             --category {wildcards.category} \
             --text_col {params.text_col} \
-            --output_dir {params.output_dir} \
+            --output_dir {params.tmp_dir} \
             --chunksize 50000 \
             --progress \
             > {log.out} 2> {log.err}
+        """
+
+rule merge_regex_classification:
+    """
+    Merge per-chunk CSVs into the final {category}_predictions.csv.
+    Keeps the header from the first chunk and appends the rest without headers.
+    """
+    input:
+        # all per-chunk outputs for this category
+        lambda wildcards: expand(
+            os.path.join(
+                cfg["regex_classification"]["output_dir"],
+                wildcards.category,
+                "chunk_{chunk_id}",
+                f"{wildcards.category}_predictions.csv"
+            ),
+            chunk_id=range(1, NUM_CHUNKS + 1)
+        )
+    output:
+        os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv")
+    log:
+        out = "logs/regex_merge.{category}.out",
+        err = "logs/regex_merge.{category}.err"
+    resources:
+        runtime = "1h",
+        mem_mb  = 4000
+    shell:
+        r"""
+        # Take header from the first file, then skip headers in the rest
+        first="{input[0]}"
+        out="{output}"
+        tmp="$(mktemp)"
+
+        # Write header
+        head -n 1 "$first" > "$tmp"
+
+        # Append all rows from all chunks, skipping header lines
+        for f in {input}; do
+            tail -n +2 "$f" >> "$tmp"
+        done
+
+        mv "$tmp" "$out"
+        echo "Merged {wildcards.category} into $out" > {log.out}
         """
 
 rule process_doc_level_predictions:
@@ -304,6 +410,9 @@ rule process_doc_level_predictions:
         )
     params:
         input_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
+    resources:
+        runtime = "10h",
+        mem_mb  = 32000
     log:
         out = "logs/process_doc_level_predictions.out",
         err = "logs/process_doc_level_predictions.err"
@@ -350,7 +459,7 @@ rule predict_age_sent_bert:
         model_path = cfg["predict_age_sent_bert"]["model_path"]
     resources:
         mem_mb=32000,
-        runtime=500
+        runtime="24h"
     conda:
         "envs/bert_models.yaml"
     shell:
@@ -385,7 +494,7 @@ rule extract_age_llm_unsloth:
     resources:
         cpus_per_task=16,
         mem_mb=32000,
-        runtime=500
+        runtime="48h"
     conda:
         "envs/unsloth.yaml"
     shell:
@@ -472,7 +581,7 @@ rule map_doc_level_age_predictions:
     threads: 2
     resources:
         mem_mb = 8000,
-        runtime = 30   # minutes
+        runtime = 300   # minutes
     conda:
         "envs/papermage.yaml"   # or your preferred env file
     shell:
@@ -527,7 +636,7 @@ rule run_ner_inference:
         cpus_per_task=16,
         gpus_per_task=1,
         mem_mb=32000,
-        runtime=500
+        runtime="72h"
     conda:
         "envs/bert_models.yaml"
     shell:
@@ -584,7 +693,10 @@ rule clean_animal_nr:
         output_file = cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv"
     log:
         out = "logs/clean_animal_nr.out",
-        err = "logs/clean_animal_nr.err"        
+        err = "logs/clean_animal_nr.err"
+    resources:
+        mem_mb=68000,
+        runtime="48h"
     conda: "envs/papermage.yaml"
     shell:
         r"""
