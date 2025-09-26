@@ -216,11 +216,28 @@ def resolve_age_from_text(age_text_to_check: str, current_age: str, current_age_
 
 # Stage 2: Clean via PMC
 EMAIL = "simona.doneva@uzh.ch"
-def pmid_to_pmcid(pmid: str) -> str:
-    url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=age-cleaner&email={EMAIL}&ids={pmid}&format=json"
-    data = requests.get(url).json()
-    rec = data.get('records', [{}])[0]
-    return rec.get('pmcid')
+def pmid_to_pmcid(pmid: str) -> str | None:
+    url = (
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+        f"?tool=age-cleaner&email={EMAIL}&ids={pmid}&format=json"
+    )
+    resp = requests.get(url)
+    
+    # Check if the server actually returned JSON
+    if resp.headers.get("Content-Type", "").startswith("application/json"):
+        try:
+            data = resp.json()
+        except requests.exceptions.JSONDecodeError:
+            print(f"Could not decode JSON for PMID {pmid}")
+            return None
+    else:
+        print(f"Non-JSON response for PMID {pmid}: {resp.text[:200]}")
+        return None
+
+    recs = data.get("records", [])
+    if recs:
+        return recs[0].get("pmcid")
+    return None
 
 _age_regex = re.compile(r"week[-\s]?old|\d+[-–]\d+\s*weeks?|\d+\s*weeks?", flags=re.IGNORECASE)
 
