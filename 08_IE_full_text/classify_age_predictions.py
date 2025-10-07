@@ -195,11 +195,13 @@ def process_age_predictions(pmid, pred_str):
             continue
         
         age = normalize_age_string(age)
-        try:
-            age_numeric = float(age)
-        except (ValueError, TypeError):
-            print(f"Skipping malformed prediction with non-numeric age: {pred}")
-            continue
+        
+        if "-" not in age:
+            try:
+                age_numeric = float(age)
+            except (ValueError, TypeError):
+                print(f"Skipping malformed prediction with non-numeric age: {pred}")
+                continue
         
         if re.search(r"[^\d.\s\-]", age):
             print(f"Skipping malformed prediction with invalid characters: {pred}")
