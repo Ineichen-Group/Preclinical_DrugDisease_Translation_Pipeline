@@ -196,7 +196,7 @@ def process_age_predictions(pmid, pred_str):
         
         age = normalize_age_string(age)
         try:
-            age = float(age)
+            age_numeric = float(age)
         except (ValueError, TypeError):
             print(f"Skipping malformed prediction with non-numeric age: {pred}")
             continue
@@ -207,7 +207,7 @@ def process_age_predictions(pmid, pred_str):
         if time_base == "weeks":
             if "-" not in age:
                # Handle cases of wrongly formatted ages 
-               if float(age) > 150:
+               if age_numeric > 150:
                    if len(age) == 3:
                        age = age[0] + "-" + age[1:] # assume a dash is missing and the first digit is part of the range
                    else:
@@ -222,7 +222,7 @@ def process_age_predictions(pmid, pred_str):
         else:
             if (time_base == "days") and ("-" not in age):
                # Handle cases of wrongly formatted ages 
-               if float(age) > 1000:
+               if age_numeric > 1000:
                     age = age[0:2] + "-" + age[2:] # assume a dash is missing and the first two digits are part of the range
             age_range_values = age.split("-")
             for age_value in age_range_values:
