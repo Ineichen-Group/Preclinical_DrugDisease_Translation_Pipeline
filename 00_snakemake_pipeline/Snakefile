@@ -100,7 +100,8 @@ rule all:
         cfg["extract_age_unsloth"]["output_file"],
         cfg["clean_age_values"]["output_file"],
         cfg["validate_age"]["out_final"],
-        cfg["doc_level_age_mapping"]["out_csv"]
+        cfg["doc_level_age_mapping"]["out_csv"],
+        cfg["fetch_author_affiliations"]["output_file"]
         
 
 rule extract_methods_pmc:
@@ -550,6 +551,9 @@ rule validate_age_values:
         out_publisher_corrections = cfg["validate_age"]["out_publisher_corrections"],
         api_key_file = cfg["validate_age"]["api_key_file"]
     conda: "envs/age_scrape_postproc.yaml"
+    resources:
+        mem_mb=32000,
+        runtime="72h"
     shell:
         r"""
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
@@ -580,7 +584,7 @@ rule map_doc_level_age_predictions:
         pred_col_age     = cfg["doc_level_age_mapping"]["pred_col_age"]
     threads: 2
     resources:
-        mem_mb = 8000,
+        mem_mb = 32000,
         runtime = 300   # minutes
     conda:
         "envs/papermage.yaml"   # or your preferred env file
@@ -728,7 +732,7 @@ rule map_animal_nr_to_numeric:
 
 rule map_strain_values:
     input: 
-        "model_predictions/strain/processed"
+        cfg["clean_ner"]["strain"]["output_clean"]
     output:
         cfg["map_strain_values"]["output_file"]
     log:
@@ -756,3 +760,28 @@ rule map_strain_values:
             --write_audit {params.write_audit} \
             > {log.out} 2> {log.err}
         """
+
+rule fetch_author_affiliation:
+    input: 
+        cfg["combine"]["output_jsonl"]
+    output:
+        cfg["fetch_author_affiliations"]["output_file"]
+    log:
+        out = "logs/fetch_author_affiliation.out",
+        err = "logs/fetch_author_affiliation.err"
+    params:
+        api_key_file = cfg["fetch_author_affiliations"]["api_key_file"]
+    conda: "envs/papermage.yaml"
+    resources:
+        mem_mb=32000,
+        runtime="24h"
+    shell:
+        r"""
+        mkdir -p logs
+        python -u ../08_IE_full_text/fetch_affiliations.py \
+            --input {input} \
+            --output {output} \
+            --email simona.doneva@uzh.ch \
+            --api-key-file {params.api_key_file} \
+            > {log.out} 2> {log.err}
+        """    

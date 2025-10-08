@@ -54,6 +54,7 @@ regex_doc_level:
     - sex_doc_level_predictions.csv
     - species_doc_level_predictions.csv
     - assay_doc_level_predictions.csv
+    - sample_size_doc_level_predictions.csv
 
 filter_age_sentences:
   predictions_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/regex/age_predictions.csv"
@@ -148,3 +149,8 @@ map_strain_values:
   delimiter: ","
   post_column: "animal_strain_norm_family"
   write_audit: "./logs/strain_norm_audit_map.csv"
+
+fetch_author_affiliations:
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/data/author_affiliations_pubmed.csv"
+  api_key_file: "../07_full_text_retrieval/api_keys.txt"
+  
