@@ -1,9 +1,11 @@
 import os
+os.environ["WANDB_DISABLED"] = "true"  # set BEFORE importing transformers
+
 import json
 import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModel
-from transformers import PreTrainedTokenizer, PreTrainedModel
+#from transformers import PreTrainedTokenizer, PreTrainedModel
 from typing import Any, Tuple, Dict, List, Union
 from scipy.spatial.distance import cdist
 import pandas as pd
@@ -36,8 +38,8 @@ def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path
     return all_reps_emb_full, term_id_pairs
     
 def map_query_to_terminology(query: str, 
-                        tokenizer: PreTrainedTokenizer, 
-                        model: PreTrainedModel, 
+                        tokenizer: AutoTokenizer, 
+                        model: AutoModel, 
                         all_reps_emb_full: np.ndarray, 
                         ontology_sf_id_pairs: np.ndarray, 
                         canonical_mapping_dict: Dict[str, str] = None,
@@ -63,60 +65,55 @@ def map_query_to_terminology(query: str,
       label, its canonical form or original query, a list of the nearest entities, and the minimum distance.
     """
         
-    # Encode the query
-    query_toks = tokenizer.batch_encode_plus([query], 
-                                             padding="max_length", 
-                                             max_length=25, 
-                                             truncation=True,
-                                             return_tensors="pt")
-    if torch.cuda.is_available():
-        query_toks = query_toks.to('cuda')  # Move tensors to GPU
-        
-    # Get the model output
+    # ---- pick device from model, fallback to cuda if available else cpu
+    model_device = next(model.parameters()).device if any(p.requires_grad for p in model.parameters()) else torch.device("cpu")
+    if model_device.type == "cpu" and torch.cuda.is_available():
+        model_device = torch.device("cuda")
+
+    # ---- tokenize on CPU, then move to model's device
+    query_toks = tokenizer.batch_encode_plus(
+        [query],
+        padding="max_length",
+        max_length=25,
+        truncation=True,
+        return_tensors="pt",
+    )
+    query_toks = {k: v.to(model_device) for k, v in query_toks.items()}
+
+    # ---- ensure embeddings live on SAME device (convert if numpy)
+    if isinstance(all_reps_emb_full, np.ndarray):
+        all_reps_emb_full = torch.from_numpy(all_reps_emb_full)
+    all_reps_emb_full = all_reps_emb_full.to(model_device)
+
+    model.to(model_device)
+    model.eval()
+
     with torch.no_grad():
-        query_output = model(**query_toks)
-    
-    # Extract the CLS token representation
-    query_cls_rep = query_output[0][:, 0, :]
+        out = model(**query_toks)
+    query_cls_rep = out[0][:, 0, :]  # [CLS]
 
-    # Compute distances between query embedding and all concept embeddings
-    if torch.cuda.is_available():
-        dist = torch.cdist(query_cls_rep, all_reps_emb_full)
-        nn_index = torch.argmin(dist).item()  # This finds the index of the minimum value
-        min_distance = dist[0, nn_index].item()  # Extract the minimum distance at that index
-    else:
-        dist = cdist(query_cls_rep.cpu().detach().numpy(), all_reps_emb_full)
-        nn_index = np.argmin(dist).item()
-        min_distance = dist[0, nn_index]  # Since dist is a numpy array, get the minimum distance at the index 
+    # ---- distances on the SAME device
+    # (Euclidean; if you want cosine, normalize and use 1 - sim)
+    dist = torch.cdist(query_cls_rep, all_reps_emb_full)
+    nn_index = torch.argmin(dist).item()
+    min_distance = dist[0, nn_index].item()
 
-    # Retrieve the nearest n_entities
-    nearest_n_entities = []
-    if torch.cuda.is_available():
-        nearest_n_indices = torch.argsort(dist[0])[:n_entities]  # Get indices of the n smallest distances
-    else:
-        nearest_n_indices = np.argsort(dist[0])[:n_entities]
-    for idx in nearest_n_indices:
-        nearest_n_entities.append(ontology_sf_id_pairs[idx.item()])
+    # nearest n
+    nearest_n_indices = torch.argsort(dist[0])[:n_entities]
+    nearest_n_entities = [ontology_sf_id_pairs[idx.item()] for idx in nearest_n_indices]
 
     if min_distance > dist_threshold:
-        # If distance is greater than the threshold, return the original query with no mapping
         return -1, query, query, nearest_n_entities, round(min_distance, 4)
-        
-    # Get the predicted concept ID and label
+
     predicted_label = ontology_sf_id_pairs[nn_index]
     predicted_term = predicted_label[0]
     predicted_id = predicted_label[1]
 
-    # Get the canonical form from the dictionary
     if canonical_mapping_dict:
-        canonical_form = canonical_mapping_dict.get(predicted_id, "Canonical form not found")
-        if canonical_form == "Canonical form not found":
-            # If the canonical form is not found, use the predicted term
-            canonical_form = predicted_term
+        canonical_form = canonical_mapping_dict.get(predicted_id, predicted_term)
     else:
         canonical_form = predicted_term
 
-    # Return the predicted concept ID, label, and canonical form
     return predicted_id, predicted_term, canonical_form, nearest_n_entities, round(min_distance, 4)
     
 def process_row_annotations(
@@ -384,7 +381,7 @@ def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminolog
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir, save_stats=True):
+def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir, save_stats=False):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
     print(f"Input file: {input_file}")
@@ -430,7 +427,7 @@ if __name__ == "__main__":
         '--type',
         type=str,
         choices=["disease", "drug"],
-        default="drug",  
+        default="disease",  
         help="Which type to normalize (default: disease)"
     )
     parser.add_argument(
@@ -442,19 +439,19 @@ if __name__ == "__main__":
     parser.add_argument(
         '--data_dir',
         type=str,
-        default="04_normalization/data/ner_samples/sampled_drugs_manual_map.csv", 
-        help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
+        default="04_normalization/data/", 
+        help="Path to a base directory where embeddings and mapping files are stored."
     )
     parser.add_argument(
         '--input',
         type=str,
-        default="04_normalization/data/ner_samples/sampled_drugs_manual_map.csv", 
+        default="04_normalization/data/mapped_to_embeddings_ontologies/drug_disease_mapped_preclinical_extra_studies.csv", 
         help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
-    )
+    ) 
     parser.add_argument(
         '--output',
         type=str,
-        default="04_normalization/data/mapped_to_embeddings_ontologies/sampled_drugs_manual_map_umls_pred.csv", 
+        default="04_normalization/data/mapped_to_embeddings_ontologies/drug_disease_mapped_preclinical_extra_studies.csv", 
         help="Path to the output CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
     )
     parser.add_argument(
@@ -465,4 +462,4 @@ if __name__ == "__main__":
     )
     
     args = parser.parse_args()
-    main(args.type, args.col_to_map, args.data_dir, args.input, args.output, args.stats_dir)
+    main(args.type, args.col_to_map, args.data_dir, args.input, args.output, args.stats_dir, save_stats=False)
