@@ -89,7 +89,7 @@ def load_current_pmids():
     all_animal_studies = pd.read_csv("02_animal_study_classification/model_predictions/all_animal_studies_clean_complete.csv")
 
     # All studies with drug and disease mention which will be kept for future processing
-    identified_studies = pd.read_csv("./04_normalization/data/mapped_all/mapped_preclinical_data_enriched.csv")[['PMID', 'drug_term_umls_norm', 'disease_term_mondo_norm']]
+    identified_studies = pd.read_csv("./04_normalization/data/mapped_all/mapped_preclinical_data_with_mondo_parents.csv")[['PMID', 'drug_term_umls_norm', 'disease_term_mondo_norm']]
     #identified_studies_extra = pd.read_csv("03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_4489.csv")[['PMID', 'unique_interventions_linkbert_predictions', 'unique_conditions_linkbert_predictions']]
     #identified_studies = pd.concat([identified_studies_main, identified_studies_extra], ignore_index=True)
     
@@ -133,6 +133,10 @@ def check_missing_pmids(hermes_df, output_dir):
     
     # 4. NER disease-specific filter
     disease = "multiple sclerosis"
+    
+    test_row = identified_studies[identified_studies['PMID']==29526407]
+    print(f"Test row for disease term: {test_row['disease_term_mondo_norm'].values[0] if not test_row.empty else 'Not found'}")
+    
     filtered = identified_studies[
         identified_studies['disease_term_mondo_norm']
         .str.lower()
@@ -148,10 +152,13 @@ def check_missing_pmids(hermes_df, output_dir):
     print(f"animal_pmids_after_join: {len(animal_pmids_after_join)}")
     missing_disease = target_pmids - animal_pmids_after_join
     print(f"Missing after joining to clinical filter: {len(missing_disease)}")
+    
+    missing_disease = target_pmids - animal_pmids_after_join - missing_ner - missing_animal - missing_original
+    print(f"Missing after joining to clinical filter not due to previous issues: {len(missing_disease)}")
     pd.DataFrame(missing_disease, columns=["pmid"]).to_csv(f"{output_dir}/missing_after_clinical_filter.csv", index=False)
 
     missing_final = target_pmids - disease_pmids 
-    print(f"Missing after all filters: {len(missing_final)}, {len(missing_final)/len(target_pmids)*100:.2f}% of total")
+    print(f"Missing after all filters (before join): {len(missing_final)}, {len(missing_final)/len(target_pmids)*100:.2f}% of total")
 
     print("✅ All missing lists saved independently.")
     
@@ -167,11 +174,11 @@ def main(fetch_dois=False, check_missing=False, save_annotated=True):
         hermes_df_original = pd.read_csv(INPUT_CSV)[[
             'DOI', 'Title', 
             'Animal model', 'Species', 'Strain', 'Sex', 'Age', 
-            'Tested drug(s)', 'Comparator', 'Outcome', 'Total number of animals'
+            'Tested drug(s)', 'Tested drug 2', 'Tested drug 3', 'Comparator', 'Outcome', 'Total number of animals'
         ]] 
         hermes_df_original = hermes_df_original.rename(columns={"Title": "title"})
         merged_df = hermes_df.merge(hermes_df_original, on="title", how="left")
-        merged_df.to_csv("05_syst_reviews_validation/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title_annotated.csv", index=False)
+        merged_df.to_csv("05_syst_reviews_validation/data/ms_berger_sr/HERMES_INCLUDED_PMIDs_valid_title_annotated.csv", index=False)
         
 if __name__ == "__main__":
-    main(fetch_dois=False, check_missing=True, save_annotated=False)
+    main(fetch_dois=False, check_missing=False, save_annotated=True)
