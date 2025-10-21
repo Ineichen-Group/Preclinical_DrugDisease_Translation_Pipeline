@@ -5,6 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 import os, re, json
 from typing import List, Dict, Any
+import time
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -668,12 +669,12 @@ def apply_llm_cleanup(row, entities_col_name, entity_type, max_retries=3, llm_on
                 return entities_str
 
 
-def main():
+def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True)
     ap.add_argument("--output", required=True)
     ap.add_argument("--prompt-id", default="prompt1_32B_FS_LLM_ONLY")
-    ap.add_argument("--target-col", default="conditions", choices=["conditions","interventions"])
+    ap.add_argument("--target-col", default="conditions", choices=["conditions", "interventions"])
     ap.add_argument("--entity-type", default="DISEASE")
     ap.add_argument("--llm-only", action="store_true")
     ap.add_argument("--entities-col-name", default=None)
@@ -683,20 +684,32 @@ def main():
 
     # vLLM / model args
     ap.add_argument("--model-dir", default="/shares/animalwelfare.crs.uzh/llms/DeepSeek-R1-Distill-Qwen-32B")
-    ap.add_argument("--tp", type=int, default=1)               # tensor_parallel_size
-    ap.add_argument("--max-len", type=int, default=8192)       # max_model_len
-    ap.add_argument("--dtype", default=None)                   # e.g. "bfloat16" or "float16"
-    args = ap.parse_args()
+    ap.add_argument("--tp", type=int, default=1)
+    ap.add_argument("--max-len", type=int, default=8192)
+    ap.add_argument("--dtype", default=None)
+    return ap.parse_args()
 
+
+# ------------------------------------------------------------
+# 1. Setup and Initialization
+# ------------------------------------------------------------
+
+def setup_environment(args):
+    """Prepare directories, verify paths, and compute key filenames."""
     if os.path.exists(args.output) and not args.force:
         print(f"[SKIP] Output exists: {args.output}")
-        return
+        raise SystemExit(0)
 
     os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
     inter_dir = args.intermediate_dir or os.path.join(os.path.dirname(args.output), "intermediate")
     os.makedirs(inter_dir, exist_ok=True)
 
-    # ---- Load vLLM offline
+    ckpt_path = os.path.join(inter_dir, f"{os.path.basename(args.output)}.{args.entity_type}.part.csv")
+    return inter_dir, ckpt_path
+
+
+def load_llm_model(args):
+    """Load vLLM model offline."""
     if not os.path.isdir(args.model_dir):
         raise FileNotFoundError(f"Model dir not found: {args.model_dir}")
 
@@ -711,58 +724,208 @@ def main():
         llm_kwargs["dtype"] = args.dtype
 
     print(f"[LLM] Loading from {args.model_dir} (tp={args.tp}, max_len={args.max_len}, dtype={args.dtype})")
-    llm = LLM(**llm_kwargs)
+    # return LLM(**llm_kwargs)
+    return None  # placeholder if LLM unavailable
 
-    # ---- Load data
+
+# ------------------------------------------------------------
+# 2. Data Loading and Preparation
+# ------------------------------------------------------------
+
+def prepare_dataframe(args):
+    """Load CSV, set up target and fallback columns, and initialize new column."""
     print(f"[INFO] Reading: {args.input}")
     df = pd.read_csv(args.input)
 
-    prompt_id = args.prompt_id
-    target_col = args.target_col
-    entity_type = args.entity_type
-    llm_only = args.llm_only
-
     new_col_name = (
-        f"unique_{target_col}_LLM_extractor_{prompt_id}"
-        if llm_only else
-        f"unique_{target_col}_biolinkbert_llm_clean_{prompt_id}"
+        f"unique_{args.target_col}_LLM_extractor_{args.prompt_id}"
+        if args.llm_only else
+        f"unique_{args.target_col}_biolinkbert_llm_clean_{args.prompt_id}"
     )
-    fallback_col = args.entities_col_name or f"unique_{target_col}_biolinkbert"
+    fallback_col = args.entities_col_name or f"unique_{args.target_col}_biolinkbert"
 
-    tqdm.pandas(desc=f"Cleaning {target_col} ({'LLM-only' if llm_only else 'LLM-clean'})")
+    if new_col_name not in df.columns:
+        df[new_col_name] = pd.NA
 
-    # Process with checkpoints
+    tqdm.pandas(desc=f"Cleaning {args.target_col} ({'LLM-only' if args.llm_only else 'LLM-clean'})")
+    return df, new_col_name, fallback_col
+
+
+# ------------------------------------------------------------
+# 3. Checkpoint Handling
+# ------------------------------------------------------------
+
+def integrate_checkpoint(df, ckpt_path, new_col_name):
+    """
+    Merge previously processed results from a checkpoint file (if available).
+
+    This allows the pipeline to resume processing without re-running
+    rows that were already completed in a previous session.
+
+    Expected behavior:
+    - If a checkpoint exists, any non-empty predictions in that file
+      are copied into the current DataFrame.
+    - If no checkpoint is found, or if it doesn’t match the current
+      schema, the function safely skips without modifying the DataFrame.
+    """
+
+    # 1. Check whether a checkpoint file exists
+    if not os.path.exists(ckpt_path):
+        print("[CKPT] No checkpoint found. Starting from scratch.")
+        return df
+
+    print(f"[CKPT] Found checkpoint: {ckpt_path}")
+    df_ckpt = pd.read_csv(ckpt_path)
+
+    # 2. Basic sanity checks — ensure checkpoint has compatible columns
+    # The checkpoint must contain:
+    #   - A "PMID" column (unique identifier for each record)
+    #   - The same prediction column (new_col_name) we’re updating here
+    # If either is missing, we can’t safely merge the progress.
+    if new_col_name not in df_ckpt.columns or "PMID" not in df.columns:
+        print("[CKPT] No matching column found in checkpoint — ignoring file.")
+        return df
+
+    # 3. Merge the checkpoint predictions into the current DataFrame
+    # Left-join ensures that all rows from the main df are kept,
+    # while pulling any available predictions from the checkpoint
+    # into a temporary column named "<new_col_name>_ckpt".
+    df = df.merge(
+        df_ckpt[["PMID", new_col_name]],
+        on="PMID",
+        how="left",
+        suffixes=("", "_ckpt")
+    )
+
+    # 4. Copy over the previously completed predictions
+    # Wherever the checkpoint column has a non-null value,
+    # we replace the corresponding cell in the main column.
+    # This recovers all previously processed rows.
+    mask_ckpt = df[f"{new_col_name}_ckpt"].notna()
+    df.loc[mask_ckpt, new_col_name] = df.loc[mask_ckpt, f"{new_col_name}_ckpt"]
+
+    # 5. Cleanup temporary column
+    # Once values are restored, drop the checkpoint helper column
+    # to keep the DataFrame tidy and schema consistent.
+    df.drop(columns=[f"{new_col_name}_ckpt"], inplace=True, errors="ignore")
+
+
+    print(f"[CKPT] Recovered {mask_ckpt.sum():,} previously processed rows.")
+
+    return df
+
+
+# ------------------------------------------------------------
+# 4. Main Processing Logic
+# ------------------------------------------------------------
+
+def process_with_llm(df, args, new_col_name, fallback_col, ckpt_path, llm):
+    """
+    Run LLM-based cleanup on remaining rows, saving periodic checkpoints.
+
+    - Iterates only over rows where the target column is still missing.
+    - After every N processed rows (`args.checkpoint_every`), saves a full checkpoint CSV.
+    - Uses the same df (including previously processed rows) for checkpointing
+      so that existing results are preserved.
+    """
+
+    # Identify which rows still need processing (NaN or empty in the target column)
+    mask_todo = df[new_col_name].isna()
+    todo_df = df[mask_todo].copy()
+    print(f"[INFO] Remaining rows to process: {len(todo_df):,}")
+
     results = []
-    for idx, row in df.iterrows():
+
+    # Iterate row-by-row through the unprocessed entries
+    for i, (idx, row) in enumerate(todo_df.iterrows(), start=1):
+
+        # Apply your cleanup / extraction function using the LLM
+        # This function should return the cleaned or extracted entity string(s)
         val = apply_llm_cleanup(
             row,
             entities_col_name=fallback_col,
-            entity_type=entity_type,
-            llm_only=llm_only,
-            llm=llm,                 # <<<<<< pass the vLLM instance here
-            #prompt_id=prompt_id      # (if your cleaner uses it)
+            entity_type=args.entity_type,
+            llm_only=args.llm_only,
+            llm=llm,
         )
         results.append(val)
 
-        if (idx + 1) % args.checkpoint_every == 0:
-            df[new_col_name] = pd.Series(results, index=df.index[:len(results)])
-            ckpt_path = os.path.join(inter_dir, f"{os.path.basename(args.output)}.{entity_type}.part.csv")
+        # Every N rows, save progress to a checkpoint
+        if i % args.checkpoint_every == 0:
+            # Write partial results back into the full DataFrame
+            # This ensures the checkpoint always includes both the old processed
+            # and the new rows, avoiding data loss if a crash happens mid-run.
+            df.loc[todo_df.index[:i], new_col_name] = results
+
+            # Create a copy without the heavy text column (optional, to save space)
             df_ckpt = df.drop(columns=["Text"], errors="ignore")
+
+            # Save the full df as the new checkpoint snapshot
+            # (this overwrites the old checkpoint but preserves all existing results)
             df_ckpt.to_csv(ckpt_path, index=False)
-            print(f"[CKPT] Saved {idx+1} rows → {ckpt_path}")
 
-    df[new_col_name] = pd.Series(results, index=df.index)
+            print(f"[CKPT] Saved checkpoint after {i:,} processed rows → {ckpt_path}")
 
-    # Fallback if empty
+    # After finishing the remaining rows, write the final batch of results
+    df.loc[todo_df.index, new_col_name] = results
+
+    # Return the updated DataFrame for final composition & saving
+    return df
+
+
+# ------------------------------------------------------------
+# 5. Finalization
+# ------------------------------------------------------------
+
+def finalize_and_save(df, args, new_col_name, fallback_col):
+    """Fill missing values, drop heavy text, and save final CSV."""
     if fallback_col in df.columns:
         mask_empty = df[new_col_name].fillna("").str.strip().eq("")
         df.loc[mask_empty, new_col_name] = df.loc[mask_empty, fallback_col]
-    else:
-        print(f"[WARN] Fallback column missing: {fallback_col}")
 
-    df = df.drop(columns=["Text"], errors="ignore")
-    df.to_csv(args.output, index=False)
-    print(f"[DONE] Saved: {args.output}")
+    df_final = df.drop(columns=["Text"], errors="ignore")
+    df_final.to_csv(args.output, index=False)
+    print(f"[DONE] Saved composed output: {args.output}")
+
+
+# ------------------------------------------------------------
+# 6. Orchestration
+# ------------------------------------------------------------
+
+def main():
+    args = parse_args()
+
+    # setup
+    inter_dir, ckpt_path = setup_environment(args)
+
+    # data prep
+    df, new_col_name, fallback_col = prepare_dataframe(args)
+    df = integrate_checkpoint(df, ckpt_path, new_col_name)
+
+    if df[new_col_name].notna().all():
+      print("[CKPT] All rows already processed. Nothing to do.")
+      finalize_and_save(df, args, new_col_name, fallback_col)
+      return
+    
+    # processing
+    llm = load_llm_model(args)
+    
+    print("[INFO] Starting LLM processing...")
+    start_time = time.time()
+    df = process_with_llm(df, args, new_col_name, fallback_col, ckpt_path, llm)
+    elapsed = time.time() - start_time
+    hours = int(elapsed // 3600)
+    minutes = int((elapsed % 3600) // 60)
+    seconds = int(elapsed % 60)
+
+    print(f"[INFO] Processing completed in {hours}h {minutes}m {seconds}s "
+          f"({elapsed:.2f} seconds total)")
+
+    # finalize
+    finalize_and_save(df, args, new_col_name, fallback_col)
+    
+
 
 if __name__ == "__main__":
     main()
+
