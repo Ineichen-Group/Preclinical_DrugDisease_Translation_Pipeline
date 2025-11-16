@@ -241,7 +241,7 @@ def build_cui_to_str_mapping(file1_path, file2_path, save_to_json=None):
 
     return result
 
-def main(load_mondo=False, load_umls=True, load_umls_mapping=False):
+def main(load_mondo=False, load_umls=False, load_umls_synonyms=True, load_umls_mapping=False):
     if load_mondo:
         onthology_owl_path = "04_normalization/data/mondo/mondo.owl"
         paht_to_save_term_id_json = "04_normalization/data/mondo/mondo_term_id_pairs.json"
@@ -249,12 +249,21 @@ def main(load_mondo=False, load_umls=True, load_umls_mapping=False):
         path_to_save_embeddings = "04_normalization/data/mondo/embeddings"
         
         load_embed_mondo(onthology_owl_path, paht_to_save_term_id_json, path_to_save_id_to_term_json, path_to_save_embeddings)
+        
     if load_umls:
         umls_mrconso_path = "04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv"
-        paht_to_save_term_id_json_umls = "04_normalization/data/umls/umls_term_id_pairs.json"
+        path_to_save_term_id_json_umls = "04_normalization/data/umls/umls_term_id_pairs.json"
         path_to_save_embeddings_umls = "04_normalization/data/umls/embeddings"
         
-        load_embed_umls(umls_mrconso_path, paht_to_save_term_id_json_umls, path_to_save_embeddings_umls)
+        load_embed_umls(umls_mrconso_path, path_to_save_term_id_json_umls, path_to_save_embeddings_umls)
+        
+    if load_umls_synonyms:
+        umls_synonyms_path = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv"
+        path_to_save_term_id_json_umls = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/umls_term_id_pairs_synonyms.json"
+        path_to_save_embeddings_umls_synonyms = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/embeddings_synonyms"
+        
+        load_embed_umls(umls_synonyms_path, path_to_save_term_id_json_umls, path_to_save_embeddings_umls_synonyms)
+        
     if load_umls_mapping:
         umls_mrconso_path = "04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv"
         umls_relations_path = "04_normalization/data/umls/mrrel_tradenames_labnumbers_20250507.csv"
