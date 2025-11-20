@@ -16,35 +16,52 @@ import time
 import argparse
 
 def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
-    # List all files in the directory that match the pattern
-    files = [f for f in os.listdir(directory_path_embeddings) if f.startswith(f'{batch_name_prefix}_batch_') and f.endswith('.npy')]
-    # Sort files to maintain the order, especially important if the batch index is used in processing
-    files.sort()
+    # List all npy files in the directory
+    files = [f for f in os.listdir(directory_path_embeddings) if f.endswith(".npy")]
 
-    # Initialize an empty list to hold the data from each file
-    all_data = []
+    # 1) If a COMBINED file exists → load ONLY that one
+    combined_files = [f for f in files if f.endswith("COMBINED.npy")]
+    if combined_files:
+        combined_files.sort()
+        emb_path = os.path.join(directory_path_embeddings, combined_files[0])
+        all_reps_emb_full = np.load(emb_path)
+    else:
+        # 2) Otherwise load all batch files
+        batch_files = sorted(
+            f for f in files
+            if f.startswith(f"{batch_name_prefix}_batch_") and f.endswith(".npy")
+        )
+        if not batch_files:
+            raise FileNotFoundError("No embedding files found.")
+        all_reps_emb_full = np.concatenate(
+            [np.load(os.path.join(directory_path_embeddings, f)) for f in batch_files],
+            axis=0
+        )
 
-    # Load each file and append the data to the list
-    for file in files:
-        file_path = os.path.join(directory_path_embeddings, file)
-        data = np.load(file_path)
-        all_data.append(data)
-
-    all_reps_emb_full = np.concatenate(all_data, axis=0)
-    
+    # Load term-id pairs
     with open(directory_path_terms_ids_json, "r") as f:
         term_id_pairs = json.load(f)
-        
+
+    # Validate length
+    if len(all_reps_emb_full) != len(term_id_pairs):
+        raise ValueError(
+            f"Embeddings={len(all_reps_emb_full)} but term_id_pairs={len(term_id_pairs)}"
+        )
+
     return all_reps_emb_full, term_id_pairs
+
+
     
 def map_query_to_terminology(query: str, 
                         tokenizer: AutoTokenizer, 
                         model: AutoModel, 
-                        all_reps_emb_full: np.ndarray, 
+                        all_reps_emb_full: torch.Tensor, 
                         ontology_sf_id_pairs: np.ndarray, 
                         canonical_mapping_dict: Dict[str, str] = None,
                         dist_threshold: float = 15,  # Added threshold parameter
-                        n_entities: int = 5) -> Tuple[int, str, str, List[Tuple[str, int]], float]:
+                        n_entities: int = 5, 
+                        device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+                        ) -> Tuple[int, str, str, List[Tuple[str, int]], float]:
     
     """
     Map a query to the closest ontology concept using a pre-trained model and return its canonical form.
@@ -54,7 +71,7 @@ def map_query_to_terminology(query: str,
     - query (str): The input query string to be mapped.
     - tokenizer (PreTrainedTokenizer): The tokenizer used for encoding the query.
     - model (PreTrainedModel): The pre-trained model used to generate embeddings for the query.
-    - all_reps_emb_full (np.ndarray): The array of embeddings for all ontology concepts.
+    - all_reps_emb_full (torch.Tensor): The array of embeddings for all ontology concepts.
     - ontology_sf_id_pairs (np.ndarray): The array of ontology concept ID and label pairs.
     - canonical_mapping_dict (Dict[str, str]): A dictionary mapping ontology IDs to their canonical forms.
     - dist_threshold (float): Distance threshold for deciding whether to map the query.
@@ -65,36 +82,22 @@ def map_query_to_terminology(query: str,
       label, its canonical form or original query, a list of the nearest entities, and the minimum distance.
     """
         
-    # ---- pick device from model, fallback to cuda if available else cpu
-    model_device = next(model.parameters()).device if any(p.requires_grad for p in model.parameters()) else torch.device("cpu")
-    if model_device.type == "cpu" and torch.cuda.is_available():
-        model_device = torch.device("cuda")
-
-    # ---- tokenize on CPU, then move to model's device
-    query_toks = tokenizer.batch_encode_plus(
+   # assume model & all_reps_emb_full are already on `device`
+    query_toks = tokenizer(
         [query],
         padding="max_length",
         max_length=25,
         truncation=True,
         return_tensors="pt",
     )
-    query_toks = {k: v.to(model_device) for k, v in query_toks.items()}
+    query_toks = {k: v.to(device) for k, v in query_toks.items()}
 
-    # ---- ensure embeddings live on SAME device (convert if numpy)
-    if isinstance(all_reps_emb_full, np.ndarray):
-        all_reps_emb_full = torch.from_numpy(all_reps_emb_full)
-    all_reps_emb_full = all_reps_emb_full.to(model_device)
-
-    model.to(model_device)
-    model.eval()
-
-    with torch.no_grad():
+    with torch.inference_mode():
         out = model(**query_toks)
-    query_cls_rep = out[0][:, 0, :]  # [CLS]
+    query_cls_rep = out[0][:, 0, :]  # [CLS], shape (1, D)
 
-    # ---- distances on the SAME device
-    # (Euclidean; if you want cosine, normalize and use 1 - sim)
-    dist = torch.cdist(query_cls_rep, all_reps_emb_full)
+    # distances on the SAME device
+    dist = torch.cdist(query_cls_rep, all_reps_emb_full)  # (1, N)
     nn_index = torch.argmin(dist).item()
     min_distance = dist[0, nn_index].item()
 
@@ -124,7 +127,8 @@ def process_row_annotations(
     ontology_sf_id_pairs: Dict[str, str], 
     canonical_mapping_dict: Dict[str, str],
     dist_threshold=10, 
-    n_entities=3
+    n_entities=3,
+    device: torch.device = None,
 ) -> Tuple[str, str, str, str, str, Dict[str, List[str]], Dict[str, str]]:
     """
     Processes a row of annotations, mapping terms to ontology CT concepts and returning the results.
@@ -150,46 +154,104 @@ def process_row_annotations(
         - Dictionary mapping terms to their canonical forms.
     """    
     if pd.isna(row) or not isinstance(row, str):
-        # Return empty strings and empty dictionaries for all the values
-        return "", "", "", {}, {}, "", ""
-    
-    terms = row.split('|')
+        return "", "", "", "", "", {}, ""
+
+    terms = row.split("|")
     ontology_terms = []
     ontology_terms_canonical = []
     ontology_termids = []
-    ontology_norms = []
     closest_3_entites = []
-    min_distances = []  # List to store minimum distances
+    min_distances = []
 
-    # Dictionaries to track mappings
-    norm_to_terms = {}  # ontology norm as key, list of terms as values
-    term_to_norm = {}   # Each term from the row and the ontology norm to which it was mapped
+    norm_to_terms: Dict[str, List[str]] = {}
+    term_to_norm: Dict[str, str] = {}
 
     for term in terms:
-        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(term, tokenizer, model, all_reps_emb_full, ontology_sf_id_pairs, canonical_mapping_dict=canonical_mapping_dict, dist_threshold=dist_threshold, n_entities=n_entities)
+        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = map_query_to_terminology(
+            term,
+            tokenizer,
+            model,
+            all_reps_emb_full,
+            ontology_sf_id_pairs,
+            canonical_mapping_dict=canonical_mapping_dict,
+            dist_threshold=dist_threshold,
+            n_entities=n_entities,
+            device=device,
+        )
         ontology_terms.append(predicted_label)
         ontology_terms_canonical.append(canonical_form)
         ontology_termids.append(predicted_id)
         min_distances.append(nn_distance)
         closest_3_entites.append(n_3_entities)
 
-        # Populate dictionaries
-        #print(canonical_form)
-        if canonical_form in norm_to_terms:
-            norm_to_terms[canonical_form].append(term)
-        else:
-            norm_to_terms[canonical_form] = [term]
-
+        norm_to_terms.setdefault(canonical_form, []).append(term)
         term_to_norm[term] = canonical_form
 
-    # Ensure unique terms in norm_to_terms dictionary
     for key in norm_to_terms:
         norm_to_terms[key] = list(set(norm_to_terms[key]))
 
-    return '|'.join(ontology_terms), '|'.join(map(str, ontology_termids)), '|'.join(ontology_terms_canonical), '|'.join([str(ents) for ents in closest_3_entites]), '|'.join([str(dist) for dist in min_distances]),  norm_to_terms, term_to_norm
+    return (
+        "|".join(map(str, ontology_terms)),
+        "|".join(map(str, ontology_termids)),
+        "|".join(ontology_terms_canonical),
+        "|".join([str(ents) for ents in closest_3_entites]),
+        "|".join([str(dist) for dist in min_distances]),
+        norm_to_terms,
+        term_to_norm,
+    )
+
+def process_row_annotations_from_cache(
+    row: Union[str, float],
+    term2mapping: Dict[str, Tuple[int, str, str, List[Tuple[str, int]], float]],
+) -> Tuple[str, str, str, str, str, Dict[str, List[str]], Dict[str, str]]:
+
+    if pd.isna(row) or not isinstance(row, str):
+        return "", "", "", "", "", {}, ""
+
+    terms = row.split("|")
+    ontology_terms = []
+    ontology_termids = []
+    ontology_terms_canonical = []
+    closest_3_entites = []
+    min_distances = []
+
+    norm_to_terms: Dict[str, List[str]] = {}
+    term_to_norm: Dict[str, str] = {}
+
+    for term in terms:
+        term = term.strip()
+        if not term:
+            continue
+
+        # should always be present, but fallback just in case
+        mapped = term2mapping.get(term, (-1, term, term, [], float("inf")))
+        predicted_id, predicted_label, canonical_form, n_3_entities, nn_distance = mapped
+
+        ontology_terms.append(predicted_label)
+        ontology_termids.append(predicted_id)
+        ontology_terms_canonical.append(canonical_form)
+        closest_3_entites.append(n_3_entities)
+        min_distances.append(nn_distance)
+
+        norm_to_terms.setdefault(canonical_form, []).append(term)
+        term_to_norm[term] = canonical_form
+
+    for key in norm_to_terms:
+        norm_to_terms[key] = list(set(norm_to_terms[key]))
+
+    return (
+        "|".join(map(str, ontology_terms)),
+        "|".join(map(str, ontology_termids)),
+        "|".join(ontology_terms_canonical),
+        "|".join([str(ents) for ents in closest_3_entites]),
+        "|".join([str(dist) for dist in min_distances]),
+        norm_to_terms,
+        term_to_norm,
+    )
 
 
-def normalize_ner_columns(
+
+def normalize_ner_columns_no_cache(
     data_dir,
     df,
     col_to_map,
@@ -197,7 +259,8 @@ def normalize_ner_columns(
     model,
     terminology="mondo",
     dist_threshold=10,
-    n_entities=3
+    n_entities=3,
+    device: torch.device = None,
 ):
     """
     Normalize named entity recognition (NER) columns in a DataFrame using a pretrained embedding model
@@ -238,41 +301,40 @@ def normalize_ner_columns(
     Mapping files must be present in the expected directory structure.
     """
 
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # Construct paths to embedding and mapping files
     embedding_dir = f"{data_dir}{terminology}/embeddings"
     embedding_prefix = f"{terminology.upper()}_emb"
     term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs.json"
 
     # Load precomputed embeddings and corresponding term IDs
-    all_reps_emb_full, term_id_pairs = load_embeddings(
+    all_reps_emb_full_np, term_id_pairs = load_embeddings(
         embedding_dir, embedding_prefix, term_id_path
     )
+    all_reps_emb_full = torch.from_numpy(all_reps_emb_full_np).to(device)
+    all_reps_emb_full.requires_grad_(False)
 
-    # Move embeddings and model to GPU if available
-    if torch.cuda.is_available():
-        all_reps_emb_full = torch.tensor(all_reps_emb_full).to("cuda")
-        model = model.to("cuda")
+    model = model.to(device)
+    model.eval()
 
     print(f"Loaded embeddings: {all_reps_emb_full.shape}, term_id_pairs: {len(term_id_pairs)}")
     tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
 
-    # Extract entity type from the column name (assumes a suffix pattern)
     entity_type = col_to_map.split("_")[-1]
 
-    # Load ID-to-term mapping dictionary, mapping to canonical forms
-    # This file should contain a mapping from term IDs to their canonical forms
     id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
     with open(id_to_term_path, "r", encoding="utf-8") as f:
         canonical_mapping_dict = json.load(f)
 
-    # Normalize each row in the specified column using a helper function
     df[
         [
             f"linkbert_{terminology}_{entity_type}",
             f"{terminology}_termid",
             f"{terminology}_term_norm",
             f"{terminology}_closest_3",
-            f"{terminology}_cdist"
+            f"{terminology}_cdist",
         ]
     ] = df[col_to_map].progress_apply(
         lambda x: pd.Series(
@@ -284,15 +346,170 @@ def normalize_ner_columns(
                 term_id_pairs,
                 canonical_mapping_dict,
                 dist_threshold,
-                n_entities
+                n_entities,
+                device=device,
             )[:5]
         )
     )
 
     return df
 
+def normalize_ner_columns(
+    data_dir,
+    df,
+    col_to_map,
+    tokenizer,
+    model,
+    terminology="mondo",
+    dist_threshold=10,
+    n_entities=3,
+    device: torch.device = None,
+):
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Construct paths to embedding and mapping files
+    embedding_dir = f"{data_dir}{terminology}/embeddings"
+    embedding_prefix = f"{terminology.upper()}_emb"
+    term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs.json"
+
+    # Load precomputed embeddings and corresponding term IDs
+    all_reps_emb_full_np, term_id_pairs = load_embeddings(
+        embedding_dir, embedding_prefix, term_id_path
+    )
+    all_reps_emb_full = torch.from_numpy(all_reps_emb_full_np).to(device)
+    all_reps_emb_full.requires_grad_(False)
+
+    model = model.to(device)
+    model.eval()
+
+    print(f"Loaded embeddings: {all_reps_emb_full.shape}, term_id_pairs: {len(term_id_pairs)}")
+    tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
+
+    entity_type = col_to_map.split("_")[-1]
+
+    id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
+    with open(id_to_term_path, "r", encoding="utf-8") as f:
+        canonical_mapping_dict = json.load(f)
+
+    # Build cache for all unique terms
+    term2mapping = build_term_mapping(
+        df,
+        col_to_map,
+        tokenizer,
+        model,
+        all_reps_emb_full,
+        term_id_pairs,
+        canonical_mapping_dict,
+        dist_threshold,
+        n_entities,
+        device,
+    )
+
+    # Use cache row-wise (no more model calls here)
+    df[
+        [
+            f"linkbert_{terminology}_{entity_type}",
+            f"{terminology}_termid",
+            f"{terminology}_term_norm",
+            f"{terminology}_closest_3",
+            f"{terminology}_cdist",
+        ]
+    ] = df[col_to_map].progress_apply(
+        lambda x: pd.Series(
+            process_row_annotations_from_cache(x, term2mapping)[:5]
+        )
+    )
+
+    return df
+
+
 def get_unique_terms(column):
     return set(term.strip() for row in column.dropna() for term in str(row).split('|') if term.strip())
+
+def extract_unique_terms(df: pd.DataFrame, col_to_map: str) -> List[str]:
+    unique_terms = set()
+    for row in df[col_to_map].dropna():
+        for t in str(row).split("|"):
+            t = t.strip()
+            if t:
+                unique_terms.add(t)
+    return list(unique_terms)
+
+def build_term_mapping(
+    df: pd.DataFrame,
+    col_to_map: str,
+    tokenizer,
+    model,
+    all_reps_emb_full: torch.Tensor,
+    ontology_sf_id_pairs,
+    canonical_mapping_dict: Dict[str, str],
+    dist_threshold: float,
+    n_entities: int,
+    device: torch.device,
+    batch_size: int = 128,
+) -> Dict[str, Tuple[int, str, str, List[Tuple[str, int]], float]]:
+    """
+    Precompute mapping for all unique terms in df[col_to_map].
+    Returns: term -> (pred_id, pred_term, canonical_form, nearest_n_entities, min_distance)
+    """
+    unique_terms = extract_unique_terms(df, col_to_map)
+    print(f"Found {len(unique_terms)} unique terms in '{col_to_map}'")
+
+    term2mapping: Dict[str, Tuple[int, str, str, List[Tuple[str, int]], float]] = {}
+
+    # ensure on device
+    model = model.to(device)
+    all_reps_emb_full = all_reps_emb_full.to(device)
+
+    for start in tqdm(range(0, len(unique_terms), batch_size), desc="Embedding unique terms"):
+        batch_terms = unique_terms[start : start + batch_size]
+
+        # 1) embed batch of terms
+        enc = tokenizer(
+            batch_terms,
+            padding=True,
+            truncation=True,
+            max_length=25,
+            return_tensors="pt",
+        )
+        enc = {k: v.to(device) for k, v in enc.items()}
+
+        with torch.inference_mode():
+            out = model(**enc)
+        batch_embs = out[0][:, 0, :]  # CLS embeddings: (B, D)
+
+        # 2) distance to ontology embeddings: (B, N)
+        dist_matrix = torch.cdist(batch_embs, all_reps_emb_full)
+
+        # 3) per-term nearest neighbors
+        for i, term in enumerate(batch_terms):
+            dists = dist_matrix[i]  # (N,)
+            nn_index = torch.argmin(dists).item()
+            min_distance = dists[nn_index].item()
+
+            nearest_n_indices = torch.argsort(dists)[:n_entities]
+            nearest_n_entities = [ontology_sf_id_pairs[idx.item()] for idx in nearest_n_indices]
+
+            if min_distance > dist_threshold:
+                term2mapping[term] = (-1, term, term, nearest_n_entities, round(min_distance, 4))
+            else:
+                predicted_label = ontology_sf_id_pairs[nn_index]
+                predicted_term = predicted_label[0]
+                predicted_id = predicted_label[1]
+
+                canonical_form = canonical_mapping_dict.get(predicted_id, predicted_term) \
+                    if canonical_mapping_dict else predicted_term
+
+                term2mapping[term] = (
+                    predicted_id,
+                    predicted_term,
+                    canonical_form,
+                    nearest_n_entities,
+                    round(min_distance, 4),
+                )
+
+    return term2mapping
 
 def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminology="mondo"):
     # Count total and successfully mapped terms
@@ -387,8 +604,10 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
     print(f"Input file: {input_file}")
 
     # Load model and tokenizer
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
-    model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
+    model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext").to(device)
+    model.eval()
 
     # Load data
     df = pd.read_csv(input_file)
@@ -408,7 +627,7 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
     # Normalize and time
     print(f"Starting normalization for: {mapping_type.upper()} with cdist {dist_threshold}")
     start_time = time.time()
-    df_mapped = normalize_ner_columns(data_dir, df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities)
+    df_mapped = normalize_ner_columns(data_dir, df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities, device=device)
     elapsed = time.time() - start_time
     time_taken = str(timedelta(seconds=int(elapsed)))
 

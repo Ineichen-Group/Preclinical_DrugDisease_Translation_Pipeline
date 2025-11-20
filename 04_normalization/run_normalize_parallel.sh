@@ -1,19 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=sapbert_norm
 #SBATCH --time=15:00:00
-#SBATCH --mem=16G
-#SBATCH --cpus-per-task=4
+#SBATCH --mem=32G
+#SBATCH --gpus=1
 #SBATCH --output=logs/job_%x_%j_%a.out
 #SBATCH --error=logs/job_%x_%j_%a.err
 #SBATCH --array=1-10
 
-ENTITY_TYPE="disease"
-COL_TO_MAP="linkbert_aact_mapped_conditions"
+ENTITY_TYPE="drug" #"disease"
+COL_TO_MAP="linkbert_mapped_drugs" #"linkbert_aact_mapped_conditions"
 
 CHUNK_ID=$SLURM_ARRAY_TASK_ID
-DATA_DIR="data/"
-INPUT_FILE="mapped_to_dict/clinical/clinical_combined_annotations.csv" #chunks/dict_mapped_ner_chunk_${CHUNK_ID}.csv"
-OUTPUT_FILE="mapped_to_embeddings_ontologies/clinical/${ENTITY_TYPE}_mapped_clinical.csv" #${ENTITY_TYPE}_mapped_ner_chunk_${CHUNK_ID}.csv"
+DATA_DIR="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/"
+INPUT_FILE="${DATA_DIR}mapped_to_dict/clinical/clinical_combined_annotations.csv" #chunks/dict_mapped_ner_chunk_${CHUNK_ID}.csv"
+OUTPUT_FILE="${DATA_DIR}mapped_to_embeddings_ontologies/clinical/${ENTITY_TYPE}_mapped_clinical_drug_enriched.csv" #${ENTITY_TYPE}_mapped_ner_chunk_${CHUNK_ID}.csv"
 LINKING_STATS_DIR="nen_stats/${CHUNK_ID}_clinical_"
 
 # Timing start
