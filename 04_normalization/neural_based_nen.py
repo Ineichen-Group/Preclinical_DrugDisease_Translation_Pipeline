@@ -598,7 +598,17 @@ def generate_mapping_stats(df, col_to_map, log_dir, time_taken="n.a", terminolog
     pd.DataFrame(unmapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_failed_mapping_cases.csv", index=False)
     pd.DataFrame(mapped_rows).to_csv(log_dir + f"{entity_type}_{terminology}_success_mapping_cases.csv", index=False)
 
-def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir, save_stats=False):
+def main(
+    mapping_type,
+    col_to_map,
+    data_dir,
+    input_file,
+    output_file,
+    stats_dir,
+    save_stats=False,
+    terminology=None,
+    dist_threshold=None,
+):
     assert mapping_type in ["disease", "drug"], "Type must be 'disease' or 'drug'"
 
     print(f"Input file: {input_file}")
@@ -611,23 +621,32 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
 
     # Load data
     df = pd.read_csv(input_file)
-    #df = df.head(15)
-    # Columns and output path
 
-    n_entities=3
-    if mapping_type == "disease":
-        terminology = "mondo"
-        output_file = output_file
-        dist_threshold = 9.7
-    else:
-        terminology = "umls"
-        output_file = output_file 
-        dist_threshold = 7.8
+    n_entities = 3
+
+    # ---- Defaults if not provided as arguments
+    if terminology is None:
+        if mapping_type == "disease":
+            terminology = "mondo"
+        else:
+            terminology = "umls"
+
+    if dist_threshold is None:
+        if mapping_type == "disease":
+            dist_threshold = 9.65
+        else:
+            dist_threshold = 8.20
+
+    print(f"Using terminology: {terminology}")
+    print(f"Using distance threshold: {dist_threshold}")
 
     # Normalize and time
     print(f"Starting normalization for: {mapping_type.upper()} with cdist {dist_threshold}")
     start_time = time.time()
-    df_mapped = normalize_ner_columns(data_dir, df, col_to_map, tokenizer, model, terminology, dist_threshold, n_entities, device=device)
+    df_mapped = normalize_ner_columns(
+        data_dir, df, col_to_map, tokenizer, model,
+        terminology, dist_threshold, n_entities, device=device
+    )
     elapsed = time.time() - start_time
     time_taken = str(timedelta(seconds=int(elapsed)))
 
@@ -635,10 +654,12 @@ def main(mapping_type, col_to_map, data_dir, input_file, output_file, stats_dir,
     df_mapped.to_csv(output_file, index=False)
     print(f"Output saved to: {output_file}")
     
-    # Stats and output
     if save_stats:
-        generate_mapping_stats(df_mapped, col_to_map, log_dir=stats_dir, time_taken=time_taken, terminology=terminology)
-    
+        generate_mapping_stats(
+            df_mapped, col_to_map, log_dir=stats_dir,
+            time_taken=time_taken, terminology=terminology
+        )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Normalize NER columns for diseases or drugs.")
@@ -652,7 +673,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--col_to_map',
         type=str,
-        default="linkbert_mapped_conditions", #linkbert_mapped_drugs
+        default="linkbert_mapped_conditions",  # linkbert_mapped_drugs
         help="Column that contains the entities for normalization."
     )
     parser.add_argument(
@@ -665,13 +686,13 @@ if __name__ == "__main__":
         '--input',
         type=str,
         default="04_normalization/data/mapped_to_embeddings_ontologies/drug_disease_mapped_preclinical_extra_studies.csv", 
-        help="Path to the input CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
+        help="Path to the input CSV file."
     ) 
     parser.add_argument(
         '--output',
         type=str,
         default="04_normalization/data/mapped_to_embeddings_ontologies/drug_disease_mapped_preclinical_extra_studies.csv", 
-        help="Path to the output CSV file (default: chunks/dict_mapped_ner_chunk_1.csv)"
+        help="Path to the output CSV file."
     )
     parser.add_argument(
         '--stats_dir',
@@ -679,6 +700,29 @@ if __name__ == "__main__":
         default="04_normalization/nen_stats/", 
         help="Path to save normalization stats like count of unique entities before and after linking."
     )
+    parser.add_argument(
+        '--terminology',
+        type=str,
+        choices=["mondo", "umls"],
+        default=None,
+        help="Terminology to use (e.g. 'mondo' for diseases, 'umls' for drugs). If not set, it is inferred from --type."
+    )
+    parser.add_argument(
+        '--dist_threshold',
+        type=float,
+        default=None,
+        help="Distance threshold for deciding whether to map a mention. If not set, a default is chosen based on --type."
+    )
     
     args = parser.parse_args()
-    main(args.type, args.col_to_map, args.data_dir, args.input, args.output, args.stats_dir, save_stats=False)
+    main(
+        args.type,
+        args.col_to_map,
+        args.data_dir,
+        args.input,
+        args.output,
+        args.stats_dir,
+        save_stats=False,
+        terminology=args.terminology,
+        dist_threshold=args.dist_threshold,
+    )
