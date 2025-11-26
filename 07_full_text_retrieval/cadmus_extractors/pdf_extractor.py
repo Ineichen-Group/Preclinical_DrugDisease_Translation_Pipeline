@@ -92,7 +92,6 @@ def extract_pdf_from_path(
 def extract_methods(
     pmid: str,
     file_path: Path,
-    parse_info: dict,
     output_dir: Path,
     logs_dir: Path,
     logger: logging.Logger = None
