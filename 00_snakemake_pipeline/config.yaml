@@ -1,10 +1,10 @@
 # config.yaml
 wrong_csvs:
-  - "../03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
-  - "../03_IE_ner/check_study_type/animal_studies_review_publications.csv"
-  - "../03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
+  - "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/03_IE_ner/check_study_type/animal_studies_case_report_publications.csv"
+  - "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/03_IE_ner/check_study_type/animal_studies_review_publications.csv"
+  - "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/03_IE_ner/check_study_type/animal_studies_clinical_trial_publications.csv"
   #- "../03_IE_ner/check_study_type/animal_studies_randomized_controlled_trial_publications.csv"
-logs_base: "logs"
+logs_base: "log"
 
 extract_cadmus_methods:
   cadmus_root: "/shares/animalwelfare.crs.uzh/cadmus"      # <- parent folder
@@ -15,7 +15,7 @@ extract_pmc_methods:
   pmc_root: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/pmc_fulltext"
   pmc_glob: "*_fulltext"
   pmc_output: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/extracted/bioc_json"  
-  logs_dir: "logs/pmc"
+  logs_dir: "log/pmc"
 
 combine:
   base_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/extracted"
@@ -67,7 +67,7 @@ predict_age_sent_bert:
 
 extract_age_unsloth:
   # --- script args ---
-  model_dir: "/data/sdonev/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
+  model_dir: "/home/sdonev/data/llms/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
   input_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/sentences_with_bert_age_predictions.csv"
   output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/age_unsloth_llama31_8b.csv"
 
@@ -153,4 +153,8 @@ map_strain_values:
 fetch_author_affiliations:
   output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/data/author_affiliations_pubmed.csv"
   api_key_file: "../07_full_text_retrieval/api_keys.txt"
-  
+
+map_affiliation_to_geolocation:
+  output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/author_affiliations_pubmed_mapped.csv"
+  model_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/data/affiliation-geoinference/geoinference_linearsvc_1mil.joblib.lzma"
+  vectorizer_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/data/affiliation-geoinference/geoinference_vectorizer_1mil.joblib.lzma"

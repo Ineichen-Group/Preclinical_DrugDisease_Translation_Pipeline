@@ -37,6 +37,9 @@ def _label_for(p: str) -> str:
 CADMUS_LABELS = [_label_for(p) for p in CADMUS_DIRS]
 CADMUS_MAP    = dict(zip(CADMUS_LABELS, CADMUS_DIRS))
 
+print("CADMUS_DIRS:", CADMUS_DIRS)
+print("CADMUS_LABELS:", CADMUS_LABELS)
+
 # shared output base (same dir for all jobs) + per-input marker to enable parallelism
 OUT_BASE        = cfg["extract_cadmus_methods"]["cadmus_output"]
 CADMUS_MARKER_PATTERN  = os.path.join(OUT_BASE, "job_done_{label}.flag")
@@ -78,6 +81,7 @@ REGEX_CATEGORIES = config["regex_classification"]["categories"]
 # ---------- workflow ----------
 rule all:
     input:
+        expand(CADMUS_MARKER_PATTERN, label=CADMUS_LABELS),
         cfg["combine"]["output_jsonl"], 
         cfg["sentence_extraction"]["output_jsonl"],
         cfg["regex_classification"]["output_dir"],
@@ -101,7 +105,7 @@ rule all:
         cfg["clean_age_values"]["output_file"],
         cfg["validate_age"]["out_final"],
         cfg["doc_level_age_mapping"]["out_csv"],
-        cfg["fetch_author_affiliations"]["output_file"]
+        cfg["map_affiliation_to_geolocation"]["output_file"]
         
 
 rule extract_methods_pmc:
@@ -127,7 +131,7 @@ rule extract_methods_pmc:
         mkdir -p {params.logs_dir}
 
         # Run multi-folder PMC extraction
-        python ../07_full_text_retrieval/extract_methods_from_bioc_json.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/extract_methods_from_bioc_json.py \
           --input_base {params.pmc_dir} \
           --output_base {params.output_base} \
           --logs_dir {params.logs_dir} \
@@ -161,7 +165,7 @@ rule extract_methods_cadmus:
         set -euo pipefail
         mkdir -p {params.logs_base} {params.output_base}
     
-        python ../07_full_text_retrieval/extract_methods_from_cadmus.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/extract_methods_from_cadmus.py \
           --cadmus-dir {params.cadmus_dir} \
           {params.wrong_csvs} \
           --output-base {params.output_base} \
@@ -204,7 +208,7 @@ rule combine_methods:
         echo "[START] $(date -Is) PWD=$(pwd) Host=$(hostname)"
     
         # your commands below all get logged:
-        python -u ../07_full_text_retrieval/combine_parsed_methods.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/combine_parsed_methods.py \
           --base-dir {params.base_dir:q} \
           --subfolders-json {params.subfolders_json:q} \
           --inner-folders-json {params.inner_folders_json:q} \
@@ -228,7 +232,7 @@ rule extract_sentences:
         "envs/papermage.yaml"
     shell:
         """
-        python ../07_full_text_retrieval/extract_sentences.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/extract_sentences.py \
             --input_jsonl {input} \
             --text_col {params.text_col} \
             --output_jsonl {output} \
@@ -260,7 +264,7 @@ rule split_texts_into_chunks:
     shell:
         r"""
         mkdir -p {params.output_dir}
-        python ../08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
             --input_jsonl {input} \
             --num_chunks {params.num_chunks} \
             --output_dir {params.output_dir} \
@@ -298,7 +302,7 @@ rule split_sent_into_chunks:
     shell:
         r"""
         mkdir -p {params.output_dir}
-        python ../08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/split_doc_texts_to_chunks_for_ner.py \
             --input_jsonl {input} \
             --num_chunks {params.num_chunks} \
             --output_dir {params.output_dir} \
@@ -346,7 +350,7 @@ rule run_regex_classification_chunk:
         r"""
         mkdir -p {params.tmp_dir}
         # Run regex on the chunk into the per-chunk dir
-        python ../08_IE_full_text/regex_runner.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/regex_runner.py \
             --df_path {input.chunk} \
             --category {wildcards.category} \
             --text_col {params.text_col} \
@@ -421,7 +425,7 @@ rule process_doc_level_predictions:
         "envs/papermage.yaml"
     shell:
         r"""
-        python ../08_IE_full_text/clean_regex_predictions.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_regex_predictions.py \
             --input_dir {params.input_dir} \
             > {log.out} 2> {log.err}
         """
@@ -440,7 +444,7 @@ rule filter_age_sentences:
     shell:
         r"""
         mkdir -p $(dirname {output})
-        python ../08_IE_full_text/extract_age_sentences.py \
+        python /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/extract_age_sentences.py \
             {input.predictions_file} \
             {input.sentences_file} \
             {output} \
@@ -466,7 +470,7 @@ rule predict_age_sent_bert:
     shell:
         r"""
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-        python -u ../08_IE_full_text/age_sent_classifier_bert.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/age_sent_classifier_bert.py \
             {params.model_path} \
             {input} \
             {output} \
@@ -483,7 +487,7 @@ rule extract_age_llm_unsloth:
         err = "logs/extract_age_unsloth.err"
     params:
         # script + required args from config
-        script_path     = "../08_IE_full_text/age_extraction_LLM.py",
+        script_path     = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/age_extraction_LLM.py",
         model_dir       = cfg["extract_age_unsloth"]["model_dir"],
         text_col        = cfg["extract_age_unsloth"]["text_col"],
         pmid_col        = cfg["extract_age_unsloth"]["pmid_col"],
@@ -530,7 +534,7 @@ rule clean_age_values:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/clean_age_llm_predictions.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_age_llm_predictions.py \
             --input_file {input} \
             --output_file {output} \
             > {log.out} 2> {log.err}
@@ -557,7 +561,7 @@ rule validate_age_values:
     shell:
         r"""
         export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
-        python -u ../08_IE_full_text/clean_age_validate_values.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_age_validate_values.py \
             --in-predictions "{input}" \
             --out-too-high "{params.out_too_high}" \
             --out-pmcid-map "{params.out_pmcid_map}" \
@@ -578,7 +582,7 @@ rule map_doc_level_age_predictions:
         out = "logs/map_doc_level_age_predictions.out",
         err = "logs/map_doc_level_age_predictions.err"
     params:
-        script_path      = "../08_IE_full_text/classify_age_predictions.py",
+        script_path      = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/classify_age_predictions.py",
         model_name_str   = cfg["doc_level_age_mapping"]["model_name_str"],
         pred_col_species = cfg["doc_level_age_mapping"]["pred_col_species"],
         pred_col_age     = cfg["doc_level_age_mapping"]["pred_col_age"]
@@ -654,7 +658,7 @@ rule run_ner_inference:
         export TOKENIZERS_PARALLELISM=true
         export RAYON_NUM_THREADS={threads}
         mkdir -p {params.output_dir}
-        python -u ../08_IE_full_text/run_bert_ner_annotations.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/run_bert_ner_annotations.py \
             --test_data_input {input.chunk} \
             --output_dir {params.output_dir} \
             --output_file_suffix {params.suffix} \
@@ -681,7 +685,7 @@ rule clean_ner:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/clean_ner_predictions.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_ner_predictions.py \
             --input_dir {input.ner_chunks_dir} \
             --output_dir {output} \
             --ner_column {params.ner_column} \
@@ -705,7 +709,7 @@ rule clean_animal_nr:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/clean_animal_nr.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_animal_nr.py \
             --ner_dir {input.ner_chunks_dir} \
             --text_file {input.methods_file} \
             --output_dir {output.output_dir} \
@@ -724,7 +728,7 @@ rule map_animal_nr_to_numeric:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/convert_animal_nr_to_numeric.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/convert_animal_nr_to_numeric.py \
             --input_file {input} \
             --output_file {output} \
             > {log.out} 2> {log.err}
@@ -749,7 +753,7 @@ rule map_strain_values:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/map_strain_values.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/map_strain_values.py \
             --input_dir {input} \
             --output_csv {output} \
             --synonyms_file {params.syn_file} \
@@ -778,10 +782,37 @@ rule fetch_author_affiliation:
     shell:
         r"""
         mkdir -p logs
-        python -u ../08_IE_full_text/fetch_affiliations.py \
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/fetch_affiliations.py \
             --input {input} \
             --output {output} \
             --email simona.doneva@uzh.ch \
             --api-key-file {params.api_key_file} \
             > {log.out} 2> {log.err}
         """    
+
+rule map_author_affiliation:
+    input: 
+        cfg["fetch_author_affiliations"]["output_file"]
+    output:
+        cfg["map_affiliation_to_geolocation"]["output_file"]
+    log:
+        out = "logs/map_affiliation_to_geolocation.out",
+        err = "logs/map_affiliation_to_geolocation.err"
+    params:
+        model_file = cfg["map_affiliation_to_geolocation"]["model_file"],
+        vectorizer_file = cfg["map_affiliation_to_geolocation"]["vectorizer_file"]
+    conda: "envs/age_scrape_postproc.yaml"
+    resources:
+        mem_mb=32000,
+        runtime="24h"
+    shell:
+        r"""
+        mkdir -p logs
+        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+        python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/map_affiliation_to_geolocation.py \
+            --input {input} \
+            --output {output} \
+            --model {params.model_file} \
+            --vectorizer {params.vectorizer_file} \
+            > {log.out} 2> {log.err}
+        """   
