@@ -16,16 +16,22 @@ import time
 import argparse
 
 def load_embeddings(directory_path_embeddings, batch_name_prefix, directory_path_terms_ids_json):
+    print(f"Loading embeddings from {directory_path_embeddings} with prefix {batch_name_prefix}...")
+    print(f"Loading term-id pairs from {directory_path_terms_ids_json}...")
+    
     # List all npy files in the directory
     files = [f for f in os.listdir(directory_path_embeddings) if f.endswith(".npy")]
 
     # 1) If a COMBINED file exists → load ONLY that one
     combined_files = [f for f in files if f.endswith("COMBINED.npy")]
+    
     if combined_files:
+        print("Found COMBINED embeddings file, loading that one...")
         combined_files.sort()
         emb_path = os.path.join(directory_path_embeddings, combined_files[0])
         all_reps_emb_full = np.load(emb_path)
     else:
+        print("No COMBINED embeddings file found, loading all batch files...")
         # 2) Otherwise load all batch files
         batch_files = sorted(
             f for f in files
@@ -354,6 +360,45 @@ def normalize_ner_columns_no_cache(
 
     return df
 
+def load_relevant_embeddings_and_mappings(
+    data_dir: str,
+    terminology: str,
+    device: torch.device,
+) -> Tuple[torch.Tensor, List[Tuple[str, str]]]:
+    """
+    Load precomputed embeddings and term-ID pairs for a given terminology.
+
+    Parameters:
+    - data_dir (str): Base directory where embeddings and mapping files are stored.
+    - terminology (str): Name of the controlled vocabulary (e.g., "mondo", "hpo").
+    - device (torch.device): Device to load the embeddings onto.
+
+    Returns:
+    - Tuple[torch.Tensor, List[Tuple[str, str]]]: 
+        - Tensor of embeddings on the specified device.
+        - List of term-ID pairs.
+        - Dictionary mapping ontology IDs to their canonical forms.
+    """
+    embedding_dir = f"{data_dir}{terminology}/embeddings"
+    embedding_prefix = f"{terminology.upper()}_emb"
+    if terminology.lower() == "umls":
+        term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs_combined.json"
+    else:
+        term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs.json"
+        
+    id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
+    
+    all_reps_emb_full_np, term_id_pairs = load_embeddings(
+        embedding_dir, embedding_prefix, term_id_path
+    )
+    all_reps_emb_full = torch.from_numpy(all_reps_emb_full_np).to(device)
+    all_reps_emb_full.requires_grad_(False)
+    with open(id_to_term_path, "r", encoding="utf-8") as f:
+            canonical_mapping_dict = json.load(f)
+            
+    print(f"Loaded embeddings: {all_reps_emb_full.shape}, term_id_pairs: {len(term_id_pairs)}, canonical mappings: {len(canonical_mapping_dict)}")         
+    return all_reps_emb_full, term_id_pairs, canonical_mapping_dict
+
 def normalize_ner_columns(
     data_dir,
     df,
@@ -368,29 +413,15 @@ def normalize_ner_columns(
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Construct paths to embedding and mapping files
-    embedding_dir = f"{data_dir}{terminology}/embeddings"
-    embedding_prefix = f"{terminology.upper()}_emb"
-    term_id_path = f"{data_dir}{terminology}/{terminology}_term_id_pairs.json"
-
-    # Load precomputed embeddings and corresponding term IDs
-    all_reps_emb_full_np, term_id_pairs = load_embeddings(
-        embedding_dir, embedding_prefix, term_id_path
-    )
-    all_reps_emb_full = torch.from_numpy(all_reps_emb_full_np).to(device)
-    all_reps_emb_full.requires_grad_(False)
-
     model = model.to(device)
     model.eval()
-
-    print(f"Loaded embeddings: {all_reps_emb_full.shape}, term_id_pairs: {len(term_id_pairs)}")
+    
+    # Load precomputed embeddings and corresponding term IDs
+    all_reps_emb_full, term_id_pairs, canonical_mapping_dict = load_relevant_embeddings_and_mappings(data_dir=data_dir, terminology=terminology, device=device)
+    
     tqdm.pandas(desc=f"Mapping {col_to_map} NER to {terminology}")
 
     entity_type = col_to_map.split("_")[-1]
-
-    id_to_term_path = f"{data_dir}{terminology}/{terminology}_id_to_term_map.json"
-    with open(id_to_term_path, "r", encoding="utf-8") as f:
-        canonical_mapping_dict = json.load(f)
 
     # Build cache for all unique terms
     term2mapping = build_term_mapping(
@@ -617,10 +648,9 @@ def main(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext").to(device)
-    model.eval()
 
     # Load data
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(input_file)[['PMID', col_to_map]]
 
     n_entities = 3
 
