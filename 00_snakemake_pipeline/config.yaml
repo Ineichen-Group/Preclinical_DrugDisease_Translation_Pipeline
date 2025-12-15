@@ -127,12 +127,16 @@ ner_inference:
       output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/bert_predictions"
 
 clean_ner:
-    strain:
-        input_prediction: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/bert_predictions"
-        output_clean: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/strain/processed"
-    animals_nr:
-        input_prediction: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/bert_predictions"
-        output_clean: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/processed"
+  shared:
+    base_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions"
+
+  strain:
+    input_prediction: "strain/bert_predictions"
+    output_clean:     "strain/processed"
+
+  animals_nr:
+    input_prediction: "animals_nr/bert_predictions"
+    output_clean:     "animals_nr/processed"
         
 clean_animal_nr:
   output_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/animals_nr/final_clean"

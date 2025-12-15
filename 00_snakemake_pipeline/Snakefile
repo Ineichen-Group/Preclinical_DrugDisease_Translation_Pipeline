@@ -37,8 +37,8 @@ def _label_for(p: str) -> str:
 CADMUS_LABELS = [_label_for(p) for p in CADMUS_DIRS]
 CADMUS_MAP    = dict(zip(CADMUS_LABELS, CADMUS_DIRS))
 
-print("CADMUS_DIRS:", CADMUS_DIRS)
-print("CADMUS_LABELS:", CADMUS_LABELS)
+#print("CADMUS_DIRS:", CADMUS_DIRS)
+#print("CADMUS_LABELS:", CADMUS_LABELS)
 
 # shared output base (same dir for all jobs) + per-input marker to enable parallelism
 OUT_BASE        = cfg["extract_cadmus_methods"]["cadmus_output"]
@@ -78,12 +78,24 @@ INFERENCE_TARGETS = [
 
 REGEX_CATEGORIES = config["regex_classification"]["categories"]
 
+# --- Clean-ner output pattern (string) ---
+CLEAN_BASE = cfg["clean_ner"]["shared"]["base_dir"]
+# Full output dirs per dataset (absolute paths)
+CLEAN_OUTDIRS = {
+    d: os.path.join(CLEAN_BASE, cfg["clean_ner"][d]["output_clean"])
+    for d in NER_DATASETS
+}
+# Pattern used by rules (still with wildcard)
+CLEAN_OUTPUT_PATTERN = os.path.join(CLEAN_BASE, "{dataset}", "processed")
+CHUNK_IDS = range(1, NUM_CHUNKS + 1)
+# pattern for done flags
+CLEAN_DONE_PATTERN = os.path.join(CLEAN_OUTPUT_PATTERN, ".clean_done")
+
+
 # ---------- workflow ----------
 rule all:
     input:
-        expand(CADMUS_MARKER_PATTERN, label=CADMUS_LABELS),
-        cfg["combine"]["output_jsonl"], 
-        cfg["sentence_extraction"]["output_jsonl"],
+        expand(CADMUS_MARKER_PATTERN, label=CADMUS_LABELS), 
         cfg["regex_classification"]["output_dir"],
         expand(
             os.path.join(cfg["regex_classification"]["output_dir"], "{category}_predictions.csv"),
@@ -96,14 +108,9 @@ rule all:
         ),
         cfg["filter_age_sentences"]["output_file"],
         INFERENCE_TARGETS,
-        [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS],
-        cfg["clean_animal_nr"]["output_dir"] + "/doc_animals_nr_predictions_clean.csv",
+        expand(CLEAN_OUTPUT_PATTERN, dataset=NER_DATASETS),
         cfg["map_animal_nr_to_numeric"]["output_dir"] + "/animals_nr_predictions_numeric.csv",
         cfg["map_strain_values"]["output_file"],
-        cfg["predict_age_sent_bert"]["output_file"],
-        cfg["extract_age_unsloth"]["output_file"],
-        cfg["clean_age_values"]["output_file"],
-        cfg["validate_age"]["out_final"],
         cfg["doc_level_age_mapping"]["out_csv"],
         cfg["map_affiliation_to_geolocation"]["output_file"]
         
@@ -667,17 +674,26 @@ rule run_ner_inference:
             > {log.out} 2> {log.err}
         """
 
-# --- Clean-ner output pattern (string) ---
-CLEAN_OUTDIRS = [cfg["clean_ner"][d]["output_clean"] for d in NER_DATASETS]
-CLEAN_BASE = os.path.commonpath(CLEAN_OUTDIRS)
-CLEAN_OUTPUT_PATTERN = os.path.join(CLEAN_BASE, "{dataset}", "processed")
+def clean_outdir(dataset):
+    # strip any leading slash in config to be safe
+    rel = cfg["clean_ner"][dataset]["output_clean"].lstrip("/")
+    return os.path.join(CLEAN_BASE, rel)
+
 rule clean_ner:
     input:
-        ner_chunks_dir=lambda wc: cfg["clean_ner"][wc.dataset]["input_prediction"]
+        # Get all chunk files for the specific dataset (e.g., animals_nr or strain)
+        ner_chunks=lambda wc: expand(
+            INFER_OUTPUT_PATTERN,
+            model_type=wc.dataset,
+            chunk_id=CHUNK_IDS,
+        ),
     output:
-        directory(CLEAN_OUTPUT_PATTERN)
+        directory(CLEAN_OUTPUT_PATTERN),
+        done   = CLEAN_DONE_PATTERN,
     params:
-        ner_column=cfg["clean_ner"].get("ner_column", "ner_prediction_BioLinkBERT-base_normalized")
+        ner_column=cfg["clean_ner"].get("ner_column", "ner_prediction_BioLinkBERT-base_normalized"),
+        # this is what your script actually reads from
+        ner_chunks_dir=lambda wc: cfg["clean_ner"][wc.dataset]["input_prediction"]
     log:
         out="logs/clean_ner_{dataset}.out",
         err="logs/clean_ner_{dataset}.err"
@@ -686,15 +702,21 @@ rule clean_ner:
         r"""
         mkdir -p logs
         python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_ner_predictions.py \
-            --input_dir {input.ner_chunks_dir} \
+            --input_dir {params.ner_chunks_dir} \
             --output_dir {output} \
             --ner_column {params.ner_column} \
             > {log.out} 2> {log.err}
+        touch {output.done}
         """
+
+ANIMALS_NR_DATASET = "animals_nr"
+ANIMALS_NR_CLEAN_DIR = CLEAN_OUTPUT_PATTERN.format(dataset=ANIMALS_NR_DATASET)
+ANIMALS_NR_DIR  = clean_outdir("animals_nr")
 
 rule clean_animal_nr:
     input:
-        ner_chunks_dir = cfg["clean_ner"]["animals_nr"]["output_clean"],
+        ner_chunks_dir = os.path.join(CLEAN_BASE, cfg["clean_ner"]["animals_nr"]["output_clean"]),
+        ner_done       = os.path.join(ANIMALS_NR_DIR, ".clean_done"),     # make sure clean_ner has finished
         methods_file = cfg["combine"]["output_jsonl"]
     output:
         output_dir = directory(cfg["clean_animal_nr"]["output_dir"]),
