@@ -119,9 +119,15 @@ All saved files are written to the `03_ner/data/animal_studies_with_drug_disease
 ## Named entity normalization (NEN) 
 We first have a basic dictionary based mapping to map terms to a more standardized form. However this has very low coverage, and is sensitive to terms who diverge too much from the spelling in the dictionary. Code for this is in [./04_normalization/dictionary_based_nen.py](./04_normalization/dictionary_based_nen.py).
 
-To further normalize the extracted entities we use two target sources:
+To further normalize the extracted entities we use:
 1. Disease terms are mapped to MONDO, downloaded from [https://mondo.monarchinitiative.org/pages/download/](https://mondo.monarchinitiative.org/pages/download/).
 2. Drug terms are mapped to UMLS. The "2024AB Full UMLS Release Files" was downloaded from [https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html). It is filtered for levels 0 (public) and 9 (SNOMED), as well as selected biomedical DBs. Further it is filtered for the semantic types "Organic Chemical", "Clinical Drug", "Biologically Active Substance", "Amino Acid, Peptide, or Protein", "Enzyme", "Immunologic Factor", "Nucleic Acid, Nucleoside, or Nucleotide", "Inorganic Chemical", "Antibiotic", "Biomedical or Dental Material", "Hormone", "Element, Ion, or Isotope", "Drug Delivery Device", "Vitamin", "Chemical Viewed Structurally", "Chemical".
+3. DrugBank ressources: 
+   1. The DrugBank database was downloaded from [https://go.drugbank.com/releases/latest](https://go.drugbank.com/releases/latest) (requires free registration). The terminology from drugbank_full_database.xml is prepared for mapping in [./04_normalization/Prep_Drugbank_for_Synonyms.ipynb](./04_normalization/Prep_Drugbank_for_Synonyms.ipynb).
+   2. Further external IDs obtained directly from the website and not included in the xml.
+
+Note: for UMLS the synonyms vocabulary, including the final DrugBank mappings, is prepared in [./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb](./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb).
+
 
 ### MONDO/UMLS embedding via SapBERT
 The script [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py) generates vector embeddings for the ontology terms from MONDO and UMLS using the SapBERT model. 
@@ -140,11 +146,19 @@ MONDO:
     - .npy files containing embeddings of MONDO terms
 
 UMLS:
-- Input: CSV file of filtered MRCONSO terms (e.g. drug/chemical concepts)
+- Input: 
+  - Unique IDs and corresponding canonical term (filtered from MRCONSO): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv)
+  - UMLS synonyms file (filtered from MRCONSO): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv)
+  - DrugBank selected terms (sourced from DrugBank): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_drugbank_external_ids.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_drugbank_external_ids.csv)
 - Output:
     - JSON file of (term name, CUI) pairs
     - .npy files containing embeddings of UMLS terms
-  
+- Additional processing
+  - Merging files of different terminologies in [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py). Here we combine the embeddings and term mappings for the base UMLS terminology, UMLS synonyms, and DrugBank terms. Output:
+    -  ["./data/umls/umls_id_to_term_map.json"](./data/umls/umls_id_to_term_map.json): mapping of canonical/unique UMLS CUIs to term names
+    -  ["./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy"](./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy): combined UMLS embeddings
+    -  ["./data/umls/umls_term_id_pairs_combined.json"](./data/umls/umls_term_id_pairs_combined.json): combined (term name, CUI) pairs; many terms have multiple CUIs due to synonyms
+
 ### Selection of Best cdist Parameter
 We manually annotated 100 randomly sampled disease and drug NER entities (see folder [./04_normalization/data/ner_samples/](./04_normalization/data/ner_samples/)). Each entity was then mapped to its closest SapBERT embedding from the relevant ontologies, and the embedding distance was recorded.
 
@@ -181,6 +195,12 @@ To run this script on the server with data parallelism for drug/disease see [./0
 ```
 sbatch run_normalize_parallel.sh disease
 ```
+
+### Mapping to parent concepts
+MONDO:
+
+UMLS:
+  - Mapping UMLS terms to parent CUIs in [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py). This script uses the MRREL file to find parent CUIs for each UMLS term, allowing normalization to higher-level concepts.
 
 ## Validation 
 
