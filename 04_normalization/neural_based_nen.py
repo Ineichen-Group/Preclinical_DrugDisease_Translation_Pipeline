@@ -436,15 +436,21 @@ def normalize_ner_columns(
         n_entities,
         device,
     )
+    
+    if terminology == 'umls':
+        prefix = "drug"
+    else:
+        prefix = "disease"
+        
 
     # Use cache row-wise (no more model calls here)
     df[
         [
             f"linkbert_{terminology}_{entity_type}",
-            f"{terminology}_termid",
-            f"{terminology}_term_norm",
-            f"{terminology}_closest_3",
-            f"{terminology}_cdist",
+            f"{prefix}_{terminology}_termid",
+            f"{prefix}_{terminology}_term_norm",
+            f"{prefix}_{terminology}_closest_3",
+            f"{prefix}_{terminology}_cdist",
         ]
     ] = df[col_to_map].progress_apply(
         lambda x: pd.Series(
@@ -650,8 +656,16 @@ def main(
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext").to(device)
 
     # Load data
-    df = pd.read_csv(input_file)[['PMID', col_to_map]]
+    df = pd.read_csv(input_file)
 
+    if "nct_id" in df.columns:
+        df = df[["nct_id", col_to_map]]
+    elif "PMID" in df.columns:
+        df = df[["PMID", col_to_map]]
+    else:
+        raise ValueError(
+            f"{input_file}: neither 'nct_id' nor 'PMID' column found"
+        )
     n_entities = 3
 
     # ---- Defaults if not provided as arguments

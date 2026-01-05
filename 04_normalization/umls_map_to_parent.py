@@ -111,7 +111,7 @@ def assign_nearest_dataset_parents(
     all_umls_ids: Set[str],
     parent_counts: Dict[str, int],
     id_column: str = "drug_umls_termid",
-    tokens_column: str = "drug_term_umls_norm"
+    tokens_column: str = "drug_umls_term_norm"
 ) -> pd.DataFrame:
     """
     Assigns the nearest dataset parents for each row in the given DataFrame based on UMLS mappings.
@@ -129,7 +129,7 @@ def assign_nearest_dataset_parents(
         id_column (str, optional): The column name in the DataFrame containing UMLS term IDs. 
             Defaults to "drug_umls_termid".
         tokens_column (str, optional): The column name in the DataFrame containing UMLS term tokens. 
-            Defaults to "drug_term_umls_norm".
+            Defaults to "drug_umls_term_norm".
     Returns:
         pd.DataFrame: A copy of the input DataFrame with two additional columns:
             - "nearest_dataset_parent_umls": The UMLS IDs of the nearest parents for each row.
@@ -342,7 +342,7 @@ def main(args):
     df_final_preclinical = merge_original_and_parent(
         df_expanded_preclinical,
         id_col="drug_umls_termid",
-        label_col="drug_term_umls_norm",
+        label_col="drug_umls_term_norm",
         parent_id_col="nearest_dataset_parent_umls",
         parent_label_col="nearest_dataset_parent_umls_label",
         merged_id_col="merged_umls_termid",
@@ -352,7 +352,7 @@ def main(args):
     df_final_clinical = merge_original_and_parent(
         df_expanded_clinical,
         id_col="drug_umls_termid",
-        label_col="drug_term_umls_norm",
+        label_col="drug_umls_term_norm",
         parent_id_col="nearest_dataset_parent_umls",
         parent_label_col="nearest_dataset_parent_umls_label",
         merged_id_col="merged_umls_termid",
