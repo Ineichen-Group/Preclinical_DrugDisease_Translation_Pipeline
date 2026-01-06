@@ -117,17 +117,30 @@ All saved files are written to the `03_ner/data/animal_studies_with_drug_disease
 - Sclerosis-specific subset.
 
 ## Named entity normalization (NEN) 
-We first have a basic dictionary based mapping to map terms to a more standardized form. However this has very low coverage, and is sensitive to terms who diverge too much from the spelling in the dictionary. Code for this is in [./04_normalization/dictionary_based_nen.py](./04_normalization/dictionary_based_nen.py).
-
-To further normalize the extracted entities we use:
+To normalize the extracted entities we use:
 1. Disease terms are mapped to MONDO, downloaded from [https://mondo.monarchinitiative.org/pages/download/](https://mondo.monarchinitiative.org/pages/download/).
 2. Drug terms are mapped to UMLS. The "2024AB Full UMLS Release Files" was downloaded from [https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html). It is filtered for levels 0 (public) and 9 (SNOMED), as well as selected biomedical DBs. Further it is filtered for the semantic types "Organic Chemical", "Clinical Drug", "Biologically Active Substance", "Amino Acid, Peptide, or Protein", "Enzyme", "Immunologic Factor", "Nucleic Acid, Nucleoside, or Nucleotide", "Inorganic Chemical", "Antibiotic", "Biomedical or Dental Material", "Hormone", "Element, Ion, or Isotope", "Drug Delivery Device", "Vitamin", "Chemical Viewed Structurally", "Chemical".
 3. DrugBank ressources: 
    1. The DrugBank database was downloaded from [https://go.drugbank.com/releases/latest](https://go.drugbank.com/releases/latest) (requires free registration). The terminology from drugbank_full_database.xml is prepared for mapping in [./04_normalization/Prep_Drugbank_for_Synonyms.ipynb](./04_normalization/Prep_Drugbank_for_Synonyms.ipynb).
    2. Further external IDs obtained directly from the website and not included in the xml.
 
-Note: for UMLS the synonyms vocabulary, including the final DrugBank mappings, is prepared in [./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb](./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb).
 
+### Overview of the flow
+The overall flow for the normalization is as follows:
+- Prepare: split the NER predictions into chunks for parallel processing: [./04_normalization/split_file_to_chunks.py](./04_normalization/split_file_to_chunks.py).
+- **UMLS**: 
+  - Prepare the UMLS synonyms vocabulary, including the final DrugBank mappings: [./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb](./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb).
+  - Embed UMLS terms with SapBERT: [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py)
+  - Combine embeddings and term mappings for base UMLS terminology, UMLS synonyms, and DrugBank terms in [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py).
+  - Link drug entities to UMLS terms using neural NEN: [./04_normalization/run_normalize_parallel_drug.sh](./04_normalization/run_normalize_parallel_drug.sh) which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
+  - Combine linked chunks in [./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb](./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb).
+  - Map UMLS terms to parent CUIs in [./04_normalization/run_umls_map_to_parent.sh](./04_normalization/run_umls_map_to_parent.sh) which calls [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py).
+- **MONDO**:
+  - Embed MONDO terms with SapBERT: [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py)
+  - Link condition entities to MONDO terms using neural NEN: [./04_normalization/run_normalize_parallel_disease.sh](./04_normalization/run_normalize_parallel_disease.sh) which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
+  - Combine linked chunks in [./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb](./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb).
+  - Clean up obsolete MONDO terms in [./04_normalization/run_mondo_clean_names.sh](./04_normalization/run_mondo_clean_names.sh) which calls [./04_normalization/mondo_clean_names.py](./04_normalization/mondo_clean_names.py).
+  - Map MONDO terms to parent MONDOIDs in [./04_normalization/run_mondo_map_to_parent.sh](./04_normalization/run_mondo_map_to_parent.sh) which calls [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py).
 
 ### MONDO/UMLS embedding via SapBERT
 The script [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py) generates vector embeddings for the ontology terms from MONDO and UMLS using the SapBERT model. 
@@ -156,8 +169,9 @@ UMLS:
 - Additional processing
   - Merging files of different terminologies in [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py). Here we combine the embeddings and term mappings for the base UMLS terminology, UMLS synonyms, and DrugBank terms. Output:
     -  ["./data/umls/umls_id_to_term_map.json"](./data/umls/umls_id_to_term_map.json): mapping of canonical/unique UMLS CUIs to term names
-    -  ["./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy"](./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy): combined UMLS embeddings
+    -  ["./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy"](./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy): combined UMLS embeddings; all terms incl synonyms
     -  ["./data/umls/umls_term_id_pairs_combined.json"](./data/umls/umls_term_id_pairs_combined.json): combined (term name, CUI) pairs; many terms have multiple CUIs due to synonyms
+    -  shape of the last two objects should match!
 
 ### Selection of Best cdist Parameter
 We manually annotated 100 randomly sampled disease and drug NER entities (see folder [./04_normalization/data/ner_samples/](./04_normalization/data/ner_samples/)). Each entity was then mapped to its closest SapBERT embedding from the relevant ontologies, and the embedding distance was recorded.
@@ -198,6 +212,7 @@ sbatch run_normalize_parallel.sh disease
 
 ### Mapping to parent concepts
 MONDO:
+  - Mapping MONDO terms to parent MONDOIDs in [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py).
 
 UMLS:
   - Mapping UMLS terms to parent CUIs in [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py). This script uses the MRREL file to find parent CUIs for each UMLS term, allowing normalization to higher-level concepts.
