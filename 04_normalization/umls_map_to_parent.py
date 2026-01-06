@@ -236,58 +236,61 @@ def merge_original_and_parent(
     parent_id_col: str = "nearest_dataset_parent_mondo",
     parent_label_col: str = "nearest_dataset_parent_label",
     merged_id_col: str = "merged_mondo_termid",
-    merged_label_col: str = "merged_mondo_label"
+    merged_label_col: str = "merged_mondo_label",
 ) -> pd.DataFrame:
     """
     For each row:
       1. Split `id_col` and `label_col` into parallel lists orig_ids, orig_labels.
       2. Split parent columns into parent_ids, parent_labels.
       3. Keep orig_ids & orig_labels exactly (including '-1' slots).
-      4. Append any parent_id != '-1' that isn’t already in orig_ids, 
+      4. Append any parent_id != '-1' that isn’t already in orig_ids,
          along with its matching parent_label.
-      5. Re-join into pipe-delimited merged_id_col / merged_label_col.
-
-    Returns the modified DataFrame, and prints how many new labels were added.
+      5. Dedupe by (id, label_lower) pair, preserving order.
+      6. Re-join into pipe-delimited merged_id_col / merged_label_col.
     """
 
     df = df.copy()
     merged_ids = []
     merged_labels = []
-
-    added_count = 0   # count new parent labels added
+    added_count = 0
 
     for _, row in df.iterrows():
         # 1) Original
-        orig_ids    = row[id_col].split("|")
-        orig_labels = row[label_col].split("|")
+        orig_ids    = str(row.get(id_col, "")).split("|")
+        orig_labels = str(row.get(label_col, "")).split("|")
 
         # 2) Parents
-        parent_ids    = row[parent_id_col].split("|")
-        parent_labels = row[parent_label_col].split("|")
+        parent_ids    = str(row.get(parent_id_col, "")).split("|")
+        parent_labels = str(row.get(parent_label_col, "")).split("|")
 
         # 3) Start with originals in order
         mids  = list(orig_ids)
         mlabs = list(orig_labels)
 
-        # 4) Append parents if new (keeps order)
+        # 4) Append parents if new (ID-wise) and not -1
         for pid, plab in zip(parent_ids, parent_labels):
-            if pid != "-1" and pid not in mids:
+            pid = pid.strip()
+            plab = plab.strip()
+            if pid and pid != "-1" and pid not in mids:
                 mids.append(pid)
                 mlabs.append(plab)
                 added_count += 1
 
-        # ---- ORDER-PRESERVING DEDUPLICATION ----
+        # 5) ORDER-PRESERVING DEDUP BY (id, label_lower)
         seen = set()
         final_ids = []
         final_labels = []
 
         for mid, mlab in zip(mids, mlabs):
-            if mid not in seen:
-                seen.add(mid)
+            mid = mid.strip()
+            mlab = mlab.strip()
+            key = (mid, mlab.lower())  # case-insensitive label dedup
+
+            if key not in seen:
+                seen.add(key)
                 final_ids.append(mid)
                 final_labels.append(mlab)
 
-        # 5) Join back
         merged_ids.append("|".join(final_ids))
         merged_labels.append("|".join(final_labels))
 
@@ -295,7 +298,6 @@ def merge_original_and_parent(
     df[merged_label_col] = merged_labels
 
     print(f"Total new parent labels added: {added_count}")
-
     return df
 
  

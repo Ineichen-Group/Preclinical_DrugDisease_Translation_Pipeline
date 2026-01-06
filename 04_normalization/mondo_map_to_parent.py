@@ -313,58 +313,68 @@ def merge_original_and_parent_mondo(
     df: pd.DataFrame,
     id_col: str,
     label_col: str,
+    *,
+    parent_id_col: str = "nearest_dataset_parent_mondo",
+    parent_label_col: str = "nearest_dataset_parent_label",
+    out_id_col: str = "merged_mondo_termid",
+    out_label_col: str = "merged_mondo_label",
+    ignore_id: str = "-1",
+    case_insensitive_labels: bool = True,
 ) -> pd.DataFrame:
-    """
-    Merge original MONDO annotations with inferred dataset parents,
-    keeping only unique MONDO IDs (order-preserving).
-
-    Rules:
-      - Preserve original MONDO IDs first
-      - Append parent MONDO terms only if not already present
-      - Ensure ID–label alignment
-      - Remove duplicates across originals and parents
-
-    Adds:
-      - merged_mondo_termid
-      - merged_mondo_label
-    """
     merged_ids = []
     merged_labels = []
 
     for _, row in df.iterrows():
-        # Original entries
-        orig_ids = str(row[id_col]).split("|")
-        orig_labels = str(row[label_col]).split("|")
+        orig_ids = str(row.get(id_col, "") or "").split("|")
+        orig_labels = str(row.get(label_col, "") or "").split("|")
 
-        # Parent entries
-        parent_ids = str(row["nearest_dataset_parent_mondo"]).split("|")
-        parent_labels = str(row["nearest_dataset_parent_label"]).split("|")
+        parent_ids = str(row.get(parent_id_col, "") or "").split("|")
+        parent_labels = str(row.get(parent_label_col, "") or "").split("|")
 
+        mids, mlabs = [], []
         seen = set()
-        mids = []
-        mlabs = []
 
-        # 1) add originals (in order)
+        def _key(mid, mlab):
+            mlab_norm = mlab.strip().lower() if case_insensitive_labels else mlab.strip()
+            return (mid.strip(), mlab_norm)
+
+        # 1) originals: keep unique by (id,label)
         for oid, olab in zip(orig_ids, orig_labels):
-            if oid not in seen:
-                seen.add(oid)
+            oid = oid.strip()
+            olab = olab.strip()
+            if not oid and not olab:
+                continue
+            k = _key(oid, olab)
+            if k not in seen:
+                seen.add(k)
                 mids.append(oid)
                 mlabs.append(olab)
 
-        # 2) add parents (if valid and unseen)
+        # 2) parents: only if pid != -1, and not already in *IDs* present
+        # (parents are real IDs; dedupe by ID is fine here)
+        present_ids = set(m.strip() for m in mids if m.strip())
         for pid, plab in zip(parent_ids, parent_labels):
-            if pid != "-1" and pid not in seen:
-                seen.add(pid)
+            pid = pid.strip()
+            plab = plab.strip()
+            if not pid or pid == ignore_id:
+                continue
+            if pid in present_ids:
+                continue
+            # still avoid exact (id,label) duplicate just in case
+            k = _key(pid, plab)
+            if k not in seen:
+                seen.add(k)
+                present_ids.add(pid)
                 mids.append(pid)
                 mlabs.append(plab)
 
         merged_ids.append("|".join(mids))
         merged_labels.append("|".join(mlabs))
 
-    df = df.copy()
-    df["merged_mondo_termid"] = merged_ids
-    df["merged_mondo_label"] = merged_labels
-    return df
+    out = df.copy()
+    out[out_id_col] = merged_ids
+    out[out_label_col] = merged_labels
+    return out
 
 
 

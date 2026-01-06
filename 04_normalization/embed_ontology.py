@@ -11,6 +11,7 @@ import warnings
 import csv
 from collections import defaultdict
 warnings.filterwarnings("ignore", category=SyntaxWarning)
+import torch
 
 def load_mondo_ontology(path_to_owl):
     print("Loading MONDO")
@@ -27,7 +28,7 @@ def load_mondo_ontology(path_to_owl):
 
     for term in tqdm(mondo_terms, desc="Filtering MONDO terms"):
         if not term.name or not term.id:
-            print(f"Skipping term: {term.name, term.id}")
+            print(f"Skipping term due to missing elements: {term.name, term.id}")
             skipped += 1
             continue
 
@@ -42,6 +43,8 @@ def load_mondo_ontology(path_to_owl):
 
         # Add synonyms
         for syn in term.synonyms:
+            if syn.scope == "BROAD":
+                continue
             synonym_name = syn.description.strip()
             if synonym_name not in seen_names:
                 term_id_pairs.append((synonym_name, term_id))
@@ -55,7 +58,7 @@ def load_mondo_ontology(path_to_owl):
     print(f"Loaded {len(term_id_pairs)} ({len(all_names)}, {len(all_ids)}) names (including synonyms). Skipped {skipped} terms.")
     return term_id_pairs, all_names, all_ids, id_to_term_name
 
-def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, save_emb_path, batch_name_prefix):
+def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, save_emb_path, batch_name_prefix, device):
     """
     Embeds a subset of names using the given tokenizer and model, and saves the embeddings to disk.
 
@@ -68,7 +71,15 @@ def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, sav
     - save_emb_path (str): Path to save the embeddings
     - batch_name_prefix (str): Prefix for the saved file name
     """
+    # ---------- FILE EXISTS CHECK ----------
+    save_path = f"{save_emb_path}/{batch_name_prefix}_batch_{batch_idx}.npy"
+    if os.path.exists(save_path):
+        print(f"[SKIP] Batch {batch_idx}: {save_path} already exists — skipping computation.")
+        return
+    # ---------------------------------------
+    
     all_reps = []
+    model.eval()
 
     for i in tqdm(range(0, len(name_subset), bs), desc=f"Embedding mini-batches for batch {batch_idx}"):
         mini_batch = name_subset[i:i + bs]
@@ -83,14 +94,14 @@ def embed_batch_and_save_batch(tokenizer, model, name_subset, batch_idx, bs, sav
         )
 
         # Forward pass (adjust for CUDA if needed)
-        # toks = {k: v.cuda() for k, v in toks.items()}  # if using GPU
-        output = model(**toks)
-        cls_rep = output[0][:, 0, :]  # CLS token representation
-        all_reps.append(cls_rep.cpu().detach().numpy())
+        toks = {k: v.to(device) for k, v in toks.items()}
+        with torch.no_grad():
+            output = model(**toks)
+            cls_rep = output[0][:, 0, :]  # CLS token representation
+            all_reps.append(cls_rep.cpu().detach().numpy())
 
     # Concatenate and save
     all_reps_emb_full = np.concatenate(all_reps, axis=0)
-    save_path = f"{save_emb_path}/{batch_name_prefix}_batch_{batch_idx}.npy"
     np.save(save_path, all_reps_emb_full)
     print(f"Saved batch {batch_idx} embeddings to {save_path}")
 
@@ -118,7 +129,8 @@ def embed_terms_sapbert(
     model = AutoModel.from_pretrained("cambridgeltl/SapBERT-from-PubMedBERT-fulltext")
 
     # Optional: move to GPU
-    # model = model.cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
 
     print(f"Embedding {len(all_names)} names in chunks of {large_batch_size}...")
     for batch_start in range(0, len(all_names), large_batch_size):
@@ -133,7 +145,8 @@ def embed_terms_sapbert(
             batch_idx=batch_idx,
             bs=bs,
             save_emb_path=save_emb_path,
-            batch_name_prefix=batch_name_prefix
+            batch_name_prefix=batch_name_prefix,
+            device=device
         )
         
 def load_embed_mondo(onthology_owl_path, path_to_save_term_id_json, path_to_save_id_to_term_json, path_to_save_embeddings):
@@ -153,22 +166,28 @@ def load_embed_mondo(onthology_owl_path, path_to_save_term_id_json, path_to_save
     
 def load_umls_terms(umls_mrconso_path):
     print("Loading UMLS")
-    unique_cui_umls = pd.read_csv(umls_mrconso_path)
+    # Read everything as string to avoid float NaNs etc.
+    unique_cui_umls = pd.read_csv(umls_mrconso_path, dtype=str)
+
+    # Drop rows where 'str' or 'cui' is missing entirely
+    unique_cui_umls = unique_cui_umls.dropna(subset=['str', 'cui'])
+
+    # Strip whitespace
     unique_cui_umls['str'] = unique_cui_umls['str'].str.strip()
     unique_cui_umls['cui'] = unique_cui_umls['cui'].str.strip()
 
-    # Extract cleaned values as lists
-    all_names = unique_cui_umls['str'].values.tolist()
-    all_ids = unique_cui_umls['cui'].values.tolist()
-    
-    term_id_pairs = []
-    #term_id_pairs_with_sty = []
+    # Remove empty strings after stripping (optional but good hygiene)
+    mask = (unique_cui_umls['str'] != "") & (unique_cui_umls['cui'] != "")
+    unique_cui_umls = unique_cui_umls[mask]
 
+    # Extract as *plain Python strings*
+    all_names = unique_cui_umls['str'].astype(str).tolist()
+    all_ids   = unique_cui_umls['cui'].astype(str).tolist()
+
+    term_id_pairs = []
     for term_name, term_id in zip(all_names, all_ids):
-        #term_sty = cui_sty_dict[term_id]
-        #term_name_sty = str(term_name) + f" ({term_sty})"
         term_id_pairs.append((term_name, term_id))
-        #term_id_pairs_with_sty.append((term_name_sty, term_id))
+
     print(f"Loaded {len(term_id_pairs)}")
     return term_id_pairs, all_names, all_ids
     
@@ -241,7 +260,7 @@ def build_cui_to_str_mapping(file1_path, file2_path, save_to_json=None):
 
     return result
 
-def main(load_mondo=False, load_umls=False, load_umls_synonyms=True, load_umls_mapping=False):
+def main(load_mondo=True, load_umls=False, load_umls_synonyms=False, load_drugbank_ext_ids=False, load_umls_mapping=False):
     if load_mondo:
         onthology_owl_path = "04_normalization/data/mondo/mondo.owl"
         paht_to_save_term_id_json = "04_normalization/data/mondo/mondo_term_id_pairs.json"
@@ -258,11 +277,18 @@ def main(load_mondo=False, load_umls=False, load_umls_synonyms=True, load_umls_m
         load_embed_umls(umls_mrconso_path, path_to_save_term_id_json_umls, path_to_save_embeddings_umls)
         
     if load_umls_synonyms:
-        umls_synonyms_path = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv"
-        path_to_save_term_id_json_umls = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/umls_term_id_pairs_synonyms.json"
-        path_to_save_embeddings_umls_synonyms = "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/umls/embeddings_synonyms"
+        umls_synonyms_path = "./04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv"
+        path_to_save_term_id_json_umls = "./04_normalization/data/umls/umls_term_id_pairs_synonyms.json"
+        path_to_save_embeddings_umls_synonyms = "./04_normalization/data/umls/embeddings_synonyms"
         
         load_embed_umls(umls_synonyms_path, path_to_save_term_id_json_umls, path_to_save_embeddings_umls_synonyms)
+        
+    if load_drugbank_ext_ids:
+        umls_synonyms_path = "./04_normalization/data/umls/mrconso_filtered_db_and_sty_drugbank_external_ids.csv"
+        path_to_save_term_id_json_db = "./04_normalization/data/umls/umls_term_id_pairs_drugbank_ids.json"
+        path_to_save_embeddings_umls_db = "./04_normalization/data/umls/embeddings_drugbank_ids"
+        
+        load_embed_umls(umls_synonyms_path, path_to_save_term_id_json_db, path_to_save_embeddings_umls_db)
         
     if load_umls_mapping:
         umls_mrconso_path = "04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv"
@@ -271,4 +297,4 @@ def main(load_mondo=False, load_umls=False, load_umls_synonyms=True, load_umls_m
         mapping = build_cui_to_str_mapping(umls_mrconso_path, umls_relations_path, save_to_json=output_json_path)
     
 if __name__ == "__main__":
-    main(load_mondo=False, load_umls=False, load_umls_mapping=True)
+    main(load_mondo=True, load_umls=False, load_umls_mapping=False)

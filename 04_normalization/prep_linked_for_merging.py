@@ -27,7 +27,7 @@ def load_and_merge_preclinical_data():
     # --- Load Preclinical Data ---
     preclinical_df_main = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_595768.csv")
     print(f"Shape of preclinical_df_main: {preclinical_df_main.shape}")
-    preclinical_df_extra = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_4489.csv")
+    preclinical_df_extra = pd.read_csv("04_normalization/data/mapped_to_dict/aggregated_ner_annotations_basic_dict_mapped_2879.csv")
     print(f"Shape of preclinical_df_extra: {preclinical_df_extra.shape}")
     preclinical_df = pd.concat([preclinical_df_main, preclinical_df_extra], ignore_index=True)
 

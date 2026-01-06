@@ -106,7 +106,7 @@ def process_interventions(df_conditions_mapped, drug_column="unique_intervention
 
 
 def main():
-    ner_outputs_path = "03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_4489.csv" #"03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_595768.csv"
+    ner_outputs_path = "03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_2879.csv" #"03_IE_ner/data/animal_studies_with_drug_disease/filtered_df_non_empty_595768.csv"
     df_pred_unique = pd.read_csv(ner_outputs_path)
     
     df_conditions_mapped = process_conditions(df_pred_unique)
