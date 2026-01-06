@@ -8,11 +8,11 @@
 
 SCRIPT="mondo_clean_names.py"
 
-CLINICAL_IN="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_with_mondo_parents.csv"
-PRECLINICAL_IN="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_with_mondo_parents.csv"
+CLINICAL_IN="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_to_embeddings_ontologies/clinical/disease_mapped_clinical_disease_enriched.csv"
+PRECLINICAL_IN="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_to_embeddings_ontologies/disease_mapped_preclinical_enriched_all.csv"
 
-CLINICAL_OUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_with_mondo_parents_mondo_cleaned.csv"
-PRECLINICAL_OUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_with_mondo_parents_mondo_cleaned.csv"
+CLINICAL_OUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_mondo_cleaned.csv"
+PRECLINICAL_OUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_mondo_cleaned.csv"
 
 mkdir -p logs "$(dirname "$CLINICAL_OUT")" "$(dirname "$PRECLINICAL_OUT")"
 
@@ -33,10 +33,10 @@ python "$SCRIPT" \
   --preclinical_output "$PRECLINICAL_OUT" \
   --clinical_key nct_id \
   --preclinical_key PMID \
-  --raw_col merged_mondo_label \
-  --id_col merged_mondo_termid \
-  --grouped_col disease_term_mondo_parent_clean \
-  --out_id_col disease_termid_mondo_parent_clean \
+  --raw_col disease_mondo_term_norm \
+  --id_col disease_mondo_termid \
+  --grouped_col disease_term_mondo_clean \
+  --out_id_col disease_termid_mondo_clean \
   --verbose
 
 END=$(date +%s)

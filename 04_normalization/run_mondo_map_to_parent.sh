@@ -10,22 +10,22 @@
 SCRIPT_PATH="mondo_map_to_parent.py"
 
 # ---- inputs ----
-CLINICAL_INPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_to_embeddings_ontologies/clinical/disease_mapped_clinical_disease_enriched.csv"
-PRECLINICAL_INPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_to_embeddings_ontologies/disease_mapped_preclinical_enriched_all.csv"
+CLINICAL_INPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_mondo_cleaned.csv"
+PRECLINICAL_INPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_mondo_cleaned.csv"
 
 # ---- outputs ----
-CLINICAL_OUTPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_with_mondo_parents.csv"
-PRECLINICAL_OUTPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_with_mondo_parents.csv"
+CLINICAL_OUTPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_mondo_cleaned_with_mondo_parents.csv"
+PRECLINICAL_OUTPUT="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_mondo_cleaned_with_mondo_parents.csv"
 
 # ---- ontology + params ----
 ONTOLOGY_PATH="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mondo/mondo.owl"
 ROOT_ID="MONDO:0000001"
 
-ID_COLUMN="disease_mondo_termid"
-LABEL_COLUMN="disease_mondo_term_norm"
+ID_COLUMN="disease_termid_mondo_clean"
+LABEL_COLUMN="disease_term_mondo_clean"
 
 MIN_DEPTH=5
-MAX_DESC=500
+MAX_DESC=20
 
 mkdir -p logs "$(dirname "$CLINICAL_OUTPUT")" "$(dirname "$PRECLINICAL_OUTPUT")"
 
