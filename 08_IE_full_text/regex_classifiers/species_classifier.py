@@ -267,7 +267,7 @@ class SpeciesClassifier:
                     # Check for overlap with any previous match
                     if any(s <= match_start < e or s < match_end <= e for s, e in matched_spans):
                         continue
-                    print(f"Found candidate match for label '{label}': {text}")
+                    
                     if not self._is_in_false_context(text, match_start, match_end, self.WINDOW):
                         vector[idx] = 1
                         found_labels.add(label)

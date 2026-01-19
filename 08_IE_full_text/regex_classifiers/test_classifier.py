@@ -4,6 +4,7 @@ from .assay_classifier import AssayClassifier
 from .species_classifier import SpeciesClassifier
 from .sex_classifier import SexClassifier
 from .welfare_classifier import WelfareClassifier
+from .age_classifier import AgeClassifier
 from pathlib import Path
 # run with python -m regex_classifiers.test_classifier from 08_IE_full_text
 
@@ -15,6 +16,7 @@ classifier = AssayClassifier(DATA_PATH)
 classifier_species = SpeciesClassifier()
 sex_classifier = SexClassifier()
 welfare_classifier = WelfareClassifier()
+age_classifier = AgeClassifier()
 
 # Example input
 text = """
@@ -24,13 +26,15 @@ Amrut rat and mice feed
 Laboratory Rabbit Diet
 The phosphorylated form was normalized against β-tubulin (Cell Signaling Cat. #2146S). 
 Another Wes was run for the total amount of IR (Cell Signaling Cat. #3025S). 
-guinea-pigs (Cavia porcellus) were purchased from Charles River Laboratories (Wilmington, MA, USA) and housed in the animal facility of the University of Barcelona."""
+guinea-pigs (Cavia porcellus) were purchased from Charles River Laboratories (Wilmington, MA, USA) and housed in the animal facility of the University of Barcelona.
+Young adult male animals (200–250 g) were obtained from Harlan Laboratories (Indianapolis, IN, USA)."""
 
 # Classify the text
 vector, labels, matches = classifier.classify(text)
 vector_species, labels_species = classifier_species.classify(text)
 numeric_code, sex_label = sex_classifier.classify(text)
 welfare_code, welfare_label = welfare_classifier.classify(text)
+age_code, age_label = age_classifier.classify(text)
 
 # Print results
 print("Multi-hot Vector:", vector)
@@ -51,3 +55,7 @@ print("Label:", sex_label)
 print("\nWelfare Classifier Results:")
 print("Numeric Code:", welfare_code)
 print("Label:", welfare_label)
+
+print("\nAge Classifier Results:")
+print("Numeric Code:", age_code)
+print("Label:", age_label)
