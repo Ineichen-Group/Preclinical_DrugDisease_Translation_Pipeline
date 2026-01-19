@@ -34,6 +34,7 @@ class SexClassifier:
                 r"\bmaternal\b",
                 r"\bmothers?\b",
                 r"\bsisters?\b",
+                r"\bpregnant?\b",
             ],
             "sex-male": [
                 r"\bmales?\b",
@@ -41,9 +42,9 @@ class SexClassifier:
                 r"\bbrothers?\b",
             ],
             "sex-both": [
-                r"\beither sex(?:es)\b",
-                r"\both sex(?:es)\b",
-                r"\b(?:of|the)\seither sex\b",
+                r"\beither sex(?:es)?\b",
+                r"\bboth sex(?:es)?\b",
+                r"\b(?:of|the)\s+either sex(?:es)?\b",
             ],
         }
 
@@ -71,8 +72,8 @@ class SexClassifier:
         snippet_start = max(0, start - context)
         snippet_end = min(len(text), end + context)
         snippet = text[snippet_start:snippet_end]
-        print(f"Found match: {match.group(0)!r}")
-        print(f"Context: ...{snippet}...")
+        #print(f"Found match: {match.group(0)!r}")
+        #print(f"Context: ...{snippet}...")
 
         # ---- false-context window check ----
         tokens = list(re.finditer(r"\b\w+\b", text))
@@ -90,7 +91,7 @@ class SexClassifier:
                 window_snippet = text[char_start:char_end]
                 
                 if self._false_context.search(window_snippet):
-                    print("→ Skipped: FALSE_CONTEXT_TERMS found within token window.")
+                    #print("→ Skipped: FALSE_CONTEXT_TERMS found within token window.")
                     return None
 
         return match
@@ -104,7 +105,7 @@ class SexClassifier:
                     found[label] = True
                     break
 
-        if found["sex-female"] and found["sex-male"]:
+        if found["sex-both"] or (found["sex-female"] and found["sex-male"]):
             final_label = "sex-both"
         elif found["sex-female"]:
             final_label = "sex-female"
@@ -112,6 +113,7 @@ class SexClassifier:
             final_label = "sex-male"
         else:
             final_label = "sex-not-reported"
+
 
         numeric_code = self._label_to_code[final_label]
         return numeric_code, final_label

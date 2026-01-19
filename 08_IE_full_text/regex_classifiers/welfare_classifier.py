@@ -34,6 +34,8 @@ class WelfareClassifier(RegexClassifier):
             r"Guide for the Care and Use of Laboratory Animals|"
             r"Directive (86/609|2010/63)[/\w]*|"
             r"ARRIVE guidelines|"
+            r"Animal Care|"
+            r"ethical treatment|"
             r"Declaration of Helsinki|"
             r"ethical (standards|guidelines|policies)|"
             r"international (laws|standards|guidelines)|"

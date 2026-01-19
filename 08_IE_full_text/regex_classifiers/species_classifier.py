@@ -26,24 +26,76 @@ class SpeciesClassifier:
 
     # Raw regex patterns for each species label
     RAW_PATTERNS: dict[str, List[str]] = {
-        "rat": [r"\brats?\b"],
+        "rat": [
+            r"\brats?\b"
+            # not feed / diet product names (e.g., "rat and mice feed")
+            r"(?!\s+(?:and\s+)?mice\s+feed\b)"
+            r"(?!\s+feed\b)"
+            r"(?!\s+diet\b)",
+        ],
         "mouse": [
-            r"\bmouse\b(?!\s+MOG)",   # "mouse", but not "mouse MOG"
-            r"\bmice\b",
+            r"\bmouse\b"
+            r"(?!\s+MOG\b)"                 # not "mouse MOG"
+            r"(?!\s+(?:feed|diet)\b)",      # not "mouse feed/diet"
+
+            r"\bmice\b"
+            r"(?!\s+(?:feed|diet)\b)",      # not "mice feed/diet"
         ],
         "cat": [
-            # Match cat/cats as animals, but NOT:
-            # - catalog refs (Cat., Cat#, Cat No./Nr./Num./Number)
-            # - author initials/surnames context (e.g., "A. Cats", "Cats J.")
-            # - enzyme acronym contexts: "CAT, EC …", "CAT activity", "CAT assay", "CAT enzyme"
-            r"(?<![A-Z]\.\s)\bcat(?:s)?\b"
-            r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number)\b)"     # not catalog
-            r"(?!\s*[A-Z]\.)"                                     # not 'Cats J.'
-            r"(?!\s*,\s*EC\b)"                                    # not 'CAT, EC …'
-            r"(?!\s+(?:activity|assay|enzyme)\b)",                # not 'CAT activity/assay/enzyme'
+            # Match "cat" / "cats" as the experimental animal ONLY.
+            # Explicitly EXCLUDES:
+            # 1) Predator-odor / object contexts:
+            #    - cat litter
+            #    - cat odor / odour (including odor-exuding, odor cues)
+            #    - cat collar, cat cue
+            #    - worn by a (domestic) cat
+            #
+            # 2) Reagent / catalog references:
+            #    - Cat., Cat#, Cat No./Nr./Num./Number
+            #    - "Cat: 1409-rPEP-02"
+            #    - Vendor phrases (e.g., Cell Signaling Cat. #)
+            #
+            # 3) Author name contexts:
+            #    - "Cats J."
+            #
+            # 4) Molecular biology / enzyme contexts:
+            #    - CAT enzyme, CAT activity, CAT assay
+            #    - CAT gene, reporter, LTR-CAT constructs
+            #    - CAT levels in cell extracts
+            #
+            # Rationale:
+            # - "cat" is highly ambiguous in biomedical text.
+            # - This rule prioritizes avoiding false positives over capturing every mention.
+            #
+            r"(?<![A-Z]\.\s)"                # not initials like "A. Cat"
+            r"(?<!concentration of\s)"       # not "concentration of CAT ..."
+            r"(?<!concentrations of\s)"
+            r"(?<!level of\s)"
+            r"(?<!levels of\s)"
+            r"\bcat(?:s)?\b"
+
+            # predator-odor / object contexts
+            r"(?!\s*(?:domestic\s+)?(?:litter|cue|collar|odou?r(?:[-\s]\w+)*)\b)"
+
+            # catalog / reagent refs
+            r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number|id)\b)"
+            r"(?!\s*[:#]\s*[\w-]+)"
+            r"(?!\s*[A-Z]\.)"
+            r"(?!\s*,\s*EC\b)"
+
+            # enzyme / molecular biology contexts
+            r"(?![\s\-\(\[]*(?:activity|assay|enzyme|protein|levels?|concentration(?:s)?|expression)\b)"
+            r"(?![\s\-\(\[]*(?:gene|reporter|ltr|construct|vector|plasmid|transfection|promoter|mrna|cdna)\b)"
+
+            # cell extracts not necessarily immediately after (window of next ~6 words)
+            r"(?!\b(?:\W+\w+){0,6}\W+(?:cell|cells|extracts?)\b)"
+
+            # "worn by a (domestic) cat"
+            r"(?!\s+by\s+(?:a|an|the)?\s*(?:domestic\s+)?cat\b)"
         ],
+
         "dog": [r"\bdogs?\b"],
-        "guinea pig": [r"\bguinea pigs?\b"],
+        "guinea pig": [r"\bguinea[-\s]?pigs?\b"],
         "monkey": [
             r"\bmonkeys?\b",
             r"\bmacaques?\b",
@@ -54,9 +106,12 @@ class SpeciesClassifier:
         ],
         "pig": [r"\bpigs?\b", r"\bswines?\b", r"\bpiglets?\b"],
         "rabbit": [
-            # match rabbit/rabbits, but not when followed by Ig (IgG, IgM, IgA, etc.)
-            r"\brabbits?\b(?!\s+Ig[GMDAE]?\b)",
+            r"\brabbits?\b"
+            r"(?!\s+Ig[GMDAE]?\b)"                           # not rabbit IgG/IgM/IgA…
+            r"(?!\s+(?:standard|laboratory|commercial)\s+rabbit\s+diet\b)"  # not Laboratory Rabbit Diet
+            r"(?!\s+diet\b)",                                # not rabbit diet (generic)
         ],
+
         "species-other": [],  # fallback
     }
 
@@ -212,7 +267,7 @@ class SpeciesClassifier:
                     # Check for overlap with any previous match
                     if any(s <= match_start < e or s < match_end <= e for s, e in matched_spans):
                         continue
-
+                    print(f"Found candidate match for label '{label}': {text}")
                     if not self._is_in_false_context(text, match_start, match_end, self.WINDOW):
                         vector[idx] = 1
                         found_labels.add(label)
