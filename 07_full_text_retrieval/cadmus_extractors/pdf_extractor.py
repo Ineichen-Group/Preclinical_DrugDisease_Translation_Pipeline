@@ -144,16 +144,9 @@ def extract_methods(
     section_paragraphs = _group_paragraphs_by_section(doc)
     
     if list(section_paragraphs)[0] == "Plain text":
-        # No sections detected, just one big block of text
-        logger.info(f"[PDF] No sections found for PMID {pmid}, treating as plain text.")
-        plain_text = section_paragraphs['Plain text']
-        status, df_from_plain = _extract_methods_from_txt(
-            text=plain_text,
-            doc_id=pmid,
-            output_json=output_json,
-            logs_dir=str(logs_dir)
-        )
-        return status, df_from_plain["subtitle"].nunique() if isinstance(df_from_plain, pd.DataFrame) else 0
+        # No sections found → log and return failure
+        _append_to_log(logs_dir / "no_sections_pdf.txt", pmid)
+        return False, 0
         
     # Now, keep only sections between “Materials and Methods” start/end
     sub_sections = defaultdict(list)
