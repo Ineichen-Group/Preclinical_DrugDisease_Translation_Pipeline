@@ -5,7 +5,7 @@ import logging
 import zipfile
 from pathlib import Path
 from collections import defaultdict
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 import pandas as pd
 from papermage.recipes import CoreRecipe
@@ -244,37 +244,71 @@ def _append_to_log(log_path: Path, text: str) -> None:
         f.write(f"{text}\n")
 
 
+METHOD_KEYWORDS = ("methods", "materials", "methodology", "procedures")
+
 def _group_paragraphs_by_section(doc) -> dict[str, list[str]]:
     """
-    Build a dict mapping section headings (if present) to paragraph texts.
-    If no sections exist, return a single entry with all text under 'Plain text'.
+    Build a dict mapping section headings to paragraph texts.
+    If no sections exist OR Methods is missing/empty, fall back to extracting from plain text.
     """
     result: dict[str, list[str]] = {}
 
-    if doc.sections:
-        # Use semantic section headings
+    empty_methods = False
+    found_methods = False
+
+    if getattr(doc, "sections", None):
         section_boundaries = sorted(
-            [(sec.spans[0].start, sec) for sec in doc.sections if sec.spans],
+            [(sec.spans[0].start, sec) for sec in doc.sections if getattr(sec, "spans", None)],
             key=lambda x: x[0]
         )
-        max_para_end = max(p.spans[0].end for p in doc.paragraphs if p.spans)
-        section_boundaries.append((max_para_end + 1, None))
 
-        for idx in range(len(section_boundaries) - 1):
-            this_start, sec_entity = section_boundaries[idx]
-            next_start, _ = section_boundaries[idx + 1]
+        # Guard: paragraphs might be missing spans
+        para_ends = [p.spans[0].end for p in getattr(doc, "paragraphs", []) if getattr(p, "spans", None)]
+        if section_boundaries and para_ends:
+            max_para_end = max(para_ends)
+            section_boundaries.append((max_para_end + 1, None))
 
-            paras_in_section = [
-                p for p in doc.paragraphs
-                if p.spans and this_start <= p.spans[0].start < next_start
-            ]
-            paras_in_section.sort(key=lambda p: p.spans[0].start)
+            for i in range(len(section_boundaries) - 1):
+                this_start, sec_entity = section_boundaries[i]
+                next_start, _ = section_boundaries[i + 1]
 
-            heading = sec_entity.text if sec_entity is not None else "<no heading>"
-            result[heading] = [p.text for p in paras_in_section]
-    else:
-        # Fallback: merge all paragraphs under a single key -> can happen with older or malformed PDFs
-        all_paras = [p.text for p in doc.paragraphs if p.text.strip()]
-        result["Plain text"] = ' '.join(all_paras)
+                paras_in_section = [
+                    p for p in doc.paragraphs
+                    if getattr(p, "spans", None) and this_start <= p.spans[0].start < next_start
+                ]
+                paras_in_section.sort(key=lambda p: p.spans[0].start)
+
+                heading = sec_entity.text if sec_entity is not None else "<no heading>"
+                heading_text = [p.text for p in paras_in_section if p.text and p.text.strip()]
+
+                if any(k in heading.lower() for k in METHOD_KEYWORDS):
+                    found_methods = True
+                    if not heading_text:
+                        empty_methods = True
+
+                # Avoid overwriting duplicate headings
+                result.setdefault(heading, []).extend(heading_text)
+
+    missing_or_empty_methods = (not found_methods) or empty_methods
+
+    if (not getattr(doc, "sections", None)) or missing_or_empty_methods:
+        printer = "[PDF] No sections found or Methods section missing/empty; falling back to plain text extraction."
+        print(printer)
+        
+        texts: List[str] = []
+        texts.extend(p.text for p in getattr(doc, "paragraphs", []) if p.text and p.text.strip())
+        texts.extend(s.text for s in getattr(doc, "sentences", []) if s.text and s.text.strip())
+        full_text = "\n".join(texts)
+
+        found_sect, methods_from_plain_txt = _extract_methods_from_txt(full_text, "")
+
+        if found_sect:
+            for _, row in methods_from_plain_txt.iterrows():
+                subtitle = row["subtitle"]
+                paragraph = row["paragraph"]
+                # Ensure list[str] type
+                result.setdefault(subtitle, []).append(paragraph)
+        else:
+            result["Plain text"] = [full_text]
 
     return result

@@ -291,8 +291,10 @@ def _extract_methods_from_txt(text: str, doc_id: str, output_json: str = None, l
     df = pd.DataFrame(rows, columns=["doc_id", "subtitle", "paragraph"]).drop_duplicates()
 
     # Convert to list of dictionaries and write to JSON
-    with output_json.open("w", encoding="utf-8") as f:
-        json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
+    if output_json:
+        print(f"Writing extracted methods to JSON: {output_json}")
+        with output_json.open("w", encoding="utf-8") as f:
+            json.dump(df.to_dict(orient="records"), f, ensure_ascii=False, indent=2)
 
     return True, df
 
