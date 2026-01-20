@@ -143,7 +143,6 @@ def process_cadmus_output(
                 success, count = extract(
                     pmid=pmid,
                     file_path=correct_file_path,
-                    parse_info=row[f"{fmt_name}_parse_d"],
                     output_dir=out_dir,
                     logs_dir=log_dir,
                     logger=logger,

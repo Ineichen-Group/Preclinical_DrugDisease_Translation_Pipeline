@@ -52,7 +52,6 @@ def can_handle(pmid: str, cadmus_base_dir: str, metadata_row: pd.Series, logger:
 def extract_methods(
     pmid: str,
     file_path: Path,
-    parse_info: dict,
     output_dir: Path,
     logs_dir: Path,
     logger: logging.Logger = None
@@ -62,7 +61,6 @@ def extract_methods(
 
     Parameters:
         pmid (str): Document identifier.
-        parse_info (dict): Should contain {"file_path": "<absolute/or relative path to zip>"}.
         output_dir (Path): Directory where we will write `methods_subtitles_{pmid}.csv`.
         logs_dir (Path): Directory where format‐specific logs (e.g. no_methods_docs_html.txt) go.
         logger (logging.Logger): If None, we create a local one just for this module.

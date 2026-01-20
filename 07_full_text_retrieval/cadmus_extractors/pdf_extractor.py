@@ -101,7 +101,6 @@ def extract_methods(
 
     Parameters:
         pmid (str): Document identifier.
-        parse_info (dict): Should contain {"file_path": "<absolute or relative path to .pdf>"}.
         output_dir (Path): Directory under which we will write:
             - {pmid}_full_text.csv   (one row with all extracted M&M text)
             - {pmid}_sections.csv    (one row per M&M subsection)
