@@ -250,7 +250,8 @@ class NERModel:
                     # SAFETY: force truncation at model_max_length
                     ner_results = self.nlp(
                         chunk_sent,
-                        tokenizer_kwargs={"truncation": True, "max_length": max_len}
+                        truncation=True,
+                        max_length=max_len,
                     )
                     
                     # Adjust the start and end char positions by the current offset
@@ -273,7 +274,8 @@ class NERModel:
                 # If the number of tokens is within the limit, proceed normally
                 ner_results = self.nlp(
                     sent,
-                    tokenizer_kwargs={"truncation": True, "max_length": max_len}
+                    truncation=True,
+                    max_length=max_len,
                 )
                 if self.use_custom_entities_grouping:
                     ner_results = self.group_entities_custom(ner_results, tokenized_sentence)

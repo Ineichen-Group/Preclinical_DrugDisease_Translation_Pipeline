@@ -37,6 +37,7 @@ def run_inference(
     test_data_csv_path,
     output_dir,
     output_file_suffix,
+    text_column="Text",
     train_data_path=None,
     test_data_path=None,
     use_bio_format=True,
@@ -91,8 +92,8 @@ def run_inference(
         )
     else:
         print(f"Running inference in tuple format for {model_name}...")
-        predictions = model.annotate(test_data_csv_path, "Text")
-    predictions = predictions.drop(columns=['Text'])
+        predictions = model.annotate(test_data_csv_path, source_column=text_column)
+    predictions = predictions.drop(columns=[text_column])
     predictions.to_csv(output_path, index=False, sep=",")
     print(f"Annotations saved to {output_path}")
 
@@ -139,6 +140,11 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, save annotations in BIO format. Default is tuple format.",
     )
+    parser.add_argument(
+        "--text_column",
+        default="Text",
+        help="Name of the text column in the CSV file. Default is 'Text'.",
+    )
     
     args = parser.parse_args()
 
@@ -160,6 +166,7 @@ if __name__ == "__main__":
             test_data_csv_path=test_data_path,
             output_dir=output_dir,
             output_file_suffix=args.output_file_suffix,
+            text_column=args.text_column,
             use_bio_format=args.bio_format,
             custom_entity_grouping=True
         )
