@@ -2,6 +2,7 @@ import os
 import sys
 import datetime
 import argparse
+import time
 
 # Ensure core module is accessible
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
@@ -84,6 +85,7 @@ def run_inference(
     )   
     output_path = os.path.join(output_dir, output_file_format)
 
+    start_time = time.time()
     # Run inference
     if use_bio_format:
         print(f"Running inference in BIO format for {model_name}...")
@@ -96,6 +98,16 @@ def run_inference(
     predictions = predictions.drop(columns=[text_column])
     predictions.to_csv(output_path, index=False, sep=",")
     print(f"Annotations saved to {output_path}")
+    
+    end_time = time.time()
+    # Time breakdown
+    elapsed_seconds = end_time - start_time
+    elapsed_hours = elapsed_seconds / 3600
+
+    print(
+        f"Total runtime: {elapsed_hours:.2f} hours "
+        f"({elapsed_seconds/60:.1f} minutes, {elapsed_seconds:.0f} seconds)"
+    )
 
 
 if __name__ == "__main__":
@@ -145,6 +157,11 @@ if __name__ == "__main__":
         default="Text",
         help="Name of the text column in the CSV file. Default is 'Text'.",
     )
+    parser.add_argument(
+        "--use_custom_entity_grouping",
+        action="store_true",
+        help="If set, use custom entity grouping during inference.",
+    )
     
     args = parser.parse_args()
 
@@ -168,7 +185,7 @@ if __name__ == "__main__":
             output_file_suffix=args.output_file_suffix,
             text_column=args.text_column,
             use_bio_format=args.bio_format,
-            custom_entity_grouping=True
+            custom_entity_grouping=args.use_custom_entity_grouping,
         )
     except ValueError as e:
         print(f"Error: {e}")
