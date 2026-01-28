@@ -127,11 +127,6 @@ def parse_args():
         help="Show a progress bar (requires tqdm).",
     )
 
-    parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="Append to existing output CSVs instead of overwriting headers.",
-    )
 
     return parser.parse_args()
 
@@ -205,16 +200,48 @@ def process_stream(
     args,
     categories: Dict[str, Tuple[type, Optional[callable]]],
 ):
-    """Stream the input file in chunks and write intermediate CSVs per category."""
-    # Sanity checks
+    """
+    Stream an input CSV/JSONL file in chunks, run category-specific classifiers,
+    and write one output CSV per category.
+
+    Key design points:
+    - Input is streamed in chunks to keep memory usage low.
+    - Classifiers are instantiated once and reused across chunks.
+    - Output files are written incrementally (append mode).
+    - Each output CSV contains exactly ONE header row.
+    - Resume is NOT supported: existing outputs are overwritten.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Command-line arguments. Required attributes:
+        - df_path: str
+            Path to input CSV or JSONL.
+        - output_dir: str
+            Directory where per-category CSVs will be written.
+        - chunksize: int
+            Number of rows per streamed chunk.
+        - category: str
+            Either "all" or a single category name.
+        - text_col: str
+            Name of the text column used for classification.
+        - progress: bool
+            Whether to show a tqdm progress bar (if available).
+
+    categories : dict
+        Mapping: category_name -> (classifier_class, output_format_fn)
+    """
+
+    # ---------- Sanity checks ----------
     if not os.path.isfile(args.df_path):
         print(f"ERROR: Input file {args.df_path} does not exist.", file=sys.stderr)
         sys.exit(1)
 
-    # Prepare output dir
+    # Ensure output directory exists
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # Reader factory
+    # ---------- Input reader ----------
+    # Automatically choose CSV or JSONL streaming reader
     is_jsonl = args.df_path.endswith(".jsonl")
     if is_jsonl:
         reader = pd.read_json(args.df_path, lines=True, chunksize=args.chunksize)
@@ -223,73 +250,112 @@ def process_stream(
         reader = pd.read_csv(args.df_path, chunksize=args.chunksize)
         print(f"Streaming CSV input in chunks of {args.chunksize} rows...")
 
-    # Instantiate classifiers once (reuse across chunks)
-    active_categories = categories.keys() if args.category == "all" else [args.category]
+    # ---------- Determine active categories ----------
+    active_categories = (
+        list(categories.keys()) if args.category == "all" else [args.category]
+    )
+
+    # ---------- Instantiate classifiers ----------
+    # Instantiate once and reuse for all chunks (important for performance)
     instantiated: Dict[str, object] = {}
     for name in active_categories:
+        if name not in categories:
+            print(
+                f"ERROR: Unknown category '{name}'. "
+                f"Available categories: {list(categories.keys())}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
         cls, _fmt = categories[name]
         instantiated[name] = cls()
 
-    # Track whether we've written the header for each category
-    header_written: Dict[str, bool] = {}
-    for name in active_categories:
-        out_path = os.path.join(args.output_dir, f"{name}_predictions.csv")
-        header_written[name] = bool(args.resume and os.path.exists(out_path))
+    # ---------- Prepare output files ----------
+    # One output CSV per category
+    out_paths = {
+        name: os.path.join(args.output_dir, f"{name}_predictions.csv")
+        for name in active_categories
+    }
 
-    # Progress wrapper
+    # Since resume is NOT supported, remove any existing output files
+    for out_path in out_paths.values():
+        if os.path.exists(out_path):
+            os.remove(out_path)
+
+    # Track whether we have already written the CSV header per category
+    header_written = {name: False for name in active_categories}
+
+    # Track one-time warnings per category (e.g., missing PMID column)
+    warned_missing_pmid = {name: False for name in active_categories}
+
+    # ---------- Progress wrapper ----------
     if args.progress and _HAS_TQDM:
         iterator = tqdm(reader, desc="Chunks", unit="chunk")
     else:
         iterator = reader
 
-    # Stream
     total_rows_processed = 0
-    for i, df_chunk in enumerate(iterator, start=1):
+
+    # ---------- Main streaming loop ----------
+    for chunk_idx, df_chunk in enumerate(iterator, start=1):
+        # Ensure required text column exists
         if args.text_col not in df_chunk.columns:
             print(
-                f"ERROR: Specified text_col '{args.text_col}' not found in input columns for chunk {i}: "
-                f"{df_chunk.columns.tolist()}",
+                f"ERROR: text_col '{args.text_col}' not found in chunk {chunk_idx}. "
+                f"Available columns: {df_chunk.columns.tolist()}",
                 file=sys.stderr,
             )
             sys.exit(1)
 
-        # Normalize text
+        # Normalize / clean text before classification
         df_chunk = normalize_text_column(df_chunk, args.text_col)
 
-        # For each category, classify and append results
+        # Run each category classifier on the current chunk
         for name in active_categories:
             clf_obj = instantiated[name]
             _, fmt = categories[name]
 
-            # Run classifier on this chunk
-            out_chunk = run_classifier_on_chunk(df_chunk.copy(), args.text_col, name, clf_obj, fmt)
+            # Run classifier (returns a DataFrame)
+            out_chunk = run_classifier_on_chunk(
+                df_chunk.copy(),
+                args.text_col,
+                name,
+                clf_obj,
+                fmt,
+            )
 
-            # Decide columns to write
-            subset_cols, has_pmid, has_sentence_id, is_assay = build_subset_columns(out_chunk.columns, name)
+            # Decide which columns should be written
+            subset_cols, has_pmid, has_sentence_id, is_assay = build_subset_columns(
+                out_chunk.columns, name
+            )
 
-            # Warn once per category if PMID missing
-            if not has_pmid and not header_written.get(f"__warned_{name}", False):
+            # Warn once if PMID column is missing
+            if not has_pmid and not warned_missing_pmid[name]:
                 print(
-                    f"WARNING: No 'PMID' column in input (category '{name}'). Output will only contain predictions.",
+                    f"WARNING: No 'PMID' column found for category '{name}'. "
+                    f"Output will only contain predictions.",
                     file=sys.stderr,
                 )
-                header_written[f"__warned_{name}"] = True
+                warned_missing_pmid[name] = True
 
-            # Write / append
-            out_path = os.path.join(args.output_dir, f"{name}_predictions.csv")
-            mode = "a" if header_written[name] else "w"
+            # Write results:
+            # - first write → create file + header
+            # - subsequent writes → append without header
+            out_path = out_paths[name]
             out_chunk.to_csv(
                 out_path,
                 index=False,
                 columns=subset_cols,
-                mode=mode,
+                mode="a" if header_written[name] else "w",
                 header=not header_written[name],
             )
             header_written[name] = True
 
         total_rows_processed += len(df_chunk)
 
+    # ---------- Final summary ----------
     print(f"Processed {total_rows_processed} rows in total.")
+
 
 
 def main():
