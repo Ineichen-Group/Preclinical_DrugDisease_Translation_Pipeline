@@ -116,6 +116,7 @@ ner_inference:
     chunk_prefix: "chunk_"
     chunk_suffix: ".jsonl"
     num_chunks: 10
+    text_col: "sent_txt"
   models:
     animals_nr:
       model_name: "michiyasunaga/BioLinkBERT-base"

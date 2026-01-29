@@ -299,8 +299,8 @@ rule split_sent_into_chunks:
         num_chunks = cfg["split_combined_texts"]["num_chunks_sent"],
         output_dir = cfg["split_combined_texts"]["output_dir_sent"]
     resources:
-        runtime = "2h",
-        mem_mb  = 128000
+        runtime = "3h",
+        mem_mb  = 163840
     log:
         out = "logs/split_combined_sents.out",
         err = "logs/split_combined_sents.err"
@@ -642,7 +642,8 @@ rule run_ner_inference:
         model_name=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_name"],
         model_path=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["model_path"],
         output_dir=lambda wc: cfg["ner_inference"]["models"][wc.model_type]["output_dir"],
-        suffix=lambda wc: f"chunk_{wc.chunk_id}"
+        suffix=lambda wc: f"chunk_{wc.chunk_id}",
+        text_col_name=cfg["ner_inference"]["shared"]["text_col"]
     log:
         out = "logs/infer_{model_type}_chunk_{chunk_id}.out",
         err = "logs/infer_{model_type}_chunk_{chunk_id}.err"
@@ -671,6 +672,7 @@ rule run_ner_inference:
             --output_file_suffix {params.suffix} \
             --model_name "{params.model_name}" \
             --model_path "{params.model_path}" \
+            --text_column "{params.text_col_name}" \
             > {log.out} 2> {log.err}
         """
 
@@ -688,7 +690,7 @@ rule clean_ner:
             chunk_id=CHUNK_IDS,
         ),
     output:
-        directory(CLEAN_OUTPUT_PATTERN),
+        outdir = directory(CLEAN_OUTPUT_PATTERN),
         done   = CLEAN_DONE_PATTERN,
     params:
         ner_column=cfg["clean_ner"].get("ner_column", "ner_prediction_BioLinkBERT-base_normalized"),
@@ -703,7 +705,7 @@ rule clean_ner:
         mkdir -p logs
         python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/clean_ner_predictions.py \
             --input_dir {params.ner_chunks_dir} \
-            --output_dir {output} \
+            --output_dir {output.outdir} \
             --ner_column {params.ner_column} \
             > {log.out} 2> {log.err}
         touch {output.done}
@@ -756,9 +758,13 @@ rule map_animal_nr_to_numeric:
             > {log.out} 2> {log.err}
         """
 
+STRAIN_DATASET = "strain"
+STRAIN_CLEAN_DIR = CLEAN_OUTPUT_PATTERN.format(dataset=STRAIN_DATASET)
+STRAIN_DIR  = clean_outdir("strain")
+
 rule map_strain_values:
     input: 
-        cfg["clean_ner"]["strain"]["output_clean"]
+        ner_done = os.path.join(STRAIN_CLEAN_DIR, ".clean_done"),
     output:
         cfg["map_strain_values"]["output_file"]
     log:
