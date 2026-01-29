@@ -20,6 +20,11 @@ def normalize_entity(text: str) -> str:
     text = re.sub(r"\s*/\s*", "/", text)
     text = re.sub(r"\s*\.\s*", ".", text)
     text = re.sub(r"\s*-\s*", "-", text)
+    
+    text = text.replace("##ague", "sprague")  # Specific fix for 'sprague'
+    text = text.replace("##", "")  # Remove any remaining '##' artifacts
+    text = text.replace("spraguedawley", "Sprague-Dawley")  # Fix concatenated form
+    
     return text.title()
 
 
@@ -79,16 +84,11 @@ def process_ner_entities_from_file(
     input_file: str, ner_column: str
 ) -> pd.DataFrame:
     """
-    Read a CSV, extract and normalize unique NER entities from a specified column,
-    and return a DataFrame with only ['PMID', 'source_label', 'prediction_encoded_label'].
+    Read a CSV, extract + normalize unique NER entities from ner_column,
+    drop rows with empty predictions, then group by PMID (and source_label)
+    keeping unique entities across rows.
 
-    Parameters:
-        input_file (str): Path to the CSV containing the raw NER predictions.
-        ner_column (str): Column name in the CSV that holds the raw entity tuples.
-
-    Returns:
-        pd.DataFrame: Columns ['PMID', 'source_label', 'prediction_encoded_label'] where
-                      'prediction_encoded_label' is the cleaned, comma-separated entities.
+    Returns columns: ['PMID', 'source_label', 'prediction_encoded_label'].
     """
     df = pd.read_csv(input_file)
     if ner_column not in df.columns:
@@ -97,8 +97,27 @@ def process_ner_entities_from_file(
     # Extract and normalize unique entities for each row
     df["prediction_encoded_label"] = df[ner_column].apply(extract_unique_entities)
 
-    # Keep only the needed columns
-    result_df = df[["PMID", "source_label", "prediction_encoded_label"]]
+    # 1) Drop rows where predictions are empty (covers "[]" and parse failures)
+    df = df[df["prediction_encoded_label"].astype(str).str.strip().ne("")].copy()
+
+    # If nothing left, return empty with expected columns
+    if df.empty:
+        return pd.DataFrame(columns=["PMID", "source_label", "prediction_encoded_label"])
+
+    # 2) Group by PMID (+ source_label) and keep uniques across rows
+    def merge_unique(entity_strs: pd.Series) -> str:
+        uniq = set()
+        for s in entity_strs.dropna().astype(str):
+            s = s.strip()
+            if not s:
+                continue
+            uniq.update([x.strip() for x in s.split(",") if x.strip()])
+        return ", ".join(sorted(uniq))
+
+    result_df = (
+        df.groupby(["PMID", "source_label"], as_index=False)["prediction_encoded_label"]
+          .agg(merge_unique)
+    )
 
     return result_df
 
