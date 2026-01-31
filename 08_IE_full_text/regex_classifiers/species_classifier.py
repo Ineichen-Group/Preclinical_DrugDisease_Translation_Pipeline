@@ -80,12 +80,13 @@ class SpeciesClassifier:
             r"(?!\s*(?:domestic\s+)?(?:litter|cue|collar|odou?r(?:[-\s]\w+)*)\b)"
 
             # catalog / reagent refs
-            r"(?!\s*\.\s*#)"
-            r"(?!\s*\.\s*[A-Z0-9-]{3,})"
-            r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number|id)\b)"
-            r"(?!\s*[:#]\s*[\w-]+)"
-            r"(?!\s*[A-Z]\.)"
-            r"(?!\s*,\s*EC\b)"
+            r"(?!\s*\.\s*#)"                         # blocks: "Cat. #" → e.g. "Cell Signaling Cat. # 12345"
+            r"(?!\s*\.\s*[A-Z0-9-]{3,})"             # blocks: raw catalog IDs → e.g. "Sigma Cat. 91077C", "Cat. sc-514032"
+            r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number|id)\b)"  # blocks: "Cat #123", "Cat no. 91077", "Cat number 12345"
+            r"(?!\s*[:#]\s*[\w-]+)"                  # blocks: "Cat: 91077C", "Cat:#AB123"
+            r"(?!\s*[A-Z]\.)"                        # blocks: abbreviated refs → e.g. "Cat. A."
+            r"(?!\s*,\s*EC\b)"                       # blocks: enzyme notation → e.g. "CAT, EC 2.7.1.1"
+
 
             # enzyme / molecular biology contexts
             r"(?![\s\-\(\[]*(?:activity|assay|enzyme|protein|levels?|concentration(?:s)?|expression)\b)"
