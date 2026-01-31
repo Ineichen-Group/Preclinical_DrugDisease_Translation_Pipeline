@@ -67,17 +67,21 @@ class SpeciesClassifier:
             # - "cat" is highly ambiguous in biomedical text.
             # - This rule prioritizes avoiding false positives over capturing every mention.
             #
+            # Match "cat" / "cats" as the experimental animal ONLY.
             r"(?<![A-Z]\.\s)"                # not initials like "A. Cat"
             r"(?<!concentration of\s)"       # not "concentration of CAT ..."
             r"(?<!concentrations of\s)"
             r"(?<!level of\s)"
             r"(?<!levels of\s)"
+            r"(?<!\bworn\s+by\s+(?:a|an|the)?\s*(?:domestic\s+)?)"  # NOT "worn by a cat"
             r"\bcat(?:s)?\b"
 
             # predator-odor / object contexts
             r"(?!\s*(?:domestic\s+)?(?:litter|cue|collar|odou?r(?:[-\s]\w+)*)\b)"
 
             # catalog / reagent refs
+            r"(?!\s*\.\s*#)"
+            r"(?!\s*\.\s*[A-Z0-9-]{3,})"
             r"(?!\s*\.?\s*(?:#|no\.?|nr\.?|num\.?|number|id)\b)"
             r"(?!\s*[:#]\s*[\w-]+)"
             r"(?!\s*[A-Z]\.)"
@@ -90,19 +94,35 @@ class SpeciesClassifier:
             # cell extracts not necessarily immediately after (window of next ~6 words)
             r"(?!\b(?:\W+\w+){0,6}\W+(?:cell|cells|extracts?)\b)"
 
-            # "worn by a (domestic) cat"
-            r"(?!\s+by\s+(?:a|an|the)?\s*(?:domestic\s+)?cat\b)"
         ],
-
         "dog": [r"\bdogs?\b"],
         "guinea pig": [r"\bguinea[-\s]?pigs?\b"],
         "monkey": [
             r"\bmonkeys?\b",
-            r"\bmacaques?\b",
+            # Great Apes & Hominids
             r"\bchimpanzees?\b",
             r"\borangutans?\b",
-            r"\bbonoboss?\b",
+            r"\bbonobos?\b",
             r"\bgibbons?\b",
+            r"\bgorillas?\b",
+            # Old World Monkeys (Common in research)
+            r"\bmacaques?\b",
+            r"\brhesus\b",
+            r"\bcynomolgus\b",
+            r"\bbaboons?\b",
+            r"\bpapio\b",  # Genus for baboons
+            r"\bvervets?\b",
+            r"\bgrivets?\b",
+            r"\bafrican green monkeys?\b",
+            # New World Monkeys (Common in research)
+            r"\bmarmosets?\b",
+            r"\btamarins?\b",
+            r"\bsquirrel monkeys?\b",
+            r"\bsaimiri\b", # Genus for squirrel monkeys
+            r"\bcapuchins?\b",
+            # General Research Terms
+            r"\bnon-?human primates?\b",
+            r"\bnhp\b",
         ],
         "pig": [r"\bpigs?\b", r"\bswines?\b", r"\bpiglets?\b"],
         "rabbit": [
