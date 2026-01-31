@@ -13,11 +13,11 @@ def document_level_strict_zero_fallback(df):
     records = []
     for pmid, group in df.groupby('PMID'):
         # Split into non-zero and zero predictions
-        nonzero = group[group['prediction_encoded_num'] > 0]
+        nonzero = group[group['prediction_encoded_num'] > "0"]
         if not nonzero.empty:
             selected = nonzero
         else:
-            selected = group[group['prediction_encoded_num'] == 0]
+            selected = group[group['prediction_encoded_num'] == "0"]
 
         # Use max prediction from selected
         max_num = selected['prediction_encoded_num'].max()
@@ -192,37 +192,42 @@ def main():
     prediction_files = ['blinding_predictions.csv',
                         'randomization_predictions.csv',
                         'welfare_predictions.csv',
-                        'sex_predictions.csv']
+                        'sex_predictions.csv',
+                        'sample_size_predictions.csv']
 
     for filename in prediction_files:
         file_path = os.path.join(input_dir, filename)
+        print(f"Processing: {file_path}")
         if not file_path.endswith('.csv'):
             raise ValueError(f"Input file '{file_path}' must be a CSV.")
         prediction_type = filename.split('_')[0]
+        if prediction_type == "sample":
+            prediction_type = "sample_size"
         output_file = os.path.join(input_dir, f"{prediction_type}_doc_level_predictions.csv")
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(file_path, dtype=str)
         doc_df = document_level_strict_zero_fallback(df)
         doc_df.to_csv(output_file, index=False)
         print(f" Saved: {output_file}")
         print(f" PMIDs processed: {len(doc_df['PMID'].unique())}")
 
     # === MULTI-LABEL CASES ===
-    print("Processing species predictions...")
     species_file = os.path.join(input_dir, 'species_predictions.csv')
+    print(f"Processing species predictions from: {species_file}")
     if not species_file.endswith('.csv'):
         raise ValueError(f"Species input file '{species_file}' must be a CSV.")
-    species_df = pd.read_csv(species_file)
+    species_df = pd.read_csv(species_file, dtype=str)
     species_doc_df = process_species_exclude_singletons_pivoted(species_df)
     species_output_file = os.path.join(input_dir, 'species_doc_level_predictions.csv')
     species_doc_df.to_csv(species_output_file, index=False)
     print(f" Saved: {species_output_file}")
     print(f" PMIDs processed: {len(species_doc_df['PMID'].unique())}")
 
-    print("Processing assay predictions...")
     assay_file = os.path.join(input_dir, 'assay_predictions.csv')
+    print(f"Processing assay predictions from: {assay_file}")
     if not assay_file.endswith('.csv'):
         raise ValueError(f"Assay input file '{assay_file}' must be a CSV.")
-    assay_df = pd.read_csv(assay_file)
+    assay_df = pd.read_csv(assay_file, dtype=str)
+    print(assay_df.head())
     assay_doc_df = process_assay_predictions(assay_df)
     assay_output_file = os.path.join(input_dir, 'assay_doc_level_predictions.csv')
     assay_doc_df.to_csv(assay_output_file, index=False)
