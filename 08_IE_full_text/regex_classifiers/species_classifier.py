@@ -75,9 +75,10 @@ class SpeciesClassifier:
             r"(?<!levels of\s)"
             r"(?<!\bworn\s+by\s+(?:a|an|the)?\s*(?:domestic\s+)?)"  # NOT "worn by a cat"
             r"\bcat(?:s)?\b"
-
+            r"(?!\s*\.)" # does not end with a period
+            
             # predator-odor / object contexts
-            r"(?!\s*(?:domestic\s+)?(?:litter|cue|collar|odou?r(?:[-\s]\w+)*)\b)"
+            r"(?!\s*(?:domestic\s+)?(?:litter|cue|collar|odou?rs?(?:[-\s]\w+)*)\b)"
 
             # catalog / reagent refs
             r"(?!\s*\.\s*#)"                         # blocks: "Cat. #" → e.g. "Cell Signaling Cat. # 12345"
@@ -274,6 +275,10 @@ class SpeciesClassifier:
                 return False
 
         return False
+    
+    def _is_simple_negated(self, text: str, match_start: int) -> bool:
+        left = text[max(0, match_start - 20):match_start].lower()
+        return bool(re.search(r"(?:not\s+(?:a|an|the)\s+|no\s+)$", left))
 
     def classify(self, text: str) -> Tuple[List[int], List[str]]:
         vector: List[int] = [0] * len(self.SPECIES_LABELS)
@@ -289,7 +294,8 @@ class SpeciesClassifier:
                     if any(s <= match_start < e or s < match_end <= e for s, e in matched_spans):
                         continue
                     
-                    if not self._is_in_false_context(text, match_start, match_end, self.WINDOW):
+                    if (not self._is_in_false_context(text, match_start, match_end, self.WINDOW)
+                                            and not self._is_simple_negated(text, match_start)):                        
                         vector[idx] = 1
                         found_labels.add(label)
                         matched_spans.append((match_start, match_end))
