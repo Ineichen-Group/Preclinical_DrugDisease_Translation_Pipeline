@@ -3,7 +3,7 @@ import sys
 import datetime
 import argparse
 import time
-
+import pandas as pd
 # Ensure core module is accessible
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(parent_dir)
@@ -32,17 +32,36 @@ def validate_path(path, is_directory=False):
     return path
 
 
+
+def _load_test_data(path, sep=","):
+    path = str(path)
+    if path.endswith(".jsonl"):
+        return pd.read_json(path, lines=True)
+    elif path.endswith(".json"):
+        return pd.read_json(path)
+    elif path.endswith(".csv"):
+        return pd.read_csv(path, sep=sep)
+    else:
+        raise ValueError(f"Unsupported file type: {path}")
+
+def _split_into_n_chunks(df, n=10):
+    n = max(1, int(n))
+    if len(df) == 0:
+        return []
+    chunk_size = (len(df) + n - 1) // n  # ceil
+    return [df.iloc[i : i + chunk_size] for i in range(0, len(df), chunk_size)]
+
 def run_inference(
     model_name,
     model_path,
-    test_data_csv_path,
+    test_data_path,
     output_dir,
     output_file_suffix,
     text_column="Text",
     train_data_path=None,
-    test_data_path=None,
     use_bio_format=True,
-    custom_entity_grouping=False):
+    custom_entity_grouping=False,
+):
     """
     Run inference using a HuggingFace model and save annotations.
 
@@ -50,18 +69,21 @@ def run_inference(
         model_name (str): Name of the HuggingFace model.
         model_path (str): Path to the model directory.
         train_data_path (str): Path to the training data JSON.
-        test_data_path (str): Path to the test data JSON.
-        test_data_csv_path (str): Path to the test data CSV.
+        test_data_path (str): Path to the test data CSV/JSON/JSONL (tuple mode).
         output_dir (str): Directory to save output annotations.
+        output_file_suffix (str): Suffix to append to output file name.
+        text_column (str): Column containing text to annotate (tuple mode).
         use_bio_format (bool): Whether to save output in BIO format.
         custom_entity_grouping (bool): Whether to use custom entity grouping.
     """
+
+
     os.makedirs(output_dir, exist_ok=True)
 
     print("Starting inference...")
     print(f"Model name: {model_name}")
     print(f"Model path: {model_path}")
-    print(f"Test CSV path: {test_data_csv_path}")
+    print(f"Input path: {test_data_path}")
     print(f"Output directory: {output_dir}")
     print(f"Output file suffix: {output_file_suffix}")
     print(f"BIO format: {use_bio_format}")
@@ -74,32 +96,98 @@ def run_inference(
         model_path,
         use_custom_entities_grouping=custom_entity_grouping,
     )
-    
+
     print("Model initialized successfully.")
 
     model_name_clean = model_name.split("/")[-1]
 
     current_date = datetime.datetime.now().strftime("%Y%m%d")
     output_file_format = (
-    f"annotated_{model_name_clean}_{'BIO' if use_bio_format else 'tuples'}_{output_file_suffix}.csv"
-    )   
+        f"annotated_{model_name_clean}_{'BIO' if use_bio_format else 'tuples'}_{output_file_suffix}.csv"
+    )
     output_path = os.path.join(output_dir, output_file_format)
 
     start_time = time.time()
+
     # Run inference
     if use_bio_format:
         print(f"Running inference in BIO format for {model_name}...")
         predictions = model.bert_predict_bio_format(
             train_data_path, test_data_path, "tokens", "ner_tags"
         )
+
+        # Keep your original behavior
+        if text_column in predictions.columns:
+            predictions = predictions.drop(columns=[text_column])
+
+        predictions.to_csv(output_path, index=False, sep=",")
+        print(f"Annotations saved to {output_path}")
+
     else:
         print(f"Running inference in tuple format for {model_name}...")
-        predictions = model.annotate(test_data_csv_path, source_column=text_column)
-    predictions = predictions.drop(columns=[text_column])
-    predictions.to_csv(output_path, index=False, sep=",")
-    print(f"Annotations saved to {output_path}")
-    
+
+        # Load test data from CSV/JSON/JSONL
+        test_df = _load_test_data(test_data_path, sep=",")
+
+        if text_column not in test_df.columns:
+            raise KeyError(
+                f"'{text_column}' column not found in test data. Columns: {list(test_df.columns)}"
+            )
+
+        # Split into 10 chunks
+        chunks = _split_into_n_chunks(test_df, n=10)
+        print(f"Loaded {len(test_df)} rows. Processing {len(chunks)} chunks sequentially...")
+
+        # Directory for intermediate chunk outputs
+        tmp_dir = os.path.join(output_dir, "tmp_chunks")
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        chunk_paths = []
+        for i, chunk_df in enumerate(chunks, start=1):
+            if len(chunk_df) == 0:
+                continue
+
+            chunk_out = os.path.join(
+                tmp_dir,
+                f"chunk_{i:02d}_of_{len(chunks):02d}_{model_name_clean}_tuples_{output_file_suffix}.csv",
+            )
+
+            # Resume capability (skip if already computed)
+            if os.path.exists(chunk_out):
+                print(f"[Chunk {i}/{len(chunks)}] Found existing output, skipping: {chunk_out}")
+                chunk_paths.append(chunk_out)
+                continue
+
+            print(f"[Chunk {i}/{len(chunks)}] Running inference on {len(chunk_df)} rows... \n")
+
+            # annotate() accepts DF directly in the file_path parameter
+            chunk_pred = model.annotate(chunk_df, source_column=text_column)
+
+            # Drop original text column to match original output behavior
+            if text_column in chunk_pred.columns:
+                chunk_pred = chunk_pred.drop(columns=[text_column])
+
+            # Save intermediate result
+            chunk_pred.to_csv(chunk_out, index=False, sep=",")
+            print(f"[Chunk {i}/{len(chunks)}] Saved: {chunk_out} \n")
+
+            chunk_paths.append(chunk_out)
+
+        if not chunk_paths:
+            raise RuntimeError("No chunks were processed; check input data.")
+
+        print(f"Combining {len(chunk_paths)} chunk files...")
+        predictions = pd.concat(
+            (pd.read_csv(p, sep=",") for p in chunk_paths),
+            ignore_index=True,
+        )
+
+        # Final save
+        predictions.to_csv(output_path, index=False, sep=",")
+        print(f"Annotations saved to {output_path}")
+
     end_time = time.time()
+
     # Time breakdown
     elapsed_seconds = end_time - start_time
     elapsed_hours = elapsed_seconds / 3600
@@ -108,6 +196,7 @@ def run_inference(
         f"Total runtime: {elapsed_hours:.2f} hours "
         f"({elapsed_seconds/60:.1f} minutes, {elapsed_seconds:.0f} seconds)"
     )
+
 
 
 if __name__ == "__main__":
@@ -169,10 +258,6 @@ if __name__ == "__main__":
         # Validate paths
         #train_data_path = validate_path(args.train_data)
         test_data_path = validate_path(args.test_data_input)
-        #test_data_csv = "/Users/sdoneva/Documents/Work/In Progress/PhD/PhD Projects/In Progress/PreclinicalInfoExtraction/models/model_predictions/bert_ner_full_ds/debug_tokenizer/preds_tokenizer_error_0.csv"# args.test_data_csv
-        #output_dir = "/Users/sdoneva/Documents/Work/In Progress/PhD/PhD Projects/In Progress/PreclinicalInfoExtraction/models/model_predictions/bert_ner_full_ds/debug_tokenizer/"#args.output_dir
-        
-        #test_data_csv_path = validate_path(test_data_csv)
         output_dir = validate_path(args.output_dir, is_directory=True)
         model_path = validate_path(args.model_path, is_directory=True)
 
@@ -180,7 +265,7 @@ if __name__ == "__main__":
         run_inference(
             model_name=args.model_name,
             model_path=model_path,
-            test_data_csv_path=test_data_path,
+            test_data_path=test_data_path,
             output_dir=output_dir,
             output_file_suffix=args.output_file_suffix,
             text_column=args.text_column,
