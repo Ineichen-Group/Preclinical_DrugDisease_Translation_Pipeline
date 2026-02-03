@@ -7,6 +7,7 @@ from datasets import load_dataset
 from .bert_helper import get_label_list, tokenize_and_align_labels, tokenize_and_align_labels_with_overflow
 import numpy as np
 from ast import literal_eval
+from pathlib import Path
 
 
 class NERModel:
@@ -138,24 +139,37 @@ class NERModel:
 
 
     def annotate(self, file_path, source_column, sep=","):
-        if file_path.endswith(".jsonl"):
-            df = pd.read_json(file_path, lines=True)
+        # If caller passed a DataFrame in the "file_path" slot
+        if isinstance(file_path, pd.DataFrame):
+            df = file_path.copy()
 
-        elif file_path.endswith(".json"):
-            df = pd.read_json(file_path)
+        # If caller passed a path-like (str / Path)
+        elif isinstance(file_path, (str, Path)):
+            file_path = str(file_path)
 
-        elif file_path.endswith(".csv"):
-            df = pd.read_csv(file_path, sep=sep)
+            if file_path.endswith(".jsonl"):
+                df = pd.read_json(file_path, lines=True)
+
+            elif file_path.endswith(".json"):
+                df = pd.read_json(file_path)
+
+            elif file_path.endswith(".csv"):
+                df = pd.read_csv(file_path, sep=sep)
+
+            else:
+                raise ValueError(f"Unsupported file type: {file_path}")
 
         else:
-            raise ValueError(f"Unsupported file type: {file_path}")
+            raise TypeError(
+                f"file_path must be a pandas.DataFrame or a path (str/Path), got {type(file_path)}"
+            )
 
         if self.normalize_pred_representation:
             predictions_col_name = "ner_prediction_{}_normalized".format(self.model_name_short)
         else:
             predictions_col_name = "ner_prediction_{}".format(self.model_name_short)
-        # df[predictions_col_name] = df[source_column].apply(self.infer_ner)
-        df[predictions_col_name] = df.apply(lambda row: self.infer_ner(row[source_column]),axis=1)
+
+        df[predictions_col_name] = df.apply(lambda row: self.infer_ner(row[source_column]), axis=1)
         return df
 
     def annotate_parallel(self, file_path, source_column, sep=","):
@@ -232,38 +246,35 @@ class NERModel:
             tokenized_sentence = self.tokenizer.tokenize(sent)
             num_tokens = len(tokenized_sentence)
 
-            # Use model max length from tokenizer if available, else default 512
-            max_len = getattr(self.tokenizer, "model_max_length", 512)
-            # Keep room for [CLS] and [SEP]
-            max_chunk_size = max_len - 2  #2 tokens for CLS + SEP
+            # If the number of tokens exceeds the limit, split into chunks
+            max_chunk_size = 505  # Keeping space for [CLS] and [SEP] tokens
 
             if num_tokens > max_chunk_size:
                 print(f"Number of tokens ({num_tokens}) too large, splitting into chunks {sent[:50] + '[...]'}.")
+                # Split into chunks of size max_chunk_size
                 chunks = [tokenized_sentence[i:i + max_chunk_size] for i in range(0, num_tokens, max_chunk_size)]
                 combined_results = []
-                offset = 0  # character offset
+                offset = 0  # To keep track of character offset due to chunks
 
                 for chunk in chunks:
                     # Convert the chunk back into a string for NER
                     chunk_sent = self.tokenizer.convert_tokens_to_string(chunk)
                     
-                    # SAFETY: force truncation at model_max_length
-                    ner_results = self.nlp(
-                        chunk_sent,
-                        truncation=True,
-                        max_length=max_len,
-                    )
+                    # Perform NER on the chunk
+                    ner_results = self.nlp(chunk_sent)
                     
                     # Adjust the start and end char positions by the current offset
                     for entity in ner_results:
-                        entity["start"] += offset
-                        entity["end"] += offset
+                        entity['start'] += offset
+                        entity['end'] += offset
                         combined_results.append(entity)
                     
+                    # Update offset by the length of the chunk (token to char conversion length)
                     offset += len(chunk_sent)
                 
+                # Optionally group and normalize the results
                 if self.use_custom_entities_grouping:
-                    combined_results = self.group_entities_custom(combined_results, tokenized_sentence)
+                    combined_results = self.group_entities_custom_for_biobert(combined_results)
                 
                 if self.normalize_pred_representation:
                     return self.normalize_representation(combined_results)
@@ -272,24 +283,17 @@ class NERModel:
 
             else:
                 # If the number of tokens is within the limit, proceed normally
-                ner_results = self.nlp(
-                    sent,
-                    truncation=True,
-                    max_length=max_len,
-                )
+                ner_results = self.nlp(sent)
                 if self.use_custom_entities_grouping:
-                    ner_results = self.group_entities_custom(ner_results, tokenized_sentence)
+                    ner_results = self.group_entities_custom_for_biobert(ner_results)
 
                 if self.normalize_pred_representation:
                     return self.normalize_representation(ner_results)
                 else:
                     return ner_results
-
-                
         elif self.model_type == "regex":
             tokens_cleaned = tokenized_sent
-            return find_drugs_and_conditions_normalized_BIO_output(
-                tokens_cleaned)  # returns a tuple drug_matches, {"entites":all_char_indices}
+            return find_drugs_and_conditions_normalized_BIO_output(tokens_cleaned)  # returns a tuple drug_matches, {"entites":all_char_indices}
         else:
             raise ValueError("Wrong model type. Allowed values are spacy and huggingface.")
 
