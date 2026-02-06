@@ -120,24 +120,32 @@ def process_ner_entities_from_file(input_file: str, ner_column: str) -> pd.DataF
 
 
 def process_directory(
-    input_dir: str, ner_column: str, output_dir: str
+    input_dir: str,
+    ner_column: str,
+    output_dir: str,
+    num_chunks: int
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
-    # Regex pattern for chunked filenames between 1 and 10
-    pattern = re.compile(r"chunk_([1-9]|10)\.csv$")
+    # Match files ending with chunk_<number>.csv
+    pattern = re.compile(rf"chunk_(\d+)\.csv$")
 
     for filename in sorted(os.listdir(input_dir)):
         match = pattern.search(filename)
         if not match:
             continue
 
-        chunk_number = match.group(1)
-        input_path = os.path.join(input_dir, filename)
-        output_filename = f"chunk_{chunk_number}.csv"
-        output_path = os.path.join(output_dir, output_filename)
+        chunk_number = int(match.group(1))
 
-        print(f"Processing: {input_path}")
+        # Skip chunks beyond the user-specified limit
+        if chunk_number > num_chunks:
+            continue
+
+        input_path = os.path.join(input_dir, filename)
+        output_path = os.path.join(output_dir, filename)
+
+        print(f"Processing chunk {chunk_number}: {input_path}")
+
         result_df = process_ner_entities_from_file(input_path, ner_column)
 
         if result_df is not None:
@@ -166,10 +174,21 @@ def main():
         default="ner_prediction_BioLinkBERT-base_normalized",
         help="Name of the NER prediction column to process."
     )
+    parser.add_argument(
+        "--num_chunks",
+        type=int,
+        required=True,
+        help="Process chunks with index ≤ this number (e.g. 20 → chunk_1 … chunk_20)."
+    )
 
     args = parser.parse_args()
 
-    process_directory(args.input_dir, args.ner_column, args.output_dir)
+    process_directory(
+        args.input_dir,
+        args.ner_column,
+        args.output_dir,
+        args.num_chunks
+    )
 
 
 if __name__ == "__main__":
