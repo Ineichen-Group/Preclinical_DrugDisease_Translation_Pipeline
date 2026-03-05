@@ -1,0 +1,2752 @@
+drug_name,tested_both_sexes,species_unique,strain_unique,assay_unique,country_unique,articles_total,articles_blinding,articles_randomization,articles_welfare,target
+acquired aneurysmal subarachnoid hemorrhage <> alteplase,1,2,0,1,2,2,1,0,1,0
+acquired aneurysmal subarachnoid hemorrhage <> dexmedetomidine,1,3,0,5,2,2,1,1,2,0
+acquired aneurysmal subarachnoid hemorrhage <> minocycline,0,2,2,2,1,1,1,0,1,0
+"acquired aneurysmal subarachnoid hemorrhage <> oxide, nitric",0,2,2,2,1,2,1,1,1,0
+acquired peripheral neuropathy <> benzalkonium,1,1,1,3,1,1,1,0,1,0
+acquired peripheral neuropathy <> incobotulinumtoxina,0,1,1,4,3,3,1,1,3,0
+acquired peripheral neuropathy <> ketorolac,0,1,1,3,1,1,0,0,1,0
+acquired peripheral neuropathy <> l-baclofen,0,1,1,1,1,1,0,0,0,0
+acute seizures <> topiramate,0,1,1,3,1,1,1,0,0,0
+acute spinal cord injury <> minocycline,0,1,1,1,1,1,0,1,1,0
+acute spinal cord injury <> riluzole,0,1,1,2,1,1,0,0,1,0
+alzheimer disease <> (18f)t807 compound,0,1,0,4,1,1,0,1,1,0
+alzheimer disease <> (methyl-(11)c)n-acetyl-n-(2-methoxybenzyl)-2-phenoxy-5-pyridinamine,1,1,1,4,1,1,0,0,1,0
+alzheimer disease <> 18f-av-45,1,2,2,3,1,1,0,0,1,0
+"alzheimer disease <> 3 inhibitor, phosphodiesterase",1,3,20,5,12,37,12,17,30,0
+alzheimer disease <> 7-beta-hydroxyepiandrosterone,0,1,1,1,1,1,0,0,0,0
+alzheimer disease <> abt 089,0,1,0,1,1,1,0,0,1,0
+alzheimer disease <> acetylcholine,0,3,2,2,2,3,0,0,1,0
+alzheimer disease <> acetylcholine esterase inhibitor,0,1,0,2,1,1,0,0,1,0
+alzheimer disease <> acetylcholinesterase,1,2,5,3,4,7,1,2,4,0
+alzheimer disease <> acitretin,0,1,0,0,1,1,0,0,0,0
+alzheimer disease <> acyclovir,0,1,1,1,1,1,1,0,0,0
+alzheimer disease <> adenosine triphosphate,1,2,2,2,2,3,0,0,1,0
+alzheimer disease <> angiotensin converting enzyme inhibitor,0,1,1,3,2,3,0,2,3,0
+alzheimer disease <> angiotensin receptor blocker,0,1,1,3,2,2,0,0,1,0
+alzheimer disease <> anticonvulsants,1,1,1,2,1,1,1,0,0,0
+alzheimer disease <> antipsychotics,0,0,0,0,1,1,1,1,0,0
+alzheimer disease <> arginine,1,2,2,2,3,4,0,1,4,0
+alzheimer disease <> aspirin,0,1,3,2,4,5,0,1,0,0
+alzheimer disease <> azd 2184,0,2,1,2,1,1,0,0,1,0
+alzheimer disease <> azd-103,1,1,1,1,1,1,0,0,1,0
+alzheimer disease <> azd3293,1,4,3,3,1,1,0,0,1,0
+alzheimer disease <> baclofen,0,3,3,2,3,3,0,0,0,0
+alzheimer disease <> ban2401,1,1,1,2,1,1,1,0,1,0
+alzheimer disease <> beta-nerve growth factor,1,2,1,2,1,1,0,0,0,0
+alzheimer disease <> bexarotene,1,1,6,5,4,7,2,0,6,0
+"alzheimer disease <> blue, methylene",1,2,8,5,7,14,6,2,12,0
+alzheimer disease <> bms 708163,0,3,0,1,1,1,0,0,0,0
+alzheimer disease <> bryostatin,1,2,2,3,2,3,1,2,2,0
+alzheimer disease <> bryostatin 1,1,2,2,3,2,3,1,2,2,0
+alzheimer disease <> butyrylcholinesterase,1,2,0,3,3,4,0,0,2,0
+alzheimer disease <> caffeine,1,3,14,5,14,35,7,12,28,0
+alzheimer disease <> chf 5074,1,1,1,4,1,3,1,0,1,0
+"alzheimer disease <> colony-stimulating factor, granulocyte-macrophage",1,2,8,4,2,9,4,5,6,0
+alzheimer disease <> copper,1,2,2,3,2,5,0,1,2,0
+alzheimer disease <> curcumin,0,0,0,1,1,1,0,0,0,0
+alzheimer disease <> diltiazem,1,1,0,1,1,1,0,0,1,0
+alzheimer disease <> dronabinol,0,2,5,4,3,8,2,2,4,0
+alzheimer disease <> endogenous antioxidants,1,3,7,5,11,27,3,4,15,0
+alzheimer disease <> equol,1,1,2,1,1,1,0,1,1,0
+alzheimer disease <> etanercept,1,2,2,4,5,5,2,0,5,0
+alzheimer disease <> etazolate,0,1,2,1,1,1,0,0,0,0
+alzheimer disease <> evp-0015962,1,1,4,3,1,1,0,0,0,0
+alzheimer disease <> evp-6124,0,1,1,3,1,1,0,0,0,0
+alzheimer disease <> exenatide,1,2,2,2,1,4,1,0,1,0
+alzheimer disease <> gamma-secretase inhibitor,1,1,3,4,1,4,0,0,3,0
+alzheimer disease <> granulocyte colony stimulating factor,0,1,4,4,2,2,1,0,1,0
+alzheimer disease <> gsk3 inhibitor,0,0,1,3,1,1,0,0,0,0
+alzheimer disease <> gts-21,1,3,3,2,2,5,1,0,1,0
+alzheimer disease <> h3 receptor antagonist,1,2,6,4,2,3,1,2,2,0
+alzheimer disease <> huperzinine,0,1,1,1,1,1,0,1,1,0
+alzheimer disease <> isoflavones,0,0,0,2,1,2,0,0,0,0
+alzheimer disease <> isoflurane,1,2,4,4,2,7,2,3,5,0
+alzheimer disease <> isotretinoin,1,2,1,1,2,2,0,0,1,0
+alzheimer disease <> ladostigil,1,1,2,4,2,5,1,3,4,0
+alzheimer disease <> lamotrigine,1,1,1,2,1,1,1,0,0,0
+alzheimer disease <> magnesium l-threonate,1,1,1,4,0,1,1,1,1,0
+alzheimer disease <> mecamylamine,1,5,13,5,10,29,1,4,14,0
+alzheimer disease <> methylergonovine,0,1,1,0,1,1,0,1,1,0
+alzheimer disease <> midazolam,0,1,2,3,3,3,0,0,1,0
+alzheimer disease <> mifepristone,1,3,2,3,4,4,0,1,1,0
+alzheimer disease <> minocycline,1,2,10,4,9,15,2,3,11,0
+alzheimer disease <> n methylaspartate,0,2,4,3,6,9,1,1,5,0
+alzheimer disease <> nefiracetam,1,2,2,2,2,2,0,1,1,0
+alzheimer disease <> nerve growth factor,1,3,6,5,9,27,2,5,9,0
+alzheimer disease <> niacin,1,1,1,2,1,1,1,1,1,0
+alzheimer disease <> niacinamide,1,3,10,5,5,15,0,3,13,0
+alzheimer disease <> nicotinic acid,1,3,7,4,7,9,0,2,5,0
+alzheimer disease <> nicotinic agonist,1,2,2,4,2,4,2,1,1,0
+alzheimer disease <> nicotinic antagonist,1,1,1,3,2,3,0,0,1,0
+alzheimer disease <> np 031112,0,1,0,4,1,1,1,1,0,0
+alzheimer disease <> pbt2,1,1,3,4,1,3,1,1,2,0
+alzheimer disease <> perindopril,1,2,5,3,2,5,0,3,3,0
+alzheimer disease <> physostigmine,1,5,22,5,15,56,7,8,24,0
+alzheimer disease <> pimavanserin,0,1,1,3,1,1,0,0,1,0
+alzheimer disease <> pioglitazone,1,2,10,5,12,31,9,12,27,0
+alzheimer disease <> piroxicam,0,1,2,3,2,2,0,1,1,0
+alzheimer disease <> polyunsaturated fatty acids,0,1,0,0,1,1,0,0,0,0
+"alzheimer disease <> pregnanolone, (3beta, 5alpha)-isomer",1,3,6,5,4,12,4,7,11,0
+alzheimer disease <> propofol,1,2,3,4,5,11,3,6,10,0
+alzheimer disease <> quinolizidines,0,2,4,2,1,1,0,0,1,0
+alzheimer disease <> rasagiline,0,2,2,3,3,6,0,0,2,0
+alzheimer disease <> riluzole,1,2,5,4,4,9,4,2,8,0
+alzheimer disease <> roflumilast,0,2,2,3,3,4,1,2,4,0
+alzheimer disease <> rolipram,1,2,7,5,4,9,1,1,7,0
+alzheimer disease <> rxr agonist,0,1,2,1,2,2,1,0,1,0
+alzheimer disease <> sargramostim,0,1,2,2,1,1,0,0,1,0
+alzheimer disease <> scopolamine,1,4,17,5,14,38,12,9,30,0
+alzheimer disease <> selegiline,0,3,5,4,6,11,4,0,10,0
+alzheimer disease <> sildenafil,1,2,2,3,3,3,0,1,2,0
+alzheimer disease <> t-817ma,1,2,4,2,1,3,1,0,3,0
+alzheimer disease <> talsaclidine,0,1,2,1,1,2,0,0,0,0
+alzheimer disease <> tamibarotene,0,2,1,2,1,2,0,0,1,0
+alzheimer disease <> telmisartan,0,2,4,4,3,6,0,1,4,0
+alzheimer disease <> tetracyclines,0,2,2,3,5,5,1,0,4,0
+alzheimer disease <> thalidomide,1,2,6,4,5,9,3,1,7,0
+alzheimer disease <> thioctic acid,1,4,7,5,8,18,2,5,13,0
+alzheimer disease <> thioridazine,0,1,1,2,1,1,0,1,1,0
+alzheimer disease <> threonate,1,1,1,4,0,1,1,1,1,0
+alzheimer disease <> tideglusib,0,1,2,2,1,1,0,0,1,0
+alzheimer disease <> tramiprosate,1,3,5,5,3,3,2,1,3,0
+"alzheimer disease <> triglycerides, medium-chain",0,2,1,2,2,2,0,1,2,0
+alzheimer disease <> ubidecarenone,1,2,13,5,11,21,1,9,19,0
+alzheimer disease <> verapamil,1,2,5,5,6,9,0,1,7,0
+alzheimer disease <> vita omega,0,1,3,2,1,1,0,1,1,0
+alzheimer disease <> vitamin d,1,2,11,5,13,14,5,5,11,0
+amyotrophic lateral sclerosis <> 1-(5-isoquinolinesulfonyl)-2-methylpiperazine,1,2,4,4,4,5,3,1,5,0
+"amyotrophic lateral sclerosis <> acetate, glatiramer",1,1,4,3,1,1,1,0,1,0
+"amyotrophic lateral sclerosis <> agents, iron chelating",0,1,1,0,1,1,0,0,0,0
+"amyotrophic lateral sclerosis <> carbonate, lithium",1,1,4,4,2,2,1,1,1,0
+amyotrophic lateral sclerosis <> celecoxib,1,1,3,5,1,3,0,1,3,0
+amyotrophic lateral sclerosis <> copaxone,1,1,4,3,1,1,1,0,1,0
+amyotrophic lateral sclerosis <> copper,1,1,3,2,2,2,0,1,2,0
+amyotrophic lateral sclerosis <> endocannabinoids,0,1,0,2,1,1,0,0,0,0
+amyotrophic lateral sclerosis <> fasudil,1,1,1,4,2,2,2,1,2,0
+amyotrophic lateral sclerosis <> glatiramer,1,1,4,3,1,1,1,0,1,0
+amyotrophic lateral sclerosis <> growth factor,1,1,1,4,1,1,0,1,1,0
+amyotrophic lateral sclerosis <> lithium,1,2,7,5,6,13,7,4,11,0
+amyotrophic lateral sclerosis <> nerve growth factor,0,2,3,2,3,4,0,0,1,0
+amyotrophic lateral sclerosis <> phenylbutyrate,1,1,4,3,3,5,1,2,4,0
+amyotrophic lateral sclerosis <> phenylbutyrate sodium,1,1,1,3,1,1,1,1,1,0
+amyotrophic lateral sclerosis <> pioglitazone,1,1,3,3,2,2,0,1,2,0
+amyotrophic lateral sclerosis <> rasagiline,0,2,1,2,2,2,1,0,1,0
+amyotrophic lateral sclerosis <> serine,0,1,2,4,3,3,2,1,2,0
+amyotrophic lateral sclerosis <> substance with interleukin 1 receptor antagonist mechanism of action,0,1,1,2,1,1,0,0,1,0
+amyotrophic lateral sclerosis <> tacrolimus,1,3,1,4,2,5,0,1,3,0
+amyotrophic lateral sclerosis <> zinc,0,1,1,3,2,2,1,0,1,0
+anaplastic meningioma <> temozolomide,1,1,0,3,1,1,0,0,1,0
+anaplastic oligodendroglioma <> carboplatin,0,1,0,1,1,1,0,1,1,0
+anaplastic oligodendroglioma <> carmustine,0,1,0,1,1,1,0,1,1,0
+astrocytoma (excluding glioblastoma) <> carboplatin,0,1,0,1,1,1,0,1,1,0
+"autism <> acid, docosahexaenoic",1,2,3,4,4,5,3,3,5,0
+autism <> arbaclofen,1,1,5,3,1,2,1,1,2,0
+autism <> argipressin,0,2,0,2,1,1,0,0,0,0
+autism <> docosahexaenoate,1,2,3,4,4,5,3,3,5,0
+autism <> donepezil,1,1,1,0,1,1,0,1,1,0
+autism <> everolimus,1,2,4,4,1,3,2,0,3,0
+autism <> leucovorin,1,1,3,2,1,1,0,0,1,0
+autism <> luteolin,1,1,1,1,1,1,0,0,1,0
+autism <> melatonin,1,2,4,4,4,5,1,1,5,0
+autism <> memantine,1,3,6,4,4,7,5,5,7,0
+autism <> rad 001,0,1,3,4,1,1,1,0,1,0
+autism <> sirolimus,1,2,8,5,1,8,5,0,8,0
+autism <> zinc,1,2,2,5,6,9,3,4,7,0
+"autism spectrum disorder <> acid, docosahexaenoic",1,2,3,4,4,5,3,3,5,0
+autism spectrum disorder <> arbaclofen,1,1,6,3,2,6,3,2,6,0
+autism spectrum disorder <> argipressin,0,2,0,2,1,1,0,0,0,0
+autism spectrum disorder <> baclofen,1,2,6,5,2,6,1,1,5,0
+autism spectrum disorder <> citalopram,1,1,1,3,1,3,1,2,3,0
+autism spectrum disorder <> docosahexaenoate,1,2,3,4,4,5,3,3,5,0
+autism spectrum disorder <> donepezil,1,2,5,3,3,3,1,2,3,0
+autism spectrum disorder <> everolimus,1,2,5,5,3,5,3,1,5,0
+autism spectrum disorder <> insulin-like growth factor i,0,1,2,3,2,2,0,1,1,0
+autism spectrum disorder <> luteolin,1,1,1,1,1,1,0,0,1,0
+autism spectrum disorder <> rad 001,0,1,3,4,1,1,1,0,1,0
+autism spectrum disorder <> sirolimus,1,2,8,5,2,11,7,0,11,0
+autism spectrum disorder <> zinc,1,2,3,5,7,11,3,4,8,0
+bell's palsy <> acyclovir,1,1,1,1,1,1,0,0,1,0
+benzodiazepine dependence <> benzodiazepine,0,2,1,2,1,1,0,1,0,0
+brain glioblastoma <> bleomycin,0,1,1,0,1,1,0,0,0,0
+brain glioblastoma <> cpt 11,1,1,1,3,1,1,0,1,0,0
+brain glioblastoma <> cyclophosphamide,0,2,3,4,1,3,0,0,1,0
+brain glioblastoma <> interferon gamma,0,1,2,2,1,1,0,1,0,0
+brain glioblastoma <> interleukin-2,1,1,1,1,1,1,0,0,1,0
+brain glioblastoma <> irinotecan,1,1,1,3,1,1,0,1,0,0
+brain glioblastoma <> irinotecan hydrochloride,1,1,1,3,1,1,0,1,0,0
+brain glioma <> carboplatin,1,1,1,3,1,1,0,0,0,0
+brain glioma <> ganciclovir,0,1,1,2,1,1,0,0,1,0
+brain glioma <> temozolomide,1,3,10,5,5,14,0,5,8,0
+"brain ischemia <> acid, egtazic",0,2,2,4,2,3,0,0,1,0
+"brain ischemia <> angiogenin, ribonuclease, rnase a family, 5, human",0,1,0,3,1,1,0,0,1,0
+brain ischemia <> antiplatelet,0,1,1,3,1,1,1,0,1,0
+brain ischemia <> dexmedetomidine,1,3,7,5,6,29,12,21,25,0
+"brain ischemia <> fatty acids, omega-3",1,1,1,2,1,1,0,0,1,0
+brain ischemia <> folic acid,0,0,1,3,1,1,1,1,0,0
+brain ischemia <> glucagon-like peptide 1 receptor agonist,0,2,4,4,3,4,2,1,4,0
+brain ischemia <> minocycline,1,2,11,5,8,28,11,13,24,0
+brain ischemia <> resveratrol,1,2,6,4,12,17,5,7,13,0
+brain ischemia <> tocotrienols,0,0,0,0,1,1,0,0,0,0
+brain ischemia <> trans-resveratrol,0,0,0,0,1,1,0,0,0,0
+brain ischemia <> vitamin e,0,3,6,5,6,9,3,1,5,0
+brain ischemia <> xenon,1,3,5,5,5,17,12,10,14,0
+brain stem glioma <> carboplatin,0,1,2,2,2,2,0,2,2,0
+brain stem glioma <> irinotecan,1,1,1,3,1,1,0,0,1,0
+brain stem glioma <> vincristine,0,1,1,4,1,1,0,0,1,0
+cannabis dependence <> cannabidiol,0,1,1,3,1,1,1,1,1,0
+cannabis dependence <> cannabinoid,0,3,2,4,1,4,2,1,4,0
+cannabis dependence <> rimonabant,0,2,1,3,2,2,1,1,2,0
+cerebral infarction <> albumin,0,2,4,5,1,4,0,2,4,0
+cerebral infarction <> argipressin,0,1,0,2,1,1,0,0,1,0
+cerebral infarction <> arundic acid,0,1,1,2,1,1,0,1,0,0
+cerebral infarction <> citicoline,1,2,4,4,8,20,4,7,14,0
+cerebral infarction <> cyclosporine,0,2,7,3,3,11,5,1,6,0
+cerebral infarction <> desflurane,0,1,2,4,4,4,2,1,3,0
+cerebral infarction <> dexmedetomidine,1,1,2,4,3,7,2,5,5,0
+cerebral infarction <> epoprostenol,0,2,1,4,3,3,0,0,0,0
+cerebral infarction <> fluoxetine,0,2,3,4,5,8,4,4,8,0
+cerebral infarction <> ginaton,0,1,1,1,1,1,0,1,1,0
+"cerebral infarction <> oxide, nitric",1,4,4,4,6,7,3,2,5,0
+cerebral infarction <> phenylephrine,0,0,0,3,1,1,0,1,1,0
+cerebral infarction <> plasmin,0,0,0,2,1,1,0,0,0,0
+cerebral infarction <> propofol,1,3,7,5,9,36,14,19,31,0
+cerebral infarction <> sevoflurane,0,2,2,5,7,20,10,14,18,0
+cerebral infarction <> thrombolytic,1,4,3,4,3,5,1,1,3,0
+cerebral infarction <> valproate,0,1,2,4,2,4,3,1,4,0
+cerebral infarction <> valproic acid,0,1,2,4,2,3,3,1,3,0
+cerebral infarction <> vasopressin (usp),0,1,0,2,1,1,0,0,1,0
+cerebral palsy <> erythropoietin,1,2,2,4,2,4,4,1,4,0
+chemotherapy-induced peripheral neuropathy <> dextromethorphan,0,1,1,1,1,1,0,0,0,0
+"chemotherapy-induced peripheral neuropathy <> hydrochloride, minocycline",0,1,1,2,1,1,0,0,1,0
+chemotherapy-induced peripheral neuropathy <> minocycline,0,1,1,2,1,1,0,0,1,0
+chemotherapy-induced peripheral neuropathy <> paclitaxel,1,3,5,5,5,20,10,7,15,0
+childhood absence epilepsy <> levetiracetam,1,1,2,3,2,3,0,2,1,0
+childhood brain stem glioma <> adavosertib,1,1,0,3,1,1,0,0,1,0
+childhood brain stem glioma <> dasatinib,0,1,1,2,1,1,0,0,1,0
+childhood brain stem glioma <> everolimus,0,1,1,2,1,1,0,0,1,0
+childhood brain stem glioma <> irinotecan,1,2,2,3,2,2,0,0,2,0
+childhood brain stem glioma <> temozolomide,1,1,0,2,1,1,0,1,1,0
+childhood brain stem glioma <> valproate,0,1,0,2,1,1,0,0,0,0
+childhood-onset idiopathic generalized epilepsy syndrome <> levetiracetam,1,1,2,3,2,3,0,2,1,0
+chronic polyneuropathy <> oxaliplatin,0,1,2,3,2,2,1,1,2,0
+chronic progressive multiple sclerosis <> mis416,1,1,2,4,1,1,0,1,1,0
+"cocaine dependence <> 1-methyl-4-(4-dimethylaminophenylethenyl)-1,2,3,6-tetrahydropyridine",0,2,2,2,1,5,0,4,5,0
+"cocaine dependence <> 1-methyl-4-phenyl-1,2,3,6-tetrahydropyridine",0,2,2,2,1,5,0,4,5,0
+cocaine dependence <> acamprosate,0,1,1,0,1,1,0,1,1,0
+cocaine dependence <> adenosine a2a receptor antagonists,0,1,1,1,1,1,0,0,1,0
+cocaine dependence <> aripiprazole,0,1,1,1,1,2,1,0,2,0
+cocaine dependence <> atomoxetine,0,1,1,2,1,1,0,0,1,0
+cocaine dependence <> baclofen,0,2,2,2,4,7,0,1,3,0
+cocaine dependence <> buspirone,0,1,1,0,1,1,0,0,0,0
+cocaine dependence <> clonidine,0,3,1,2,1,2,0,0,2,0
+cocaine dependence <> cocaethylene,0,1,0,1,1,1,0,0,0,0
+cocaine dependence <> cycloserine,0,1,1,0,1,1,0,1,1,0
+cocaine dependence <> donepezil,0,1,1,1,1,1,0,0,1,0
+cocaine dependence <> doxazosin,0,1,1,0,1,1,0,1,1,0
+cocaine dependence <> exenatide,0,2,2,3,2,6,1,3,6,0
+cocaine dependence <> gabapentin,0,1,1,1,1,1,0,0,1,0
+cocaine dependence <> gbr 12909,0,1,1,1,1,2,1,0,1,0
+cocaine dependence <> glucagon-like peptide 1 receptor agonist,0,2,2,3,2,4,1,1,4,0
+cocaine dependence <> lidocaine,1,1,1,3,1,2,0,0,2,0
+cocaine dependence <> metyrapone,0,1,1,2,1,3,0,1,3,0
+cocaine dependence <> minocycline,0,1,1,2,1,1,0,1,1,0
+cocaine dependence <> naloxone,0,2,2,2,1,2,0,0,2,0
+cocaine dependence <> nepicastat,1,2,6,2,1,3,0,2,3,0
+cocaine dependence <> nicotine,0,1,0,1,1,1,0,0,1,0
+cocaine dependence <> nmda receptor antagonist,0,1,1,2,1,1,0,1,0,0
+cocaine dependence <> ondansetron,0,1,1,1,1,4,0,2,3,0
+cocaine dependence <> oxazepam,0,1,1,2,1,2,0,0,2,0
+cocaine dependence <> phendimetrazine,0,1,0,1,1,3,0,0,3,0
+cocaine dependence <> phentermine,0,1,1,1,1,1,0,0,1,0
+cocaine dependence <> rti 336,0,0,0,0,1,1,0,0,0,0
+"cocaine dependence <> serine, d-",0,1,1,2,1,2,0,0,2,0
+cocaine dependence <> yohimbine,0,1,1,0,1,1,0,0,1,0
+creutzfeldt jacob disease <> quinacrine,1,1,1,4,3,3,0,0,1,0
+diabetic neuropathy <> botulinum toxin,0,1,1,2,1,1,1,0,1,0
+diabetic neuropathy <> c-peptide,0,1,0,3,1,3,0,2,1,0
+diabetic neuropathy <> cannabinoid,1,2,5,5,7,7,2,2,6,0
+diabetic neuropathy <> clonidine,0,1,2,0,1,1,0,0,1,0
+diabetic neuropathy <> exenatide,0,1,0,2,1,1,0,0,0,0
+diabetic neuropathy <> insulin,1,3,13,5,11,31,9,6,23,0
+diabetic neuropathy <> liraglutide,0,1,2,3,2,2,1,2,2,0
+diabetic neuropathy <> mcc-257,0,2,2,4,1,1,0,0,1,0
+diabetic neuropathy <> naloxone,0,2,3,4,4,5,3,3,5,0
+diabetic neuropathy <> ruboxistaurin,0,1,1,0,1,1,0,0,1,0
+diabetic neuropathy <> simvastatin,0,1,1,2,1,1,1,0,1,0
+diabetic neuropathy <> vascular endothelial growth factor a,0,3,4,5,2,2,0,0,2,0
+diabetic neuropathy <> vitamin c,0,2,2,3,4,4,0,2,4,0
+diabetic polyneuropathy <> insulin,0,2,7,4,1,2,2,0,2,0
+diabetic polyneuropathy <> simvastatin,0,1,1,2,1,1,1,0,1,0
+diffuse intrinsic pontine glioma <> adavosertib,1,1,0,3,1,1,0,0,1,0
+diffuse intrinsic pontine glioma <> dasatinib,0,1,1,2,1,1,0,0,1,0
+diffuse intrinsic pontine glioma <> everolimus,0,1,1,2,1,1,0,0,1,0
+diffuse intrinsic pontine glioma <> irinotecan,1,2,2,3,2,2,0,0,2,0
+diffuse intrinsic pontine glioma <> temozolomide,1,1,0,2,1,1,0,1,1,0
+diffuse intrinsic pontine glioma <> valproate,0,1,0,2,1,1,0,0,0,0
+"drug dependence <> 1-methyl-4-(4-dimethylaminophenylethenyl)-1,2,3,6-tetrahydropyridine",0,2,2,2,2,6,0,5,6,0
+"drug dependence <> 1-methyl-4-phenyl-1,2,3,6-tetrahydropyridine",0,2,2,2,2,6,0,5,6,0
+drug dependence <> 5-ht3 receptor antagonist,0,1,1,4,3,6,2,3,3,0
+drug dependence <> 6 beta-hydroxynaltrexone,0,1,1,0,1,1,0,1,1,0
+drug dependence <> acamprosate,0,2,2,2,3,3,0,2,3,0
+drug dependence <> adenosine a2a receptor antagonists,0,1,1,1,1,1,0,0,1,0
+drug dependence <> alkaloid opiates,0,1,0,2,1,1,0,1,0,0
+drug dependence <> alpha-methyltyrosine,0,3,3,0,0,1,0,0,0,0
+drug dependence <> antagonist,0,1,2,2,2,2,0,0,2,0
+drug dependence <> benzodiazepine,0,1,1,0,1,1,0,0,1,0
+drug dependence <> cannabinoid,0,4,9,4,4,9,4,4,9,0
+drug dependence <> cholinesterase inhibitor,0,1,1,1,1,1,0,0,1,0
+drug dependence <> cocaethylene,0,1,0,1,1,1,0,0,0,0
+drug dependence <> cycloserine,0,1,2,1,2,2,0,1,1,0
+drug dependence <> dextromethorphan,0,2,2,2,2,3,0,0,2,0
+drug dependence <> donepezil,0,1,1,1,1,1,0,0,1,0
+drug dependence <> doxazosin,0,1,1,0,1,1,0,1,1,0
+drug dependence <> exenatide,1,2,2,3,3,7,2,4,7,0
+drug dependence <> gbr 12909,0,1,1,1,1,2,1,0,1,0
+drug dependence <> glucagon-like peptide 1 receptor agonist,1,2,2,3,3,5,2,2,5,0
+drug dependence <> guanfacine,0,1,1,2,1,1,0,0,1,0
+drug dependence <> ibudilast,1,1,1,1,1,1,0,0,1,0
+drug dependence <> isradipine,1,1,1,0,1,1,0,1,0,0
+drug dependence <> lisdexamfetamine,0,1,0,0,1,1,0,0,1,0
+drug dependence <> lithium,0,1,1,0,1,1,0,0,0,0
+drug dependence <> lorcaserin,1,3,5,2,3,8,0,2,7,0
+drug dependence <> metyrapone,0,1,2,3,4,6,0,3,6,0
+drug dependence <> nepicastat,1,2,6,2,1,3,0,2,3,0
+drug dependence <> nifedipine,0,1,0,1,1,1,0,0,0,0
+drug dependence <> nmda antagonist,0,1,2,1,2,2,0,1,1,0
+drug dependence <> nmda receptor antagonist,0,2,4,3,3,4,1,2,2,0
+drug dependence <> nmda receptor antagonists,0,1,1,2,1,1,0,0,1,0
+drug dependence <> oxazepam,0,1,1,2,1,2,0,0,2,0
+drug dependence <> phendimetrazine,0,1,0,1,1,3,0,0,3,0
+drug dependence <> phentermine,0,1,1,1,1,1,0,0,1,0
+drug dependence <> pioglitazone,0,3,3,4,2,3,0,0,2,0
+drug dependence <> pregabalin,0,1,1,3,3,3,0,0,3,0
+drug dependence <> rimonabant,0,2,1,3,2,2,1,1,2,0
+drug dependence <> rti 336,0,0,0,0,1,1,0,0,0,0
+"drug dependence <> serine, d-",0,1,1,2,1,2,0,0,2,0
+drug dependence <> serotonin,0,0,0,0,1,1,0,0,0,0
+drug dependence <> vanoxerine,0,1,1,1,1,2,0,0,2,0
+drug dependence <> yohimbine,0,2,7,3,5,7,1,2,4,0
+drug dependence <> α1-adrenergic antagonist,0,1,1,0,1,1,0,1,1,0
+drug resistant epilepsy <> verapamil,1,0,0,3,1,1,0,0,1,0
+"epilepsy <> (1,10-phenanthroline)(9,10-phenanthrenequinonediimine)rhodamine(iii)",0,1,1,2,1,1,0,0,0,0
+"epilepsy <> acetate, glatiramer",0,1,1,2,1,1,1,1,1,0
+epilepsy <> atorvastatin,0,2,1,2,1,1,0,0,1,0
+epilepsy <> buspirone,0,3,4,3,3,5,0,0,1,0
+epilepsy <> cannabidivarin,1,2,5,2,2,4,2,1,3,0
+epilepsy <> clozapine,0,2,2,4,4,4,1,0,0,0
+epilepsy <> digoxin,0,1,1,1,2,2,0,1,1,0
+epilepsy <> everolimus,1,2,11,5,5,11,6,4,10,0
+epilepsy <> fluoxetine hydrochloride,0,1,1,3,1,1,1,0,0,0
+epilepsy <> gaba (b) receptor antagonist,1,1,2,3,5,7,3,0,5,0
+epilepsy <> glatiramer,0,1,1,2,1,1,1,1,1,0
+epilepsy <> insulin,0,2,4,3,5,6,0,3,1,0
+epilepsy <> intravenous immunoglobulins,1,1,1,2,1,1,0,1,1,0
+epilepsy <> loop diuretic agent,0,1,2,2,2,3,0,1,2,0
+epilepsy <> memantine,1,4,13,5,13,32,5,5,21,0
+epilepsy <> mirtazapine,0,1,1,1,1,1,1,1,1,0
+epilepsy <> mtor inhibitors,0,2,2,3,1,2,2,0,2,0
+epilepsy <> muscimol,1,4,4,4,10,38,3,4,3,0
+epilepsy <> olanzapine,0,1,1,2,1,1,0,0,0,0
+epilepsy <> oxygen,0,0,0,0,1,1,0,0,0,0
+epilepsy <> p-glycoprotein inhibitor,0,1,1,3,1,1,0,0,1,0
+epilepsy <> rad 001,0,1,3,4,1,1,1,0,1,0
+epilepsy <> s -,0,1,1,1,1,1,0,0,1,0
+epilepsy <> selective serotonin reuptake inhibitors,0,2,5,4,3,3,1,0,2,0
+epilepsy <> talampanel,0,2,3,4,1,1,0,0,0,0
+epilepsy <> testosterone,1,2,1,1,1,2,1,0,0,0
+epilepsy <> thiopental,0,2,3,3,3,5,0,0,2,0
+epilepsy <> triheptanoin,0,2,5,2,3,4,0,1,4,0
+epilepsy <> verapamil,1,5,15,5,15,37,0,6,13,0
+epilepsy <> vinca alkaloid,0,3,3,3,2,5,0,0,3,0
+epilepsy <> vinpocetine,0,3,3,3,2,5,0,0,3,0
+epilepsy <> vx-765,0,2,2,3,1,3,3,2,3,0
+epilepsy <> zolpidem,1,2,9,5,7,16,1,2,13,0
+epilepsy with generalized tonic-clonic seizures <> anticonvulsant,0,1,4,1,1,1,1,0,0,0
+"febrile seizures, familial <> dioxide, carbon",0,0,0,3,1,1,0,0,0,0
+focal epilepsy <> memantine,0,3,1,2,1,1,0,0,0,0
+focal epilepsy <> pregnanolone,1,0,0,0,1,1,0,0,1,0
+glioblastoma <> 2 methoxyestradiol,1,1,1,2,1,1,0,0,1,0
+glioblastoma <> 4-(acetylamino)benzenesulfonyl chloride,0,0,0,2,1,1,0,0,0,0
+glioblastoma <> abt 888,1,1,2,5,4,5,1,3,4,0
+glioblastoma <> adrenal cortex hormone,1,2,2,3,2,3,0,2,1,0
+glioblastoma <> aflibercept,0,1,0,2,1,1,1,1,1,0
+glioblastoma <> aldoxorubicin,1,1,0,3,1,1,0,0,1,0
+glioblastoma <> amd 3100,0,1,0,5,2,3,1,1,3,0
+glioblastoma <> anti antibodies,1,1,0,2,1,1,0,0,0,0
+glioblastoma <> arsenic trioxide,0,1,0,1,1,1,0,1,1,0
+glioblastoma <> ascorbate,0,2,1,3,2,2,0,0,1,0
+glioblastoma <> aspirin,0,0,0,1,1,1,0,0,0,0
+glioblastoma <> asunercept,0,1,2,3,1,2,0,0,1,0
+glioblastoma <> atezolizumab,1,1,11,5,10,27,2,14,24,0
+glioblastoma <> atorvastatin,0,2,2,4,5,9,0,1,4,0
+glioblastoma <> azacitidine,1,1,4,3,1,1,0,1,1,0
+glioblastoma <> bev,0,2,3,3,3,4,0,0,2,0
+glioblastoma <> bortezomib,1,2,3,2,4,8,0,1,4,0
+glioblastoma <> c-met inhibitor,0,1,1,3,1,1,0,0,0,0
+glioblastoma <> cabazitaxel,1,3,6,0,1,1,0,0,1,0
+glioblastoma <> cabozantinib,1,2,1,4,1,2,0,1,1,0
+glioblastoma <> camptosar,0,0,0,1,1,1,0,0,0,0
+glioblastoma <> carboplatin,1,5,7,5,6,13,0,4,11,0
+glioblastoma <> cediranib,1,1,7,4,3,6,0,2,5,0
+glioblastoma <> cediranib maleate,0,1,0,2,1,1,0,1,0,0
+glioblastoma <> cetuximab,1,3,6,5,6,10,1,2,9,0
+glioblastoma <> cisplatin,1,3,13,5,16,37,3,9,23,0
+glioblastoma <> crizotinib,1,1,1,3,1,1,0,0,1,0
+glioblastoma <> cyclophosphamide,1,1,4,3,3,4,0,0,3,0
+glioblastoma <> dasatinib,1,1,5,5,4,10,1,0,7,0
+"glioblastoma <> deacetylases, histone",0,1,0,2,1,1,0,0,0,0
+glioblastoma <> dexamethasone,1,3,10,5,8,22,5,5,15,0
+glioblastoma <> dichloroacetate,1,2,3,4,5,8,0,3,6,0
+glioblastoma <> dordaviprone,0,1,0,3,1,1,0,0,0,0
+glioblastoma <> doxorubicin,1,3,15,5,21,67,5,28,53,0
+glioblastoma <> doxorubicin liposome,1,2,6,4,3,7,1,1,7,0
+glioblastoma <> doxy,1,2,5,5,6,15,1,5,12,0
+glioblastoma <> doxycycline,1,2,8,5,7,20,2,8,14,0
+glioblastoma <> doxycycline hyclate,1,2,5,5,6,15,1,5,12,0
+glioblastoma <> epidermal growth factor receptor tyrosine kinase inhibitor,0,1,2,1,1,1,0,1,1,0
+glioblastoma <> erlotinib,0,1,0,3,1,2,0,1,2,0
+glioblastoma <> etoposide,1,2,5,4,7,10,1,1,6,0
+glioblastoma <> everolimus,1,2,3,4,4,4,0,1,4,0
+"glioblastoma <> f18, fluorodeoxyglucose",0,1,1,4,1,1,0,0,1,0
+glioblastoma <> fkbp12 rapamycin associated protein,1,2,4,3,5,7,0,0,5,0
+glioblastoma <> flucytosine,1,3,7,4,6,7,0,0,6,0
+glioblastoma <> fluorouracil,0,2,1,2,1,1,0,0,1,0
+glioblastoma <> ganciclovir,1,3,5,4,6,11,2,3,6,0
+glioblastoma <> ganciclovir elaidate,0,1,0,1,1,1,0,1,1,0
+glioblastoma <> gdc-0084,1,1,1,5,1,1,0,1,0,0
+glioblastoma <> gefitinib,0,1,1,3,2,4,0,0,2,0
+glioblastoma <> gonanes,0,1,0,2,1,1,0,1,1,0
+glioblastoma <> histone deacetylase inhibitor,1,1,0,3,1,1,0,0,0,0
+glioblastoma <> human epidermal growth factor receptor 2,1,1,0,1,1,1,0,0,0,0
+glioblastoma <> imetelstat,0,1,1,3,1,1,0,0,0,0
+glioblastoma <> ink4b protein,0,1,4,3,2,2,0,1,2,0
+glioblastoma <> interferon alfa,0,2,2,3,2,2,0,2,2,0
+glioblastoma <> interferon gamma,0,1,2,2,1,1,0,0,1,0
+glioblastoma <> interleukin-2,1,1,1,2,1,1,0,1,0,0
+glioblastoma <> iodine,1,1,3,3,1,2,0,0,1,0
+glioblastoma <> iodine radioisotopes,0,2,2,1,1,1,0,0,1,0
+glioblastoma <> iressa,0,1,1,3,1,1,0,0,1,0
+glioblastoma <> irinotecan,1,2,10,4,9,17,2,8,14,0
+glioblastoma <> irinotecan hydrochloride,1,1,2,4,2,3,0,2,2,0
+glioblastoma <> isotretinoin,0,2,0,2,1,1,0,0,0,0
+glioblastoma <> lapatinib,0,1,1,2,1,1,0,0,1,0
+glioblastoma <> mebendazole,1,1,1,1,1,1,0,0,1,0
+glioblastoma <> memantine,1,1,1,0,1,1,0,0,0,0
+glioblastoma <> metformin,1,1,7,5,8,11,0,4,8,0
+glioblastoma <> mibefradil,1,1,1,3,2,2,0,1,1,0
+glioblastoma <> nexavar,0,0,0,0,1,1,0,0,0,0
+glioblastoma <> p-boronophenylalanine,0,1,1,1,1,1,0,0,0,0
+glioblastoma <> paclitaxel,1,3,17,5,15,46,1,24,36,0
+glioblastoma <> palbociclib,1,1,6,3,4,5,0,2,5,0
+glioblastoma <> perifosine,0,1,4,4,1,2,0,0,1,0
+glioblastoma <> pexidartinib,0,1,1,2,1,1,0,0,1,0
+glioblastoma <> pioglitazone,0,1,1,3,2,2,0,1,1,0
+glioblastoma <> plerixafor,1,2,5,5,4,9,3,4,9,0
+glioblastoma <> plx3397,0,1,1,2,1,1,0,0,1,0
+glioblastoma <> promethazine,1,1,1,2,1,1,0,1,1,0
+glioblastoma <> ps 341,0,0,0,1,1,1,0,0,0,0
+glioblastoma <> px-866,0,1,0,2,1,1,0,1,1,0
+glioblastoma <> rad 001,0,0,0,3,1,1,0,0,1,0
+glioblastoma <> selinexor,1,1,0,3,1,2,0,1,2,0
+glioblastoma <> sirolimus,1,2,13,5,9,27,3,8,19,0
+glioblastoma <> sn-38,1,1,1,3,1,1,0,1,1,0
+glioblastoma <> sorafenib,0,0,0,0,1,1,0,0,0,0
+glioblastoma <> sorafenib tosylate,0,0,0,0,1,1,0,0,0,0
+glioblastoma <> sunitinib,1,2,8,4,7,14,3,5,11,0
+glioblastoma <> suramin,1,1,1,1,1,1,0,1,0,0
+glioblastoma <> tamoxifen,1,1,0,2,1,1,0,0,0,0
+glioblastoma <> temsirolimus,1,2,1,4,3,5,0,1,3,0
+glioblastoma <> thalidomide,1,1,1,1,1,1,1,0,1,0
+glioblastoma <> topoisomerase i inhibitor,0,1,0,0,1,1,0,0,1,0
+glioblastoma <> topotecan,0,1,0,3,2,4,0,0,2,0
+glioblastoma <> trastuzumab,0,2,1,4,1,2,1,0,2,0
+glioblastoma <> valproate,1,3,7,4,4,5,1,3,3,0
+glioblastoma <> valproic acid,1,3,7,4,4,5,1,3,3,0
+glioblastoma <> vandetanib,1,1,1,2,1,1,0,1,1,0
+glioblastoma <> veliparib,1,1,2,5,4,5,1,3,4,0
+glioblastoma <> vitamin c,0,0,0,0,1,1,0,0,1,0
+glioblastoma <> vorinostat,1,2,1,4,3,6,0,0,3,0
+glioblastoma <> zd 6474,1,1,1,2,1,1,0,1,1,0
+"glioma <> 1,2,5,6-dianhydrogalactitol",0,1,1,2,1,1,0,0,1,0
+"glioma <> 2-(2-oxo-2-((3,7,11-trimethyl-2,6,10-dodecatrienyl)oxy)aminoethyl)phosphonic acid, (2,2-dimethyl-1-oxopropoxy)methyl ester sodium",0,1,0,0,1,1,0,1,1,0
+"glioma <> 3,4-dihydroxyphenylalanine",1,2,3,1,2,2,0,1,2,0
+glioma <> aldesleukin,0,1,1,1,1,1,0,1,0,0
+glioma <> alpha-linolenic acid,0,1,1,2,1,1,0,0,0,0
+glioma <> amd 3100,0,1,1,5,2,3,1,1,3,0
+glioma <> ang1005,0,1,1,3,1,1,0,0,1,0
+glioma <> anti-vegf humanized monoclonal antibody,0,1,0,1,1,1,0,0,0,0
+glioma <> arginine,1,1,1,4,1,1,0,1,1,0
+glioma <> arsenic trioxide,0,1,1,3,1,1,0,0,1,0
+glioma <> avastin,1,2,0,4,2,2,0,1,1,0
+glioma <> bortezomib,0,0,0,1,1,1,0,0,0,0
+glioma <> celecoxib,1,1,4,5,3,5,0,3,3,0
+glioma <> cetuximab,1,3,1,3,3,9,0,2,6,0
+glioma <> chemotherapy,1,2,2,3,2,2,1,1,1,0
+glioma <> chlorotoxin,0,2,1,3,1,3,0,0,1,0
+glioma <> cilengitide,1,2,2,2,1,2,0,0,1,0
+glioma <> cisplatin,1,3,8,5,15,36,2,8,17,0
+"glioma <> colony-stimulating factor, granulocyte-macrophage",1,2,4,3,6,9,2,2,6,0
+glioma <> cpt 11,0,2,1,2,1,2,0,1,0,0
+glioma <> dasatinib,1,1,5,5,1,8,1,1,7,0
+glioma <> docetaxel,0,1,1,3,1,1,0,1,1,0
+glioma <> dronabinol,1,2,1,4,2,8,0,7,6,0
+glioma <> e 7016,1,1,0,2,1,1,0,1,1,0
+glioma <> enzastaurin,0,2,2,4,1,1,0,0,1,0
+glioma <> everolimus,1,1,5,4,1,5,0,1,3,0
+glioma <> flt,0,1,0,4,1,1,0,0,1,0
+glioma <> flucytosine,1,2,12,5,6,11,1,3,9,0
+glioma <> fluoromisonidazole,0,1,2,3,3,3,1,0,3,0
+glioma <> fluorouracil,1,1,2,2,2,2,0,1,1,0
+glioma <> fluvastatin,0,1,0,2,1,1,0,0,0,0
+glioma <> ganciclovir,1,3,12,4,8,26,0,2,10,0
+glioma <> ganciclovir elaidate,1,1,1,3,1,1,0,0,0,0
+glioma <> grn1005,0,1,1,3,1,1,0,0,1,0
+glioma <> histone deacetylase inhibitor,0,2,5,4,2,2,0,1,2,0
+glioma <> human epidermal growth factor receptor 2,1,1,0,2,1,2,0,0,2,0
+glioma <> hydroxymethylglutaryl coa reductase inhibitors,0,1,1,3,4,4,1,1,2,0
+glioma <> il13-pe38qqr,0,1,1,2,1,1,0,0,1,0
+glioma <> imiquimod,1,1,2,2,1,1,0,1,1,0
+glioma <> interferon,0,1,2,1,1,1,0,0,0,0
+glioma <> interleukin 13,0,0,1,1,1,1,0,0,1,0
+glioma <> interleukin-2,1,1,2,2,2,4,0,2,2,0
+glioma <> iodine,0,1,2,4,2,2,1,1,2,0
+glioma <> iodine radioisotopes,0,2,3,4,2,2,1,0,2,0
+glioma <> iodine-131,0,1,1,3,1,1,1,0,1,0
+glioma <> irinotecan,1,4,9,5,6,15,2,8,9,0
+glioma <> irinotecan hydrochloride,0,2,1,2,1,2,0,1,0,0
+glioma <> lomustine,1,2,2,4,4,6,0,3,3,0
+glioma <> methotrexate,1,2,3,4,4,4,0,1,2,0
+glioma <> misonidazole,0,1,2,3,3,3,1,0,3,0
+glioma <> mtor inhibitors,1,2,3,2,2,2,0,0,1,0
+glioma <> n-(phosphonoacetyl)-l-aspartic acid,0,1,1,2,1,1,0,0,0,0
+glioma <> nimotuzumab,1,1,0,2,1,1,0,0,1,0
+glioma <> o(6)-benzylguanine,1,2,1,2,3,3,0,2,1,0
+glioma <> paclitaxel,1,3,19,5,15,75,1,40,64,0
+glioma <> pemetrexed,0,1,1,1,1,1,1,0,1,0
+glioma <> phosphonacetic acid,0,1,1,2,1,1,0,0,0,0
+glioma <> plerixafor,0,1,1,5,2,3,1,1,3,0
+glioma <> rad 001,0,1,2,2,1,2,0,0,1,0
+glioma <> rmp 7,1,1,1,3,1,1,0,0,0,0
+glioma <> sirolimus,1,3,11,5,9,24,1,6,14,0
+glioma <> snake venom,1,2,2,2,1,2,0,0,1,0
+glioma <> sulfasalazine,1,2,6,5,6,13,4,6,7,0
+glioma <> sunitinib,1,2,9,4,6,15,2,5,12,0
+glioma <> sunitinib malate,0,1,1,0,1,1,0,0,1,0
+glioma <> tamoxifen,0,2,1,4,2,3,0,0,0,0
+glioma <> tem,0,2,1,3,2,2,0,0,1,0
+glioma <> temsirolimus,1,2,1,5,3,4,0,1,2,0
+glioma <> thalidomide,1,1,2,3,3,4,1,0,2,0
+glioma <> tm-601,0,1,0,1,1,1,0,0,0,0
+glioma <> toll-like receptor agonists,1,1,1,3,1,1,0,0,1,0
+glioma <> vandetanib,1,1,1,1,1,2,0,0,2,0
+glioma <> vinblastine,1,1,1,3,1,2,1,2,2,0
+glioma <> vincristine,1,2,4,3,4,7,0,2,3,0
+glioma <> zd 6474,1,1,1,1,1,2,0,0,2,0
+grade iii glioma <> carboplatin,0,1,0,1,1,1,0,1,1,0
+grade iii meningioma <> temozolomide,1,1,0,3,1,1,0,0,1,0
+huntington disease <> alprazolam,1,1,1,4,1,2,1,1,2,0
+huntington disease <> bn82451,1,1,2,1,1,1,0,0,1,0
+huntington disease <> cannabinoid,0,3,7,3,4,6,0,1,4,0
+huntington disease <> cyclophosphamide,0,1,2,3,1,1,1,1,0,0
+huntington disease <> cyclosporine,0,1,1,2,2,2,2,1,2,0
+huntington disease <> cysteamine,1,1,3,2,3,4,0,1,2,0
+huntington disease <> epigallocatechin gallate,0,1,1,2,1,1,0,1,1,0
+huntington disease <> phenylbutyrate,1,1,1,3,1,1,0,0,1,0
+huntington disease <> rolipram,1,2,2,3,1,3,3,2,3,0
+huntington disease <> ubidecarenone,1,2,9,5,3,9,4,4,6,0
+huntington disease <> ursodeoxycholate,0,2,2,3,1,2,1,1,2,0
+huntington disease <> ursodiol,0,2,2,3,1,2,1,1,2,0
+huntington disease <> valproate,0,1,1,1,0,1,0,0,0,0
+huntington disease <> valproic acid,0,1,1,1,0,1,0,0,0,0
+idiopathic generalized epilepsy <> apomorphine,1,2,3,2,4,5,0,0,2,0
+idiopathic generalized epilepsy <> lidocaine,1,4,3,3,3,4,1,2,4,0
+idiopathic generalized epilepsy <> propofol,1,2,5,2,3,3,0,0,2,0
+major depressive disorder <> acetylcysteine,0,2,2,2,1,2,0,0,2,0
+major depressive disorder <> amisulpride,0,1,1,1,1,1,0,0,1,0
+major depressive disorder <> cycloserine,0,1,4,2,2,2,1,0,2,0
+major depressive disorder <> flx,0,2,3,2,2,2,0,0,2,0
+major depressive disorder <> ghrelin,1,2,2,4,1,3,0,1,3,0
+major depressive disorder <> inositol,0,1,1,1,1,1,0,0,1,0
+major depressive disorder <> mood stabilizers,0,1,2,2,3,3,1,0,3,0
+major depressive disorder <> morphine,1,1,2,2,2,4,1,0,4,0
+major depressive disorder <> n methylaspartate,1,2,6,3,4,5,2,1,4,0
+major depressive disorder <> n-methyl-d-aspartate (nmda) receptor antagonist,0,1,2,1,1,1,0,0,1,0
+major depressive disorder <> serotonin agents,1,1,2,3,1,1,0,1,1,0
+major depressive disorder <> ssr125543,0,3,2,2,1,1,1,1,1,0
+major depressive disorder <> testosterone,1,1,1,2,1,1,1,1,1,0
+major depressive disorder <> yohimbine,0,2,1,3,3,3,0,1,1,0
+major depressive disorder <> zinc,0,0,1,3,1,2,0,1,1,0
+malignant glioma <> (benzoylphenyl)alanyl,0,1,1,2,1,1,0,0,1,0
+"malignant glioma <> 2-(2-oxo-2-((3,7,11-trimethyl-2,6,10-dodecatrienyl)oxy)aminoethyl)phosphonic acid, (2,2-dimethyl-1-oxopropoxy)methyl ester sodium",0,1,0,0,1,1,0,1,1,0
+"malignant glioma <> 3,4-dihydroxyphenylalanine",0,1,1,1,1,1,0,1,1,0
+malignant glioma <> ang1005,1,1,3,2,1,1,0,0,1,0
+malignant glioma <> anti-vegf humanized monoclonal antibody,0,2,0,2,2,2,0,1,1,0
+malignant glioma <> anticonvulsant,1,1,2,2,1,1,0,0,1,0
+malignant glioma <> arsenic trioxide,0,2,1,3,1,2,0,1,2,0
+malignant glioma <> busulfan,1,1,1,0,1,1,0,1,0,0
+malignant glioma <> camptothecin,1,1,1,3,1,1,0,1,0,0
+malignant glioma <> carboplatin,1,4,3,4,5,10,0,2,7,0
+malignant glioma <> ccnu,0,1,0,2,1,1,0,1,1,0
+malignant glioma <> cetuximab,0,1,0,1,0,1,0,0,1,0
+malignant glioma <> cisplatin,1,2,7,4,9,14,1,5,8,0
+"malignant glioma <> colony-stimulating factor, granulocyte-macrophage",0,1,1,2,1,1,0,1,1,0
+malignant glioma <> cpt 11,1,2,2,5,2,4,0,3,1,0
+malignant glioma <> cyclophosphamide,1,2,4,5,3,4,1,1,1,0
+malignant glioma <> dasatinib,0,1,0,3,1,2,0,0,2,0
+malignant glioma <> dexamethasone,1,2,2,3,6,7,1,1,5,0
+malignant glioma <> doxorubicin,1,2,8,3,5,8,1,6,7,0
+malignant glioma <> etoposide,1,1,2,3,2,2,0,0,0,0
+malignant glioma <> everolimus,0,1,1,2,0,1,0,0,0,0
+malignant glioma <> flt,0,1,0,4,1,1,0,0,1,0
+malignant glioma <> flucytosine,1,2,5,4,3,7,2,3,7,0
+malignant glioma <> fluorothymidine (18-f),0,1,0,4,1,1,0,0,1,0
+malignant glioma <> fluorouracil,0,2,1,2,1,1,0,0,1,0
+malignant glioma <> ganciclovir,1,3,10,4,8,20,0,2,11,0
+malignant glioma <> ganciclovir elaidate,0,1,0,1,1,1,0,1,1,0
+malignant glioma <> gefitinib,0,1,3,3,2,4,0,1,4,0
+malignant glioma <> grn1005,1,1,3,2,1,1,0,0,1,0
+malignant glioma <> histone deacetylase inhibitor,0,2,5,4,2,2,0,1,2,0
+"malignant glioma <> inhibitor, angiogenesis",0,2,2,2,2,2,0,0,2,0
+malignant glioma <> interleukin-2,1,1,2,2,2,3,0,1,3,0
+malignant glioma <> iodine radioisotopes,0,2,2,1,1,1,0,0,1,0
+malignant glioma <> irinotecan,1,2,4,5,4,6,1,4,3,0
+malignant glioma <> irinotecan hydrochloride,1,2,2,5,2,4,0,3,1,0
+malignant glioma <> lomustine,0,1,0,2,1,1,0,1,1,0
+malignant glioma <> mtor inhibitors,1,2,2,1,1,1,0,0,1,0
+malignant glioma <> myocet,1,1,1,0,1,1,0,1,1,0
+malignant glioma <> o(6)-benzylguanine,0,2,0,1,1,1,0,1,0,0
+malignant glioma <> p-boronophenylalanine,0,1,1,4,1,2,0,2,0,0
+malignant glioma <> paclitaxel,1,2,11,4,9,18,0,7,15,0
+malignant glioma <> panobinostat,1,2,3,3,2,2,1,2,2,0
+malignant glioma <> procarbazine,0,1,0,2,1,1,0,1,1,0
+malignant glioma <> protoporphyrin,0,1,1,1,1,1,0,0,1,0
+malignant glioma <> sirolimus,1,2,4,5,6,9,1,2,6,0
+malignant glioma <> sn-38,1,1,1,4,2,2,0,1,1,0
+malignant glioma <> sorafenib,0,1,1,2,1,1,0,0,1,0
+malignant glioma <> steroid,0,1,1,0,1,1,0,0,1,0
+malignant glioma <> sunitinib,1,1,1,0,1,1,0,0,0,0
+malignant glioma <> tamoxifen,1,2,1,4,2,3,0,0,0,0
+malignant glioma <> tem,0,0,0,1,1,1,0,0,0,0
+malignant glioma <> temsirolimus,0,1,0,2,1,1,0,1,1,0
+malignant glioma <> topoisomerase i inhibitor,1,1,2,4,1,2,0,2,1,0
+malignant glioma <> topotecan,0,1,1,4,2,2,0,1,1,0
+malignant glioma <> valproate,1,3,7,5,5,7,0,3,5,0
+malignant glioma <> valproic acid,1,3,5,5,4,6,0,3,4,0
+malignant glioma <> vandetanib,1,2,2,3,2,3,1,1,2,0
+malignant glioma <> vincristine,0,1,0,2,2,2,0,1,1,0
+malignant glioma <> zd 6474,1,2,2,3,2,3,1,1,2,0
+menopausal depression <> estradiol,1,1,1,2,1,1,1,1,1,0
+metabolic epilepsy <> triheptanoin,0,0,0,2,1,1,0,0,1,0
+methamphetamine dependence <> buprenorphine,0,1,1,1,1,1,0,0,1,0
+methamphetamine dependence <> methylphenidate,0,1,0,0,2,3,0,1,2,0
+methamphetamine dependence <> ondansetron,0,0,0,0,1,1,1,0,0,0
+mild traumatic brain injury <> acetylcysteine,0,1,1,3,1,1,0,0,1,0
+mild traumatic brain injury <> lithium,0,1,1,3,1,1,0,1,1,0
+mild traumatic brain injury <> melatonin,0,1,1,3,1,1,1,1,1,0
+mild traumatic brain injury <> ondansetron,0,1,1,2,1,1,1,1,1,0
+motor neuron disorder <> riluzole,1,3,4,3,6,9,4,1,7,0
+motor neuron disorder <> tamoxifen,0,1,0,1,1,1,0,0,0,0
+mtbi <> acetylcysteine,0,2,2,2,1,1,0,1,1,0
+multiple sclerosis <> 123i-clinde,0,1,1,2,1,1,0,0,0,0
+multiple sclerosis <> 17-hydro-9-dehydro-andrographolide,1,1,2,4,1,1,0,0,1,0
+multiple sclerosis <> acetylcysteine,1,2,5,4,7,14,4,4,11,0
+"multiple sclerosis <> acid, uric",1,2,3,4,2,4,0,0,0,0
+"multiple sclerosis <> agent, immunosuppressive",1,0,0,2,1,1,0,0,0,0
+multiple sclerosis <> amiloride,1,1,2,4,2,3,1,1,3,0
+multiple sclerosis <> antibody,0,1,1,2,1,1,1,0,0,0
+multiple sclerosis <> atorvastatin,1,2,6,4,2,6,2,0,5,0
+multiple sclerosis <> beta 1 interferon,0,2,0,2,1,1,0,0,0,0
+multiple sclerosis <> caffeine,1,2,2,4,2,2,1,2,2,0
+"multiple sclerosis <> carbonate, lithium",0,1,1,0,1,1,0,0,0,0
+multiple sclerosis <> clemastine,0,2,2,4,3,3,1,0,3,0
+multiple sclerosis <> clemastine fumarate,0,1,0,3,1,1,1,0,1,0
+"multiple sclerosis <> colony-stimulating factor, granulocyte-macrophage",1,1,2,4,4,4,0,1,3,0
+multiple sclerosis <> dexamethasone,1,3,11,5,11,23,5,2,13,0
+multiple sclerosis <> dexrazoxane,1,1,1,4,1,1,1,0,1,0
+multiple sclerosis <> endogenous antioxidants,1,0,0,1,1,1,0,0,0,0
+multiple sclerosis <> epon,1,1,2,5,2,2,1,0,2,0
+multiple sclerosis <> epoxy resins,1,1,2,5,2,2,1,0,2,0
+multiple sclerosis <> estradiol,1,2,11,5,5,12,1,1,7,0
+multiple sclerosis <> estrogens,1,2,14,5,6,26,5,2,17,0
+multiple sclerosis <> filgrastim,1,1,2,4,1,1,0,0,0,0
+multiple sclerosis <> fluoxetine,1,2,1,4,2,2,1,2,1,0
+multiple sclerosis <> idebenone,1,1,1,4,1,1,1,0,1,0
+multiple sclerosis <> immunoglobulins,0,1,1,0,1,1,0,0,0,0
+multiple sclerosis <> immunomodulator,1,1,1,3,2,2,0,0,1,0
+multiple sclerosis <> insulin-like growth factor i,0,1,0,1,1,1,0,0,0,0
+multiple sclerosis <> interferon alfa,1,1,5,4,1,3,0,0,1,0
+multiple sclerosis <> interferon type i,1,2,5,3,2,3,0,0,0,0
+multiple sclerosis <> lamotrigine,0,1,2,3,1,2,1,1,1,0
+multiple sclerosis <> linoleate,0,0,0,3,1,1,0,0,1,0
+multiple sclerosis <> linoleic acid,0,0,0,3,1,1,0,0,1,0
+multiple sclerosis <> lithium,1,1,3,4,2,2,0,0,1,0
+"multiple sclerosis <> lymphocyte immune globulin, anti thymocyte globulin",0,1,2,3,1,1,0,0,1,0
+multiple sclerosis <> melatonin,1,3,2,4,7,12,4,7,9,0
+multiple sclerosis <> minocycline,1,2,13,5,10,26,12,7,18,0
+multiple sclerosis <> monoclonal antibody,1,2,15,5,7,19,11,2,14,0
+multiple sclerosis <> olesoxime,0,2,1,3,1,1,0,1,1,0
+multiple sclerosis <> omega-6 fatty acids,0,2,2,3,3,3,0,0,0,0
+multiple sclerosis <> oxcarbazepine,1,1,5,5,1,2,2,2,2,0
+multiple sclerosis <> phenytoin,0,1,3,4,2,4,2,3,3,0
+multiple sclerosis <> pioglitazone,1,2,4,5,6,9,1,0,4,0
+multiple sclerosis <> polyunsaturated fatty acids,0,0,0,2,1,1,0,0,0,0
+multiple sclerosis <> prednisolone,1,1,3,4,2,3,2,0,2,0
+multiple sclerosis <> quetiapine,1,1,1,4,1,1,0,0,1,0
+multiple sclerosis <> riluzole,1,1,3,3,1,1,1,0,1,0
+multiple sclerosis <> rolipram,1,3,6,4,6,10,4,0,6,0
+multiple sclerosis <> rtl-1000,1,1,1,4,1,1,1,1,1,0
+multiple sclerosis <> sildenafil,1,1,1,2,1,1,1,1,1,0
+multiple sclerosis <> sphingosine,0,0,0,1,1,1,0,0,0,0
+myocardial depression <> pimagedine,0,2,2,2,2,2,0,0,1,0
+neuralgia <> (+-)-milnacipran,1,2,5,4,7,16,7,3,15,0
+neuralgia <> acetylcarnitine,0,2,3,4,2,6,5,2,6,0
+neuralgia <> adenosine,0,1,1,2,3,6,1,2,6,0
+neuralgia <> ara290,1,2,2,4,2,5,1,3,4,0
+neuralgia <> atenolol,0,1,1,0,1,1,0,0,1,0
+neuralgia <> av-411,0,1,3,3,1,1,1,0,0,0
+neuralgia <> benphothiamine,1,2,1,3,2,2,0,0,1,0
+neuralgia <> bicifadine,0,2,4,4,1,1,1,1,1,0
+"neuralgia <> blue, methylene",0,1,1,1,2,2,0,1,1,0
+neuralgia <> cisplatin,1,3,5,4,4,5,1,1,5,0
+neuralgia <> clobazam,1,1,2,2,1,2,1,0,0,0
+neuralgia <> cycloserine,0,1,1,1,1,1,1,0,1,0
+neuralgia <> d-methadone,0,1,1,2,1,1,0,0,1,0
+neuralgia <> dextromethorphan,0,2,4,5,10,15,4,4,13,0
+neuralgia <> ethosuximide,1,2,2,2,6,7,2,1,6,0
+neuralgia <> gabaa agonists,0,1,1,1,1,1,0,0,1,0
+neuralgia <> gamma-aminobutyrate,1,3,7,5,13,19,5,3,15,0
+"neuralgia <> hydrochloride, venlafaxine",0,1,1,1,1,1,1,1,1,0
+neuralgia <> ibuprofen,0,2,4,4,5,9,6,3,8,0
+neuralgia <> krn 5500,0,1,1,0,1,2,1,0,2,0
+neuralgia <> menthol,0,2,3,4,4,4,2,1,4,0
+neuralgia <> midazolam,0,2,3,3,6,8,3,2,7,0
+neuralgia <> nerve growth factor,1,2,6,4,12,21,10,11,17,0
+neuralgia <> nmda receptor antagonist,1,3,8,4,6,9,1,0,9,0
+neuralgia <> no donor,0,2,5,2,2,4,2,0,4,0
+neuralgia <> norketamine,1,1,4,3,2,3,1,2,3,0
+neuralgia <> ns1209,0,2,1,3,1,2,1,0,2,0
+"neuralgia <> oxide, nitric",1,2,4,4,5,6,1,2,6,0
+"neuralgia <> oxide, nitrous",0,1,1,1,1,2,0,2,2,0
+neuralgia <> oxytocin,0,1,1,2,2,2,1,0,1,0
+neuralgia <> paclitaxel,1,2,5,5,8,21,12,7,18,0
+neuralgia <> parecoxib,1,1,2,2,2,2,1,1,2,0
+neuralgia <> quinidine,0,1,1,2,2,2,0,0,2,0
+neuralgia <> rufinamide,0,1,1,1,1,1,1,0,1,0
+neuralgia <> sulfasalazine,0,2,4,3,2,2,1,1,1,0
+"neuralgia <> sulfate, morphine",0,1,1,0,1,1,0,0,1,0
+neuralgia <> terbutaline,0,1,1,3,1,1,0,0,1,0
+neuralgia <> tetrodotoxin,1,2,5,4,9,17,9,3,15,0
+neuralgia <> tricyclic antidepressants,0,1,1,2,2,2,0,0,1,0
+neuralgia <> valproate,1,2,4,4,5,9,6,4,7,0
+neuralgia <> valproic acid,1,2,3,4,4,7,5,4,5,0
+neuralgia <> vincristine,0,2,4,3,4,4,1,1,4,0
+neuralgia <> vitamin d,1,1,3,2,3,3,1,0,2,0
+neuralgia <> xp 13512,1,2,1,2,1,1,0,0,1,0
+neuralgia <> β-mimetics,0,1,1,3,1,1,0,0,1,0
+"neuropathy, painful <> acetylcarnitine",0,1,2,2,2,2,1,1,1,0
+"neuropathy, painful <> duloxetine",1,1,1,4,5,7,3,1,7,0
+nicotine dependence <> lorcaserin,1,2,3,2,2,4,0,1,4,0
+nicotine dependence <> ondansetron,0,1,1,1,1,1,1,0,0,0
+non-arteritic anterior ischemic optic neuropathy <> methylprednisolone,0,2,1,3,1,2,1,0,2,0
+non-arteritic anterior ischemic optic neuropathy <> steroid,0,1,1,3,1,1,1,0,1,0
+nonconvulsive seizures <> fosphenytoin,0,1,1,3,1,1,1,0,1,0
+nonconvulsive seizures <> phenytoin,0,1,1,3,1,1,1,0,1,0
+obsolete absence epilepsy <> levetiracetam,1,2,3,3,1,3,0,3,1,0
+obsolete absence epilepsy <> topiramate,1,2,4,2,1,1,0,0,1,0
+"obsolete epilepsy, absence <> antiepileptic",1,2,2,2,1,1,0,0,0,0
+"obsolete epilepsy, absence <> topiramate",1,2,3,3,1,2,0,0,0,0
+obsolete susceptibility to ischemic stroke <> 3k3a-apc protein,1,3,5,5,1,9,4,7,8,0
+obsolete susceptibility to ischemic stroke <> acetaminophen,0,1,1,3,1,1,0,1,1,0
+obsolete susceptibility to ischemic stroke <> albumin,0,1,2,5,3,6,3,5,6,0
+"obsolete susceptibility to ischemic stroke <> alfa, epoetin",1,1,1,3,1,1,1,1,0,0
+obsolete susceptibility to ischemic stroke <> bu-yang-huan-wu-tang,0,1,1,5,1,1,1,1,1,0
+obsolete susceptibility to ischemic stroke <> c1 esterase inhibitor,1,1,1,3,1,1,1,1,1,0
+obsolete susceptibility to ischemic stroke <> carbamylated erythropoietin,0,1,1,1,1,1,1,1,1,0
+obsolete susceptibility to ischemic stroke <> citalopram,0,2,2,4,2,2,2,2,2,0
+obsolete susceptibility to ischemic stroke <> deferoxamine,0,2,0,1,1,1,0,0,0,0
+obsolete susceptibility to ischemic stroke <> dextromethorphan,0,1,0,1,1,1,1,0,1,0
+obsolete susceptibility to ischemic stroke <> drotrecogin-alfa,1,3,7,5,6,16,7,10,15,0
+obsolete susceptibility to ischemic stroke <> erythropoietin,1,3,4,5,8,13,9,10,11,0
+obsolete susceptibility to ischemic stroke <> ethanol,1,3,0,2,1,1,0,0,0,0
+"obsolete susceptibility to ischemic stroke <> factor, brain-derived neurotrophic",0,1,1,5,2,3,2,3,3,0
+obsolete susceptibility to ischemic stroke <> filgrastim,1,1,2,3,1,1,1,1,1,0
+obsolete susceptibility to ischemic stroke <> fingolimod,1,1,3,4,5,6,5,6,6,0
+obsolete susceptibility to ischemic stroke <> fty-720,0,1,1,4,1,1,1,1,1,0
+"obsolete susceptibility to ischemic stroke <> fumarate, dimethyl",0,2,5,5,5,6,3,4,6,0
+obsolete susceptibility to ischemic stroke <> granulocyte colony stimulating factor,1,2,2,5,3,4,1,1,4,0
+obsolete susceptibility to ischemic stroke <> human serum albumin,0,1,1,2,1,1,0,1,1,0
+obsolete susceptibility to ischemic stroke <> ils-920,0,0,0,2,1,1,0,0,0,0
+obsolete susceptibility to ischemic stroke <> inosine,0,1,2,4,1,1,0,0,0,0
+obsolete susceptibility to ischemic stroke <> iv tpa,0,1,1,3,1,1,1,0,1,0
+obsolete susceptibility to ischemic stroke <> lovastatin,1,1,1,2,1,1,0,0,1,0
+obsolete susceptibility to ischemic stroke <> low molecular weight heparin,1,2,1,4,1,2,1,0,2,0
+obsolete susceptibility to ischemic stroke <> mci 186,0,1,1,4,1,2,2,1,2,0
+obsolete susceptibility to ischemic stroke <> nitrite,0,1,1,3,1,2,2,2,2,0
+obsolete susceptibility to ischemic stroke <> nitroglycerin,0,3,1,3,2,5,3,1,3,0
+obsolete susceptibility to ischemic stroke <> norepinephrine,0,0,1,3,1,1,0,0,1,0
+obsolete susceptibility to ischemic stroke <> ocriplasmin,0,2,3,4,1,2,2,1,1,0
+"obsolete susceptibility to ischemic stroke <> oxide, nitric",1,3,4,4,4,4,2,2,2,0
+obsolete susceptibility to ischemic stroke <> phenylephrine,0,2,1,4,1,2,1,0,2,0
+obsolete susceptibility to ischemic stroke <> plasmin,0,2,3,4,1,2,2,1,1,0
+obsolete susceptibility to ischemic stroke <> protein c,1,3,7,5,6,16,7,10,15,0
+obsolete susceptibility to ischemic stroke <> reteplase,0,2,1,4,2,3,1,2,3,0
+obsolete susceptibility to ischemic stroke <> selective serotonin reuptake inhibitor,0,1,1,3,1,1,1,0,1,0
+obsolete susceptibility to ischemic stroke <> sp-8203,0,1,2,4,1,2,0,1,2,0
+obsolete susceptibility to ischemic stroke <> streptokinase,1,1,1,2,1,2,1,0,1,0
+obsolete susceptibility to ischemic stroke <> thrombolytic therapy,1,1,1,2,1,1,0,0,0,0
+obsolete susceptibility to ischemic stroke <> tocotrienols,0,1,2,2,1,1,0,1,1,0
+obsolete susceptibility to ischemic stroke <> verapamil,0,2,3,3,2,3,0,1,3,0
+obsolete susceptibility to ischemic stroke <> vitamin e,0,1,2,2,1,1,0,1,1,0
+oligodendroglioma <> carboplatin,0,1,0,1,1,1,0,1,1,0
+oligodendroglioma <> carmustine,1,2,2,3,2,2,0,1,1,0
+opiate dependence <> 5-ht3 receptor antagonist,0,2,2,5,3,4,1,1,3,0
+opiate dependence <> 6 beta-hydroxynaltrexone,0,1,1,0,1,1,0,1,1,0
+opiate dependence <> benzodiazepine,0,3,1,1,3,5,0,0,1,0
+opiate dependence <> calcium channel blocker,0,1,1,1,1,2,0,2,1,0
+opiate dependence <> citalopram,1,1,1,0,1,1,0,0,0,0
+opiate dependence <> cocaine,0,1,2,0,1,1,0,0,0,0
+opiate dependence <> dextromethorphan,1,3,5,4,4,9,1,1,6,0
+opiate dependence <> hydrocortisone,0,1,1,1,1,1,0,0,0,0
+opiate dependence <> ibudilast,0,1,1,2,1,1,1,1,1,0
+opiate dependence <> isradipine,0,1,0,0,1,1,0,0,0,0
+opiate dependence <> melatonin,0,1,1,2,1,1,0,0,1,0
+opiate dependence <> minocycline,0,2,4,3,3,4,2,2,4,0
+opiate dependence <> mirtazapine,0,1,1,3,3,3,0,2,3,0
+opiate dependence <> nmda antagonist,0,1,1,1,1,2,0,1,1,0
+opiate dependence <> nmda receptor antagonist,0,2,4,3,4,6,1,1,3,0
+opiate dependence <> ondansetron,0,2,6,5,3,5,2,2,4,0
+opiate dependence <> propranolol,0,4,3,2,3,4,2,0,1,0
+opiate dependence <> substance p,0,1,1,0,1,1,0,0,0,0
+opiate dependence <> yohimbine,0,2,3,1,2,3,1,1,0,0
+optic nerve glioma <> carboplatin,0,1,1,2,1,1,0,0,1,0
+optic nerve glioma <> temozolomide,0,1,1,4,1,1,0,1,0,0
+optic pathway glioma <> carboplatin,0,1,1,2,1,1,0,0,1,0
+optic pathway glioma <> temozolomide,0,1,1,4,1,1,0,1,0,0
+paclitaxel-induced neuropathy <> paclitaxel,1,2,3,2,2,4,1,1,3,0
+painful diabetic neuropathy <> amitriptyline,0,2,4,2,3,3,1,1,3,0
+parkinson disease <> 123i-ibzm,0,1,0,2,1,1,0,0,1,0
+parkinson disease <> 3-methoxydopa,0,2,2,3,4,7,0,0,3,0
+"parkinson disease <> 6-fluoro-2-(4-(pyridin-2-yl)but-3-yn-1-yl)imidazo(1,2-a)pyridine",0,1,0,0,1,1,1,0,1,0
+parkinson disease <> acetaminophen,0,2,2,3,4,4,0,0,1,0
+parkinson disease <> acetylcholine,0,1,1,0,1,1,0,0,0,0
+parkinson disease <> acetylcysteine,1,3,12,5,16,67,13,14,34,0
+parkinson disease <> afq056,1,1,0,1,1,1,0,0,1,0
+parkinson disease <> alpha-amino-3-hydroxy-5-methyl-4-isoxazolepropionic acid receptor antagonist,0,2,2,4,4,7,2,1,3,0
+parkinson disease <> alpha-keto carboxylic acid,0,1,1,2,1,1,0,0,0,0
+parkinson disease <> anticholinergic,1,1,1,2,3,3,0,1,2,0
+parkinson disease <> aplindore,0,1,0,2,1,1,0,0,0,0
+parkinson disease <> arundic acid,0,1,1,2,1,2,1,0,0,0
+"parkinson disease <> b12, vitamin",0,0,0,1,1,1,0,0,1,0
+parkinson disease <> bia 3-202,0,1,1,3,1,1,0,0,1,0
+parkinson disease <> capsaicin,1,2,2,4,3,3,0,0,3,0
+parkinson disease <> cd ld,0,1,1,0,1,1,0,1,0,0
+parkinson disease <> cep-1347,1,2,3,4,2,3,1,0,2,0
+parkinson disease <> clonidine,0,2,6,4,7,13,3,2,7,0
+parkinson disease <> cocaine,1,3,8,2,5,9,1,4,6,0
+"parkinson disease <> colony-stimulating factor, granulocyte-macrophage",0,2,1,2,4,8,3,1,6,0
+"parkinson disease <> cp 101,606",1,1,0,1,1,1,1,0,0,0
+parkinson disease <> creatine,1,2,2,2,2,2,0,1,2,0
+parkinson disease <> dextromethorphan,1,2,6,5,2,8,3,3,6,0
+parkinson disease <> dopamine d2 receptor antagonist,0,2,1,1,2,3,0,0,2,0
+parkinson disease <> dopamine receptor antagonist,0,1,1,1,1,1,0,0,0,0
+parkinson disease <> eliprodil,0,1,0,2,1,1,0,0,1,0
+parkinson disease <> endogenous antioxidants,1,2,3,4,7,14,3,2,4,0
+"parkinson disease <> erythropoietin (human, recombinant)",1,1,1,2,1,1,1,0,1,0
+parkinson disease <> exenatide,0,2,4,5,7,20,6,11,16,0
+"parkinson disease <> factor, brain-derived neurotrophic",1,2,3,2,3,7,2,1,2,0
+"parkinson disease <> fatty acids, omega-3",1,3,2,3,5,6,2,2,5,0
+parkinson disease <> fipamezole,1,1,0,0,1,1,0,0,1,0
+parkinson disease <> folate,0,2,2,3,3,3,0,0,1,0
+parkinson disease <> folic acid,1,1,1,2,2,4,1,1,2,0
+parkinson disease <> ganglioside m1b,1,4,6,4,6,13,4,6,10,0
+parkinson disease <> glial cell-line derived neurotrophic factor,1,4,19,5,20,91,29,26,56,0
+parkinson disease <> glutathione,1,4,7,5,13,34,6,5,14,0
+parkinson disease <> glycerin,0,1,0,2,2,2,0,0,1,0
+parkinson disease <> gm1-ganglioside,1,4,6,4,6,19,6,6,16,0
+parkinson disease <> granulocyte colony stimulating factor,0,2,3,3,4,5,3,0,3,0
+parkinson disease <> histamine,0,1,1,1,1,1,0,0,1,0
+parkinson disease <> histamine antagonists,0,3,2,4,3,3,0,0,3,0
+parkinson disease <> hydroxymethylglutaryl coa reductase inhibitors,1,2,5,3,8,10,2,2,6,0
+parkinson disease <> iodide ion i-123,0,1,0,2,1,1,0,0,1,0
+parkinson disease <> iodine radioisotopes,0,1,0,2,1,1,0,0,1,0
+parkinson disease <> iron,1,2,4,5,7,12,0,4,8,0
+parkinson disease <> keto acids,0,1,1,2,1,1,0,0,0,0
+parkinson disease <> l-glutathione reduced,0,1,1,3,4,4,1,2,1,0
+parkinson disease <> leucine rich repeat serine threonine protein kinase 2,0,1,0,1,0,1,0,0,0,0
+parkinson disease <> lrrk2 inhibitors,1,2,4,4,6,10,5,2,8,0
+parkinson disease <> muscimol,0,2,2,4,3,6,3,1,6,0
+parkinson disease <> n 0923,1,1,0,0,1,1,0,0,0,0
+parkinson disease <> nebicapone,0,1,1,3,1,1,0,0,1,0
+parkinson disease <> nerve growth factor,1,2,2,4,4,6,1,3,2,0
+parkinson disease <> nilotinib,1,1,3,4,3,6,1,1,4,0
+parkinson disease <> nmda antagonist,0,2,2,2,3,3,0,1,1,0
+parkinson disease <> nmda receptor antagonist,1,3,2,3,4,5,2,0,2,0
+parkinson disease <> norepinephrine,0,1,1,1,3,3,1,0,3,0
+parkinson disease <> nortropanes,1,2,1,4,3,3,1,0,3,0
+parkinson disease <> oxazepines,0,1,0,2,1,1,0,0,1,0
+parkinson disease <> pergolide,1,3,6,3,8,12,0,1,3,0
+parkinson disease <> phenylbutyrate,0,1,2,3,2,4,1,0,4,0
+parkinson disease <> pioglitazone,0,3,2,4,5,7,2,4,7,0
+parkinson disease <> pyrimethamine,0,1,1,2,1,1,1,0,1,0
+parkinson disease <> quinidine,0,2,1,3,1,1,0,0,0,0
+parkinson disease <> rhepo,1,1,1,2,1,1,1,0,1,0
+parkinson disease <> rifampin,0,2,1,3,3,4,0,1,0,0
+parkinson disease <> riluzole,1,3,2,4,3,7,2,0,1,0
+parkinson disease <> sargramostim,0,0,0,1,1,1,1,1,0,0
+parkinson disease <> sch 420814,0,1,0,0,1,2,0,0,0,0
+parkinson disease <> tacrolimus,1,3,5,3,3,4,0,1,1,0
+parkinson disease <> thalidomide,0,1,1,2,1,1,0,1,1,0
+parkinson disease <> topiramate,0,3,2,2,2,2,1,1,2,0
+parkinson disease <> tyrosine,0,1,5,2,2,2,1,0,1,0
+parkinson disease <> ubiquinol,0,1,1,2,1,1,0,0,1,0
+parkinson disease <> vitamin d3,0,2,2,4,3,3,0,2,2,0
+parkinsonian disorder <> (-)-pramipexole,1,2,3,3,4,4,0,1,3,0
+parkinsonian disorder <> adenosine a2a receptor antagonists,0,1,1,1,1,1,0,0,0,0
+parkinsonian disorder <> alpha-amino-3-hydroxy-5-methyl-4-isoxazolepropionic acid receptor antagonist,0,2,1,1,1,1,1,0,0,0
+parkinsonian disorder <> apomorphine,1,3,2,3,6,8,1,1,3,0
+parkinsonian disorder <> bromocriptine,0,1,2,1,2,4,0,1,1,0
+parkinsonian disorder <> cabergoline,0,2,1,2,2,2,1,0,0,0
+parkinsonian disorder <> dopamine agonist,0,2,2,3,3,4,0,1,1,0
+parkinsonian disorder <> lisuride,0,1,0,0,1,1,1,0,0,0
+parkinsonian disorder <> melatonin,0,1,2,2,2,2,0,0,1,0
+parkinsonian disorder <> nicotine,0,3,5,3,3,4,0,0,1,0
+pediatric meningioma <> everolimus,0,0,0,1,1,1,0,0,0,0
+pediatric meningioma <> hydroxyurea,0,1,1,2,1,3,0,0,1,0
+pediatric meningioma <> temozolomide,1,1,1,4,1,2,0,0,2,0
+pediatric meningioma <> verapamil,0,1,2,2,2,3,1,0,2,0
+peripheral neuropathy <> amitriptyline,0,1,1,3,1,1,1,1,1,0
+peripheral neuropathy <> capsaicin,0,2,2,2,3,3,2,3,3,0
+peripheral neuropathy <> clonidine,0,1,1,3,1,2,0,0,2,0
+peripheral neuropathy <> doxycycline,0,2,3,5,2,3,0,1,3,0
+"peripheral neuropathy <> fatty acids, omega-3",0,1,1,2,2,2,0,1,1,0
+peripheral neuropathy <> methadone,0,1,1,2,1,1,1,0,1,0
+peripheral neuropathy <> minocycline,0,2,4,3,4,5,3,2,5,0
+peripheral neuropathy <> vascular endothelial growth factor a,0,2,3,4,1,1,0,0,1,0
+peripheral neuropathy <> vincristine,0,1,1,2,1,1,0,1,1,0
+peripheral neuropathy <> vitamin e,0,1,2,3,4,4,0,1,4,0
+polyneuropathy <> vitamin e,0,1,1,1,1,1,1,1,1,0
+post-stroke <> levetiracetam,0,1,0,2,1,1,1,1,1,0
+post-traumatic epilepsy <> acetaminophen,0,1,1,2,1,1,0,0,1,0
+"post-traumatic epilepsy <> fatty acids, omega-3",1,1,2,3,1,1,0,0,1,0
+post-traumatic epilepsy <> ibuprofen,0,1,1,2,1,1,0,0,1,0
+post-traumatic epilepsy <> melatonin,1,2,3,3,3,3,1,2,3,0
+postherpetic neuralgia <> amitriptyline,0,1,1,3,1,1,1,1,1,0
+postherpetic neuralgia <> lamotrigine,0,1,1,1,1,1,0,0,1,0
+postherpetic neuralgia <> valacyclovir,0,1,2,3,1,1,0,0,1,0
+primary progressive multiple sclerosis <> methylprednisolone,0,0,0,2,1,1,0,0,1,0
+prion disease <> doxycycline,0,1,1,4,2,3,0,1,1,0
+prion disease <> quinacrine,1,1,4,4,3,4,0,0,2,0
+psychostimulant addiction <> cocaine,0,1,0,1,1,1,0,0,0,0
+recurrent glioblastoma multiforme <> bevacizumab,0,1,0,4,1,1,0,0,1,0
+recurrent glioblastoma multiforme <> temozolomide,0,1,0,4,1,1,0,0,1,0
+recurrent glioma <> bevacizumab,0,1,0,4,1,1,0,0,1,0
+recurrent glioma <> temozolomide,1,1,1,4,2,2,0,1,2,0
+refractory depression <> lithium,0,1,1,0,1,1,0,0,0,0
+refractory epilepsy <> aed,1,1,1,2,1,1,0,0,1,0
+refractory epilepsy <> aeds,1,1,2,2,1,2,1,0,1,0
+refractory epilepsy <> verapamil,0,1,0,1,1,1,0,0,0,0
+relapsing-remitting multiple sclerosis <> beta 1 interferon,0,2,0,2,1,1,0,0,0,0
+relapsing-remitting multiple sclerosis <> minocycline,1,1,1,4,1,1,0,0,1,0
+relapsing-remitting multiple sclerosis <> monoclonal antibody,0,1,1,4,1,1,0,0,1,0
+respiratory depression <> midazolam,0,1,1,1,1,1,0,0,1,0
+schizophrenia <> (-)-pramipexole,0,1,1,2,2,2,0,0,0,0
+"schizophrenia <> 2 inhibitor, cyclooxygenase",0,1,1,3,1,1,0,0,1,0
+"schizophrenia <> 3-(2,4-dimethoxybenzylidene)anabaseine",0,3,3,3,1,6,0,1,3,0
+schizophrenia <> ampakines,0,2,2,2,2,3,0,0,0,0
+schizophrenia <> amphetamine,1,5,30,5,16,70,16,29,51,0
+schizophrenia <> arginine,0,1,2,2,2,2,0,2,1,0
+schizophrenia <> avl-3288,0,1,2,3,2,3,3,1,3,0
+schizophrenia <> bf2.649,0,1,2,2,1,1,0,0,1,0
+schizophrenia <> butyrophenone,0,2,1,3,2,4,0,0,1,0
+schizophrenia <> caffeine,1,2,6,3,4,8,1,5,4,0
+schizophrenia <> cannabidiol,1,3,13,4,12,36,8,16,34,0
+schizophrenia <> cannabinoid,1,2,17,5,12,43,10,14,39,0
+schizophrenia <> cholecalciferol,1,1,1,2,1,1,0,1,1,0
+schizophrenia <> clonidine,1,1,6,4,4,12,3,4,8,0
+schizophrenia <> clz,1,2,7,4,7,10,3,5,9,0
+schizophrenia <> cysteamine,0,2,1,1,1,1,0,0,1,0
+schizophrenia <> d-amino acid oxidase inhibitor,0,2,3,3,1,2,0,0,2,0
+schizophrenia <> d1 agonist,0,1,1,1,1,1,0,0,1,0
+schizophrenia <> d2 antagonism,1,1,1,2,1,1,0,0,1,0
+schizophrenia <> daao inhibitor,0,1,1,2,1,1,0,0,1,0
+schizophrenia <> desipramine,0,2,3,4,5,7,0,2,3,0
+schizophrenia <> digoxin,0,0,0,1,1,2,0,1,0,0
+schizophrenia <> dronabinol,1,3,9,4,12,25,10,9,24,0
+schizophrenia <> endocannabinoids,0,2,3,4,2,3,0,0,3,0
+schizophrenia <> glutathione,0,1,1,2,1,1,0,1,1,0
+schizophrenia <> glycine transporter inhibitor,1,2,2,3,3,3,1,2,3,0
+schizophrenia <> glyt-1 inhibitor,0,2,1,2,2,2,1,1,2,0
+schizophrenia <> glyt1 inhibitor,1,3,11,3,3,5,0,2,5,0
+schizophrenia <> histamine,1,2,2,3,2,2,0,1,2,0
+schizophrenia <> homocysteine,0,1,0,1,1,1,0,0,0,0
+schizophrenia <> isradipine,1,0,0,3,1,1,0,0,0,0
+schizophrenia <> ketoconazole,0,1,1,2,1,1,0,0,0,0
+schizophrenia <> l-spd,0,1,1,3,1,2,0,0,2,0
+schizophrenia <> levetiracetam,0,2,2,1,1,2,0,0,2,0
+schizophrenia <> levodopa,0,1,1,1,1,1,0,1,1,0
+schizophrenia <> lysine,0,2,1,2,1,1,0,0,1,0
+schizophrenia <> mecamylamine,1,2,6,4,3,15,2,3,9,0
+schizophrenia <> methamphetamine,1,1,2,3,3,7,2,1,3,0
+schizophrenia <> mglu2/3 agonist,0,1,1,2,1,1,0,1,1,0
+schizophrenia <> midazolam,0,1,1,2,1,1,0,1,1,0
+schizophrenia <> mood stabilizers,0,2,2,2,2,2,0,2,2,0
+schizophrenia <> neuroleptic,1,2,3,5,6,12,2,2,7,0
+schizophrenia <> nicotinic acid,1,1,1,2,1,1,1,1,0,0
+schizophrenia <> nicotinic agonist,0,1,0,2,1,1,0,0,1,0
+schizophrenia <> nicotinic antagonist,1,2,1,3,1,2,0,0,0,0
+schizophrenia <> nitroprusside,1,2,6,3,6,12,2,9,10,0
+"schizophrenia <> nitroprusside, sodium",1,2,6,3,6,12,2,9,10,0
+schizophrenia <> norclozapine,0,1,1,2,1,1,0,1,1,0
+schizophrenia <> ola,1,1,2,2,2,4,0,1,4,0
+schizophrenia <> org 24448,0,1,1,1,1,1,0,0,0,0
+"schizophrenia <> oxide, nitric",1,1,2,1,2,2,0,1,1,0
+schizophrenia <> papaverine,0,2,7,4,2,3,1,1,1,0
+schizophrenia <> partial dopamine agonist,0,1,1,2,1,1,0,0,0,0
+schizophrenia <> pentazocine,1,2,2,1,2,4,0,0,2,0
+schizophrenia <> pergolide,0,1,1,4,2,3,1,0,1,0
+schizophrenia <> pf-04958242,0,2,0,1,1,1,1,1,1,0
+schizophrenia <> physostigmine,0,2,3,3,3,4,1,1,3,0
+schizophrenia <> pipamperone,0,2,1,2,2,3,0,0,0,0
+schizophrenia <> progesterone,0,1,0,0,1,1,0,0,0,0
+schizophrenia <> rimonabant,0,1,1,2,1,1,0,0,1,0
+schizophrenia <> rolipram,1,2,7,3,3,8,1,1,7,0
+schizophrenia <> rp5063,0,1,1,3,1,1,1,1,1,0
+schizophrenia <> secretin,0,1,1,0,1,1,0,0,0,0
+schizophrenia <> selegiline,0,1,1,2,1,1,1,1,1,0
+schizophrenia <> sertraline,0,1,2,3,2,2,1,1,1,0
+schizophrenia <> slv 313,0,1,1,2,1,4,1,0,3,0
+schizophrenia <> ssris,0,2,2,2,2,2,0,1,2,0
+schizophrenia <> sulforaphane,1,1,2,3,2,2,0,1,2,0
+schizophrenia <> tak-063,0,2,3,2,1,2,1,0,0,0
+schizophrenia <> tamoxifen,1,1,1,2,1,1,0,0,1,0
+schizophrenia <> tc 5619,1,2,4,1,1,1,1,0,1,0
+schizophrenia <> vasopressin (usp),1,1,1,3,1,1,1,1,1,0
+sciatic neuropathy <> gabapentin,0,1,1,1,1,1,0,1,0,0
+sciatic neuropathy <> infliximab,1,2,1,2,1,2,2,1,2,0
+sciatic neuropathy <> tumor necrosis factor alpha inhibitor,1,2,1,3,2,3,2,1,2,0
+secondary progressive multiple sclerosis <> mis416,1,1,2,4,1,1,0,1,1,0
+self-limited neonatal seizures <> phenobarbital,1,1,2,2,2,2,1,1,2,0
+sensory peripheral neuropathy <> cisplatin,0,1,3,4,2,4,2,1,1,0
+spinal cord injury <> anticholinergic agent,1,1,1,1,1,1,0,0,1,0
+spinal cord injury <> botulinum toxin,0,2,1,4,2,2,1,1,2,0
+spinal cord injury <> buspirone,0,1,1,2,1,2,0,0,2,0
+spinal cord injury <> caffeine,0,2,2,5,2,3,1,2,3,0
+spinal cord injury <> calcium,0,0,0,0,1,1,0,0,0,0
+spinal cord injury <> carbidopa,0,1,1,1,1,1,0,0,1,0
+spinal cord injury <> creatine,1,1,1,2,1,1,1,0,1,0
+spinal cord injury <> cyproheptadine,1,2,3,4,5,5,2,0,4,0
+spinal cord injury <> dextromethorphan,1,1,2,3,3,4,1,3,1,0
+spinal cord injury <> erythropoietin,1,2,2,5,6,12,9,4,12,0
+"spinal cord injury <> factor, hepatocyte growth",1,2,1,4,2,2,1,0,2,0
+spinal cord injury <> ibuprofen,1,2,2,3,1,4,3,1,1,0
+spinal cord injury <> incobotulinumtoxina,1,2,4,4,3,5,4,2,5,0
+spinal cord injury <> levocarnitine,1,1,1,2,1,1,1,0,1,0
+spinal cord injury <> levodopa,1,2,2,3,3,5,0,1,4,0
+spinal cord injury <> lithium,1,1,1,2,1,2,0,2,2,0
+spinal cord injury <> memantine,0,2,3,3,2,2,2,1,2,0
+spinal cord injury <> minocycline,1,2,6,5,8,19,10,5,15,0
+spinal cord injury <> mirabegron,1,1,1,1,1,1,0,0,1,0
+spinal cord injury <> morphine,1,1,1,4,3,11,5,2,10,0
+spinal cord injury <> nifedipine,0,1,1,2,1,1,0,0,0,0
+spinal cord injury <> prednisolone,1,2,1,3,1,2,1,1,2,0
+spinal cord injury <> riluzole,1,4,5,5,8,18,8,9,15,0
+spinal cord injury <> serotonin,1,2,2,4,6,11,5,4,9,0
+spinal cord injury <> steroid,1,3,3,4,5,5,1,2,3,0
+spinal cord injury <> substance with receptor agonist mechanism of action (substance),1,2,2,4,2,2,1,1,2,0
+spinal cord injury <> vitamin e,0,1,3,3,4,7,1,1,3,0
+"stroke disorder <> (1,10-phenanthroline)(9,10-phenanthrenequinonediimine)rhodamine(iii)",0,1,1,2,1,1,0,0,0,0
+stroke disorder <> abciximab,0,1,1,4,1,1,0,1,1,0
+stroke disorder <> acadesine,0,2,2,4,1,1,0,0,1,0
+stroke disorder <> acetazolamide,1,0,0,1,1,1,0,0,0,0
+"stroke disorder <> acid, glycyrrhizic",0,1,1,3,1,1,0,1,0,0
+"stroke disorder <> agents, iron chelating",0,2,2,4,2,3,1,1,1,0
+stroke disorder <> albumin,0,1,1,5,3,9,5,3,9,0
+stroke disorder <> aminoimidazole carboxamide,0,2,2,4,1,1,0,0,1,0
+"stroke disorder <> angiogenin, ribonuclease, rnase a family, 5, human",0,1,0,3,1,1,0,0,1,0
+stroke disorder <> arginine,1,2,4,4,6,8,4,4,7,0
+stroke disorder <> astaxanthin,0,2,2,2,1,1,0,0,1,0
+stroke disorder <> bu-yang-huan-wu-tang,0,1,1,5,1,1,1,1,1,0
+stroke disorder <> carbamazepine,1,1,2,4,2,3,0,0,2,0
+stroke disorder <> chorionic gonadotropin human,0,1,1,4,1,1,1,1,1,0
+"stroke disorder <> citrate, sildenafil",0,2,2,4,2,2,1,1,2,0
+stroke disorder <> citrulline,0,1,1,1,2,2,0,1,1,0
+stroke disorder <> cycloserine,1,1,1,3,1,1,0,1,1,0
+stroke disorder <> cyclosporine,0,3,7,4,6,15,2,5,11,0
+stroke disorder <> darbepoetin alfa,0,1,1,1,1,1,0,0,1,0
+stroke disorder <> deferoxamine,0,2,4,5,6,13,5,5,11,0
+stroke disorder <> dexmedetomidine,0,2,4,5,6,14,9,6,12,0
+stroke disorder <> drotrecogin-alfa,0,2,2,4,1,4,0,1,4,0
+"stroke disorder <> erythropoietin (human, recombinant)",0,2,3,1,1,1,0,0,1,0
+stroke disorder <> fingolimod,1,2,5,5,6,13,12,11,13,0
+stroke disorder <> fty-720,0,2,5,4,3,9,8,3,9,0
+stroke disorder <> granulocyte colony stimulating factor,1,2,4,5,4,12,8,7,8,0
+stroke disorder <> hetastarch,1,1,1,0,1,1,0,1,0,0
+stroke disorder <> human serum albumin,0,1,1,5,2,3,3,1,3,0
+stroke disorder <> hydralazine,1,1,5,4,3,9,1,3,7,0
+stroke disorder <> immunoglobulin fc fragments,0,1,0,2,1,1,1,0,1,0
+stroke disorder <> inosine,0,2,3,4,1,3,2,2,2,0
+stroke disorder <> iron,1,1,1,4,2,3,2,0,2,0
+stroke disorder <> labetalol,0,1,1,2,1,1,0,0,1,0
+stroke disorder <> levosimendan,1,1,0,1,1,1,1,1,1,0
+stroke disorder <> lisinopril,0,1,2,3,1,1,0,1,1,0
+stroke disorder <> lovastatin,0,1,2,4,2,3,0,1,0,0
+stroke disorder <> mannitol,0,1,2,3,3,6,0,3,4,0
+stroke disorder <> modafinil,0,2,1,4,1,2,1,1,2,0
+stroke disorder <> nicotine,1,2,4,5,4,6,1,3,5,0
+stroke disorder <> nitrate,0,1,2,3,1,1,0,0,1,0
+stroke disorder <> nitrendipine,0,3,1,1,1,1,0,0,1,0
+stroke disorder <> nitric oxide donor,0,1,1,3,1,1,1,1,1,0
+stroke disorder <> nitrite,0,1,1,3,1,2,2,2,2,0
+stroke disorder <> nitroglycerin,0,2,4,3,3,5,3,2,2,0
+stroke disorder <> nitroprusside,1,2,1,3,2,5,3,4,4,0
+"stroke disorder <> oxide, nitric",1,3,4,5,5,10,4,4,7,0
+stroke disorder <> phentolamine,1,1,1,2,1,1,1,0,1,0
+stroke disorder <> policosanol,0,0,0,2,1,1,0,0,1,0
+stroke disorder <> protein c,0,2,2,4,1,4,0,1,4,0
+stroke disorder <> quercetin,1,2,2,1,1,1,0,0,1,0
+stroke disorder <> resveratrol,1,4,12,5,16,46,18,22,38,0
+stroke disorder <> reteplase,0,3,2,5,4,5,1,1,2,0
+stroke disorder <> revacept,0,1,0,2,1,1,1,0,1,0
+stroke disorder <> selective serotonin reuptake inhibitor,0,2,4,4,4,6,3,3,6,0
+stroke disorder <> sildenafil,0,2,3,5,10,14,7,8,14,0
+stroke disorder <> ssris,0,1,1,4,2,2,2,2,2,0
+stroke disorder <> steroid,0,3,3,3,1,3,2,0,2,0
+stroke disorder <> streptokinase,1,1,2,3,1,4,1,1,1,0
+stroke disorder <> thrombolysis,0,2,3,4,3,3,2,3,3,0
+stroke disorder <> thrombolytic,1,4,10,5,7,20,8,10,12,0
+stroke disorder <> thrombolytic therapy,1,2,2,4,2,2,0,1,1,0
+stroke disorder <> thrombolytics,0,1,1,3,1,2,1,2,2,0
+stroke disorder <> tocotrienols,0,2,2,3,1,2,0,2,1,0
+stroke disorder <> ym 872,0,1,1,3,1,2,1,0,1,0
+subarachnoid hemorrhage <> alteplase,1,5,2,3,4,6,3,2,3,0
+"subarachnoid hemorrhage <> citrate, sildenafil",0,1,1,2,1,1,1,0,1,0
+subarachnoid hemorrhage <> deferoxamine,1,5,3,5,5,10,3,6,8,0
+subarachnoid hemorrhage <> dexmedetomidine,1,2,2,3,1,2,0,0,2,0
+subarachnoid hemorrhage <> epoprostenol,1,1,0,0,1,1,0,0,0,0
+subarachnoid hemorrhage <> erythropoietin,1,2,3,4,2,3,0,1,3,0
+"subarachnoid hemorrhage <> erythropoietin (human, recombinant)",1,1,2,3,1,2,0,1,2,0
+subarachnoid hemorrhage <> ibuprofen,0,0,0,0,1,1,0,0,0,0
+subarachnoid hemorrhage <> minocycline,0,3,4,4,2,6,4,4,6,0
+subarachnoid hemorrhage <> morphine,0,1,1,2,1,1,0,0,1,0
+subarachnoid hemorrhage <> nitrite,0,1,1,2,1,1,1,1,1,0
+"subarachnoid hemorrhage <> nitrite, sodium",0,1,0,2,1,1,1,1,1,0
+subarachnoid hemorrhage <> sildenafil,0,2,2,4,2,2,2,0,2,0
+"substance dependence <> 3,3'-di-(n-cyclopropylmethyl-4,5-epoxy-14-hydroxymorphinan-6-one-3-yl)carbonate",0,1,1,2,2,3,0,0,1,0
+substance dependence <> 5-ht3 receptor antagonist,0,1,1,1,1,1,0,0,0,0
+substance dependence <> acetylcysteine,0,2,4,3,2,4,3,1,4,0
+substance dependence <> atomoxetine,0,1,1,1,1,1,0,0,1,0
+substance dependence <> benzodiazepine,1,2,1,1,1,2,0,0,1,0
+substance dependence <> buspirone,0,1,1,2,1,1,0,1,1,0
+substance dependence <> cocaine,0,3,4,5,3,5,0,2,3,0
+substance dependence <> dopamine,0,1,1,1,1,1,0,0,1,0
+substance dependence <> ethanol,0,2,2,3,2,2,0,1,2,0
+substance dependence <> methylphenidate,0,1,1,1,1,1,0,0,1,0
+substance dependence <> morphine,1,4,8,5,8,18,2,5,14,0
+substance dependence <> nicotine,0,2,4,3,5,9,0,2,8,0
+substance dependence <> ondansetron,0,2,6,3,2,2,1,1,1,0
+substance dependence <> opioid receptor antagonists,0,1,1,2,1,1,0,0,0,0
+substance dependence <> propranolol,0,1,1,1,1,1,0,0,1,0
+substance dependence <> psilocybin,0,0,0,1,1,1,0,1,1,0
+substance dependence <> varenicline,1,2,4,1,2,4,0,2,3,0
+sympathetic paraganglioma <> dotatate,0,1,1,4,1,1,0,1,1,0
+sympathetic paraganglioma <> lutetium dotatate lu-177,0,1,1,4,1,1,0,1,1,0
+sympathetic paraganglioma <> somatostatin analog,0,0,0,1,1,1,0,0,0,0
+sympathetic paraganglioma <> temozolomide,1,1,0,3,1,1,0,0,0,0
+sympathetic paraganglioma <> vascular endothelial growth factor a,0,1,0,0,1,1,0,0,0,0
+tbi <> minocycline,1,1,0,3,1,1,1,0,1,0
+temporal lobe epilepsy <> selective serotonin reuptake inhibitor,0,1,1,2,1,1,0,1,1,0
+traumatic brain injury <> adrenal cortex hormone,0,2,3,3,2,3,0,2,2,0
+"traumatic brain injury <> alfa, epoetin",0,2,1,4,2,2,0,2,2,0
+traumatic brain injury <> argipressin,0,1,0,3,1,3,3,3,3,0
+traumatic brain injury <> atorvastatin,0,2,3,5,3,7,4,5,4,0
+traumatic brain injury <> carbamazepine,0,0,1,1,1,1,0,0,0,0
+traumatic brain injury <> chloral,0,1,1,0,1,1,1,1,0,0
+"traumatic brain injury <> citrate, sildenafil",1,1,1,1,1,1,0,1,1,0
+traumatic brain injury <> clonidine,0,1,1,2,1,1,1,1,1,0
+traumatic brain injury <> cycloserine,0,2,2,3,2,2,1,1,1,0
+traumatic brain injury <> cyclosporine,1,3,5,5,7,25,12,9,18,0
+traumatic brain injury <> escitalopram,1,1,1,1,1,1,1,1,1,0
+traumatic brain injury <> estrogens,1,1,2,4,2,2,1,1,1,0
+"traumatic brain injury <> estrogens, conjugated (usp)",0,1,1,3,1,1,1,1,1,0
+"traumatic brain injury <> fatty acids, omega-3",0,2,2,5,3,5,2,4,5,0
+traumatic brain injury <> glyburide,0,1,2,5,3,4,2,2,3,0
+"traumatic brain injury <> hydrate, chloral",0,1,1,0,1,1,1,1,0,0
+traumatic brain injury <> hypertonic saline solutions,0,2,2,5,3,5,3,3,5,0
+traumatic brain injury <> ibuprofen,0,2,2,5,1,4,1,2,4,0
+traumatic brain injury <> magnesium,1,1,2,5,3,7,1,5,4,0
+traumatic brain injury <> minocycline,1,2,9,5,9,30,13,15,28,0
+traumatic brain injury <> nerve growth factor,1,2,1,4,2,5,0,2,3,0
+traumatic brain injury <> neurosteroids,1,0,0,1,2,2,0,0,0,0
+traumatic brain injury <> nnz 2566,1,1,1,3,2,3,0,0,3,0
+traumatic brain injury <> pentobarbital,0,1,1,0,1,1,0,1,0,0
+traumatic brain injury <> phenylephrine,0,1,0,3,1,2,2,2,2,0
+"traumatic brain injury <> pregnanolone, (3beta, 5alpha)-isomer",1,1,3,4,2,8,0,5,5,0
+traumatic brain injury <> pregnenolone,0,1,1,1,1,1,0,0,1,0
+traumatic brain injury <> premarin,0,1,1,3,1,1,1,1,1,0
+traumatic brain injury <> sevoflurane,1,2,3,5,4,10,2,6,10,0
+traumatic brain injury <> sildenafil,1,1,2,4,2,2,0,1,2,0
+traumatic brain injury <> sodium,0,1,1,3,1,1,1,1,1,0
+traumatic brain injury <> valproate,1,3,4,5,5,33,12,21,30,0
+traumatic brain injury <> valproic acid,1,3,4,5,4,28,9,18,26,0
+traumatic brain injury <> vasopressin (usp),0,0,0,3,1,1,1,1,1,0
+trigeminal neuralgia <> incobotulinumtoxina,0,1,1,4,3,3,1,1,3,0
+trigeminal neuralgia <> l-baclofen,0,1,1,1,1,1,0,0,0,0
+trigeminal neuralgia <> lidocaine,0,1,2,5,3,5,0,0,5,0
+acquired aneurysmal subarachnoid hemorrhage <> ketamine,1,3,0,5,1,1,1,1,1,1
+acquired aneurysmal subarachnoid hemorrhage <> nimodipine,0,3,5,4,3,5,2,1,3,1
+acquired aneurysmal subarachnoid hemorrhage <> urokinase,0,1,1,1,1,1,1,1,1,1
+acquired peripheral neuropathy <> baclofen,1,1,2,3,5,6,1,2,5,1
+acquired peripheral neuropathy <> botulinum toxin type a,0,2,3,4,3,5,3,3,5,1
+acquired peripheral neuropathy <> capsaicin,1,2,2,5,2,3,2,0,3,1
+acquired peripheral neuropathy <> carbamazepine,1,1,1,1,2,3,0,0,1,1
+acquired peripheral neuropathy <> dexamethasone,0,1,3,3,2,3,2,1,3,1
+acquired peripheral neuropathy <> eslicarbazepine,0,1,2,3,1,3,3,0,3,1
+acquired peripheral neuropathy <> gabapentin,1,2,5,4,7,10,7,5,8,1
+acquired peripheral neuropathy <> lamotrigine,0,1,1,2,1,1,1,1,1,1
+acquired peripheral neuropathy <> lidocaine,0,1,2,4,2,3,0,0,3,1
+acquired peripheral neuropathy <> pregabalin,0,2,4,4,3,6,3,3,6,1
+acquired peripheral neuropathy <> sumatriptan,0,1,3,4,3,3,1,2,3,1
+acute embolic stroke <> alteplase,0,1,1,2,2,2,1,1,1,1
+acute seizures <> midazolam,0,1,1,0,1,1,0,0,1,1
+alzheimer disease <> (18)f-florzolotau,1,1,3,2,1,1,0,0,1,1
+alzheimer disease <> 2-(n-cyclohexylamino)ethanesulfonic acid,1,3,4,5,5,9,1,2,4,1
+alzheimer disease <> acetaminophen,0,1,0,3,1,1,0,0,1,1
+alzheimer disease <> acetylcarnitine,1,2,5,3,5,9,0,3,3,1
+alzheimer disease <> achei,0,6,2,4,4,8,0,2,6,1
+alzheimer disease <> achelase i,0,1,1,2,1,1,0,0,0,1
+"alzheimer disease <> acid, docosahexaenoic",1,2,9,5,4,17,3,4,11,1
+alzheimer disease <> adrenal cortex hormone,1,1,1,4,4,7,1,2,4,1
+alzheimer disease <> aducanumab,1,1,0,4,1,1,1,1,1,1
+alzheimer disease <> alpha tocopherol,0,3,5,2,4,4,0,0,1,1
+alzheimer disease <> anavex2-73,0,1,1,4,1,3,0,0,3,1
+alzheimer disease <> anti-dementia,1,2,0,2,1,1,1,1,1,1
+alzheimer disease <> atorvastatin,1,2,3,2,3,4,0,1,2,1
+alzheimer disease <> atropine,1,4,10,5,9,19,2,1,9,1
+alzheimer disease <> bapineuzumab,0,1,0,1,1,1,0,0,1,1
+alzheimer disease <> bupropion,0,1,0,0,1,1,0,0,0,1
+alzheimer disease <> bupropion hydrochloride,0,1,0,0,1,1,0,0,0,1
+alzheimer disease <> by ache,1,2,8,4,6,12,2,3,6,1
+alzheimer disease <> cannabinoid,1,2,5,5,9,18,3,2,10,1
+alzheimer disease <> carnecin,0,0,0,2,1,1,0,0,0,1
+alzheimer disease <> carvedilol,1,2,2,3,2,2,1,1,2,1
+alzheimer disease <> cholesterol,0,2,2,2,3,3,0,0,1,1
+alzheimer disease <> cholinesterase,0,2,1,2,2,2,0,0,0,1
+alzheimer disease <> cholinesterase inhibitor,1,4,5,4,9,21,1,7,4,1
+alzheimer disease <> copper sulfate anhydrous,0,1,1,3,1,1,0,1,1,1
+alzheimer disease <> cyclosporine,1,2,8,5,9,19,0,3,9,1
+alzheimer disease <> dextroamphetamine,0,1,0,1,1,1,0,1,1,1
+alzheimer disease <> dextromethorphan,0,2,7,4,3,5,0,2,4,1
+alzheimer disease <> docosahexaenoate,1,2,9,5,4,17,3,4,11,1
+alzheimer disease <> donepezil,0,1,1,1,2,2,0,1,0,1
+alzheimer disease <> donepezil hydrochloride,0,1,1,1,2,2,0,1,0,1
+alzheimer disease <> e 2020,1,3,7,4,6,12,0,2,7,1
+alzheimer disease <> eicosapentaenoate,0,2,5,3,6,12,2,6,7,1
+alzheimer disease <> eicosapentaenoic acid,0,2,5,3,6,12,2,6,7,1
+alzheimer disease <> ena 713,0,1,1,3,2,3,0,0,3,1
+alzheimer disease <> epigallocatechin gallate,1,2,10,5,5,8,4,1,7,1
+alzheimer disease <> estrogens,1,2,2,3,4,11,0,1,2,1
+alzheimer disease <> exelon,0,1,0,0,1,1,0,0,1,1
+"alzheimer disease <> fatty acids, omega-3",1,2,12,5,14,22,8,9,14,1
+alzheimer disease <> florbetaben,0,2,1,2,1,1,0,0,1,1
+alzheimer disease <> florbetaben (18-f),0,2,1,2,1,1,0,0,1,1
+alzheimer disease <> florbetapir,1,2,2,3,2,2,0,0,1,1
+alzheimer disease <> florbetapir (18-f),1,2,2,3,1,1,0,0,1,1
+alzheimer disease <> flurbiprofen,1,2,3,4,4,13,4,3,8,1
+alzheimer disease <> folate,1,1,1,2,1,3,0,0,0,1
+alzheimer disease <> folic acid,0,1,1,2,1,2,1,0,1,1
+alzheimer disease <> gabapentin,1,2,1,2,1,2,1,0,1,1
+alzheimer disease <> galantamine,0,2,3,3,1,3,0,2,1,1
+alzheimer disease <> gantenerumab,1,2,2,4,1,2,2,2,2,1
+alzheimer disease <> glucagon-like peptide 1,1,2,7,5,4,17,6,5,9,1
+alzheimer disease <> glucagon-like peptide 1 receptor agonist,1,2,14,5,9,31,5,18,28,1
+alzheimer disease <> glucose,0,0,0,1,1,1,0,0,0,1
+alzheimer disease <> glutathione,1,2,3,3,7,13,1,1,7,1
+alzheimer disease <> guanfacine,0,1,2,0,1,1,0,0,1,1
+alzheimer disease <> gv-971,1,1,2,3,1,1,0,1,1,1
+alzheimer disease <> histamine,1,2,2,4,4,5,0,0,2,1
+alzheimer disease <> histidine,0,1,2,4,4,4,0,0,1,1
+alzheimer disease <> huperzine a,1,5,15,5,11,49,4,21,36,1
+alzheimer disease <> hydroxymethylglutaryl coa reductase inhibitors,1,3,5,2,4,6,0,0,0,1
+alzheimer disease <> ibuprofen,1,2,2,4,4,8,1,2,2,1
+alzheimer disease <> icosapent ethyl,0,1,1,2,1,1,0,1,1,1
+alzheimer disease <> idalopirdine,0,1,1,3,1,1,0,0,1,1
+alzheimer disease <> indomethacin,1,2,5,4,6,12,3,4,2,1
+alzheimer disease <> insulin,1,2,13,5,17,49,2,15,36,1
+alzheimer disease <> interleukin,1,2,5,5,5,12,9,6,10,1
+alzheimer disease <> lacosamide,0,2,2,2,1,1,0,0,1,1
+alzheimer disease <> latrepirdine,0,2,2,2,2,2,0,0,0,1
+alzheimer disease <> lecozotan,1,2,1,2,1,1,0,0,1,1
+alzheimer disease <> lemborexant,0,1,0,2,1,1,0,1,1,1
+alzheimer disease <> levodopa,0,1,1,1,1,1,0,0,1,1
+alzheimer disease <> liraglutide,1,2,10,5,6,21,4,14,18,1
+alzheimer disease <> lithium,1,3,8,5,12,34,10,7,13,1
+alzheimer disease <> lovastatin,1,3,3,2,3,3,0,1,0,1
+alzheimer disease <> lu ae58054,0,1,1,4,2,4,0,1,4,1
+alzheimer disease <> ly 450139,0,1,3,3,2,2,1,0,2,1
+alzheimer disease <> malate,0,0,1,1,1,1,0,0,0,1
+alzheimer disease <> melatonin,1,3,15,5,17,48,3,11,31,1
+alzheimer disease <> memantine,1,1,3,3,3,3,0,0,0,1
+alzheimer disease <> metformin,1,1,2,4,3,4,0,0,4,1
+alzheimer disease <> methylphenidate,0,2,3,3,4,4,0,3,4,1
+alzheimer disease <> mirtazapine,0,1,0,1,1,1,0,0,1,1
+alzheimer disease <> mometasone,0,1,1,2,1,1,0,1,0,1
+alzheimer disease <> ne2001,0,1,0,3,1,1,0,0,1,1
+alzheimer disease <> nicotine,0,4,9,5,5,10,1,3,3,1
+alzheimer disease <> nifedipine,1,2,5,5,5,12,0,0,7,1
+alzheimer disease <> nilvadipine,1,2,4,5,2,5,0,0,4,1
+alzheimer disease <> nmda receptor antagonist,0,2,4,3,4,4,0,0,2,1
+alzheimer disease <> nsaid,0,1,1,2,1,2,1,1,0,1
+alzheimer disease <> pittsburgh compound b,1,1,4,4,1,1,0,0,1,1
+alzheimer disease <> posiphen,1,1,2,2,1,2,1,0,2,1
+alzheimer disease <> prazosin,1,2,4,4,4,4,0,1,3,1
+alzheimer disease <> pti-125,1,1,1,3,1,1,1,1,1,1
+alzheimer disease <> resveratrol,1,2,3,5,5,13,1,2,7,1
+alzheimer disease <> rifampin,0,1,0,2,1,2,0,0,0,1
+alzheimer disease <> rivastigmine,0,2,2,4,5,9,0,0,6,1
+alzheimer disease <> rivastigmine tartrate,0,1,1,3,2,3,0,0,3,1
+alzheimer disease <> rosiglitazone,0,2,1,3,2,4,2,1,3,1
+alzheimer disease <> rvt-101,0,3,5,2,1,1,0,1,1,1
+alzheimer disease <> salicylamide,1,2,8,4,6,12,2,3,6,1
+alzheimer disease <> salicylamides,1,2,8,4,6,12,2,3,6,1
+alzheimer disease <> selective serotonin reuptake inhibitor,0,2,2,2,3,3,0,0,1,1
+alzheimer disease <> selenium,1,4,12,5,9,21,4,6,19,1
+alzheimer disease <> serotonin agents,0,1,1,4,2,2,0,1,0,1
+alzheimer disease <> sodium oligomannate,1,3,4,3,1,2,0,2,2,1
+alzheimer disease <> sodium-glucose transporter 2 inhibitor,1,2,2,3,4,4,2,1,4,1
+alzheimer disease <> spironolactone,0,2,1,2,2,2,0,0,1,1
+alzheimer disease <> sra-333,1,2,1,2,1,1,0,0,1,1
+alzheimer disease <> substance with gonadotropin releasing hormone receptor antagonist mechanism of action (substance),1,2,4,3,3,5,2,2,5,1
+alzheimer disease <> succinylcholine,1,2,3,4,2,2,1,1,2,1
+"alzheimer disease <> sulfate, copper",0,2,2,4,2,2,0,2,2,1
+alzheimer disease <> tarenflurbil,1,1,0,3,2,3,1,1,2,1
+alzheimer disease <> testosterone,1,2,3,3,3,8,1,0,8,1
+alzheimer disease <> tongxinluo,0,1,1,3,1,1,0,1,1,1
+alzheimer disease <> valproate,1,1,1,2,1,1,1,0,0,1
+alzheimer disease <> valproic acid,1,1,1,2,1,1,1,0,0,1
+alzheimer disease <> vitamin d3,1,2,7,4,2,2,2,1,1,1
+alzheimer disease <> vitamin e,1,2,4,5,6,11,2,2,3,1
+alzheimer disease <> vortioxetine,1,1,2,4,2,2,1,1,2,1
+alzheimer disease <> xaliproden,0,1,1,3,1,1,0,0,1,1
+alzheimer disease <> zolpidem,1,2,5,5,4,4,1,2,4,1
+amyotrophic lateral sclerosis <> arimoclomol,1,1,2,2,1,3,0,1,2,1
+amyotrophic lateral sclerosis <> ceftriaxone,1,2,2,3,3,4,1,0,3,1
+amyotrophic lateral sclerosis <> dexpramipexole,0,1,1,2,1,1,0,0,0,1
+amyotrophic lateral sclerosis <> edaravone,1,2,3,3,1,3,3,2,3,1
+amyotrophic lateral sclerosis <> granulocyte colony stimulating factor,1,2,2,4,3,6,4,5,6,1
+amyotrophic lateral sclerosis <> insulin-like growth factor i,1,2,8,5,2,8,3,1,6,1
+amyotrophic lateral sclerosis <> levocarnitine,1,1,1,3,1,1,0,0,1,1
+amyotrophic lateral sclerosis <> masitinib,1,1,1,3,1,3,0,3,3,1
+amyotrophic lateral sclerosis <> mecobalamin,0,1,2,2,1,1,1,0,1,1
+amyotrophic lateral sclerosis <> memantine,1,1,1,2,2,2,0,1,1,1
+amyotrophic lateral sclerosis <> minocycline,1,2,5,4,6,9,2,1,6,1
+amyotrophic lateral sclerosis <> nmda receptor antagonist,0,1,1,1,1,1,1,1,1,1
+amyotrophic lateral sclerosis <> pridopidine,1,1,5,4,4,4,3,1,4,1
+amyotrophic lateral sclerosis <> rilutek,1,1,0,1,1,1,0,0,1,1
+amyotrophic lateral sclerosis <> riluzole,1,2,2,4,5,7,2,0,4,1
+amyotrophic lateral sclerosis <> tirasemtiv,1,1,3,2,1,1,1,1,1,1
+amyotrophic lateral sclerosis <> trehalose,1,2,2,4,2,4,1,1,2,1
+amyotrophic lateral sclerosis <> tro19622,1,2,4,4,1,1,1,0,1,1
+amyotrophic lateral sclerosis <> valproate,1,3,3,4,4,4,1,1,4,1
+amyotrophic lateral sclerosis <> valproate sodium,0,2,0,3,1,1,0,0,1,1
+amyotrophic lateral sclerosis <> vitamin e,0,1,1,2,1,1,1,0,1,1
+anaplastic oligodendroglioma <> temozolomide,0,1,0,1,1,1,0,1,1,1
+anaplastic oligodendroglioma <> vincristine,1,1,1,1,1,1,0,1,0,1
+astrocytoma (excluding glioblastoma) <> temozolomide,1,2,2,3,2,2,0,1,1,1
+autism <> acetylcysteine,1,2,2,5,4,4,2,2,3,1
+autism <> amphetamine,1,2,9,4,3,6,4,2,6,1
+autism <> atypical antipsychotics,1,1,4,3,1,1,1,0,1,1
+autism <> cannabinoid,1,2,7,4,5,5,3,3,5,1
+autism <> cholinesterase inhibitor,1,2,2,1,1,1,1,0,0,1
+autism <> cycloserine,0,1,3,3,1,1,1,0,0,1
+autism <> dexmedetomidine,0,1,1,3,1,1,1,1,1,1
+autism <> dextroamphetamine,1,1,3,2,1,1,1,1,1,1
+autism <> dronabinol,1,1,3,2,1,1,0,0,1,1
+autism <> endogenous antioxidants,0,1,1,2,1,1,1,0,1,1
+autism <> fluoxetine,0,2,2,2,2,3,0,3,3,1
+autism <> ketamine,1,1,4,3,2,2,2,0,2,1
+autism <> lithium,1,2,6,4,2,10,4,3,8,1
+autism <> lurasidone,1,1,0,0,1,1,1,0,0,1
+autism <> methylphenidate,0,1,1,1,1,1,0,1,1,1
+autism <> olanzapine,0,1,1,1,1,3,0,3,2,1
+autism <> oxytocin,1,3,22,5,13,36,14,12,30,1
+autism <> risperidone,0,1,1,1,1,1,0,0,1,1
+autism <> sulforaphane,0,1,1,2,1,1,1,0,1,1
+autism <> valproate,1,1,2,3,3,4,1,1,3,1
+autism <> valproic acid,1,1,2,3,3,4,1,1,3,1
+autism <> vasopressin (usp),1,1,2,5,3,3,1,1,1,1
+autism <> vitamin d,0,1,0,3,0,1,0,1,1,1
+autism spectrum disorder <> acetylcysteine,1,2,2,5,6,6,3,3,5,1
+autism spectrum disorder <> amphetamine,1,2,9,4,2,5,4,2,5,1
+autism spectrum disorder <> antipsychotics,0,1,2,4,2,2,2,0,1,1
+autism spectrum disorder <> atypical antipsychotics,1,1,4,3,1,1,1,0,1,1
+autism spectrum disorder <> cannabidiol,1,1,1,1,1,2,1,1,2,1
+autism spectrum disorder <> cannabinoid,1,2,7,4,5,5,3,3,5,1
+autism spectrum disorder <> cariprazine,0,1,1,2,1,1,1,1,1,1
+autism spectrum disorder <> cholinesterase inhibitor,1,2,2,1,1,1,1,0,0,1
+autism spectrum disorder <> cycloserine,0,1,3,3,1,1,1,0,0,1
+autism spectrum disorder <> dexmedetomidine,0,1,1,3,1,1,1,1,1,1
+autism spectrum disorder <> dextroamphetamine,1,1,3,2,1,1,1,1,1,1
+autism spectrum disorder <> dronabinol,1,1,3,2,1,1,0,0,1,1
+autism spectrum disorder <> endogenous antioxidants,0,1,1,2,1,1,1,0,1,1
+"autism spectrum disorder <> fatty acids, omega-3",0,1,0,4,1,1,0,1,1,1
+autism spectrum disorder <> fluoxetine,0,2,2,2,2,3,0,3,3,1
+autism spectrum disorder <> ketamine,1,1,4,3,2,2,2,0,2,1
+autism spectrum disorder <> leucovorin,1,1,3,2,1,1,0,0,1,1
+autism spectrum disorder <> lithium,1,2,9,4,3,15,7,4,11,1
+autism spectrum disorder <> lurasidone,1,1,0,0,1,1,1,0,0,1
+autism spectrum disorder <> memantine,0,1,1,1,1,1,1,0,1,1
+autism spectrum disorder <> methylphenidate,0,1,1,1,1,1,0,1,1,1
+autism spectrum disorder <> olanzapine,0,1,1,1,1,3,0,3,2,1
+autism spectrum disorder <> oxytocin,1,3,17,5,9,27,11,9,22,1
+autism spectrum disorder <> risperidone,0,1,1,1,1,1,0,0,1,1
+autism spectrum disorder <> sulforaphane,0,1,1,2,1,1,1,0,1,1
+autism spectrum disorder <> valproate,1,1,2,3,3,4,1,1,3,1
+autism spectrum disorder <> valproic acid,1,1,2,3,3,4,1,1,3,1
+autism spectrum disorder <> vasopressin (usp),1,1,2,5,3,3,1,1,1,1
+autism spectrum disorder <> vitamin d,0,1,0,3,0,1,0,1,1,1
+autonomic neuropathy <> thioctic acid,0,0,0,0,1,1,0,0,0,1
+bell's palsy <> glucocorticoids,0,1,1,1,1,2,0,1,2,1
+brain glioblastoma <> bevacizumab,0,1,0,3,1,1,0,0,1,1
+brain glioblastoma <> carmustine,1,1,3,4,3,10,1,4,2,1
+brain glioblastoma <> temozolomide,1,2,2,5,3,7,0,3,7,1
+"brain ischemia <> 2 inhibitor, cyclooxygenase",1,3,4,5,6,14,6,4,12,1
+brain ischemia <> 3-n-butylphthalide,1,2,4,5,1,16,5,9,13,1
+brain ischemia <> acetaminophen,0,1,1,0,1,1,0,0,1,1
+"brain ischemia <> acid, docosahexaenoic",1,5,4,5,8,23,11,13,20,1
+brain ischemia <> adrenal cortex hormone,1,2,2,3,3,4,1,1,4,1
+brain ischemia <> allopurinol,1,3,5,5,2,14,5,7,10,1
+brain ischemia <> alteplase,1,1,2,3,2,2,0,1,2,1
+brain ischemia <> anticonvulsant,0,2,3,4,2,2,1,0,1,1
+brain ischemia <> aspirin,1,2,2,3,2,3,0,0,1,1
+brain ischemia <> calcium antagonists,1,2,3,4,3,3,2,0,1,1
+brain ischemia <> capsaicin,1,1,1,4,2,2,2,1,2,1
+brain ischemia <> chloroquine,0,2,3,4,2,3,0,0,3,1
+brain ischemia <> cilostazol,0,3,4,5,2,6,3,2,4,1
+brain ischemia <> colchicine,0,1,1,2,1,1,1,1,1,1
+brain ischemia <> docosahexaenoate,1,5,4,5,8,23,11,13,20,1
+brain ischemia <> eicosapentaenoate,1,2,3,4,3,5,2,2,5,1
+brain ischemia <> eicosapentaenoic acid,1,2,3,4,3,5,2,2,5,1
+brain ischemia <> heparin,1,6,4,5,4,7,3,2,5,1
+brain ischemia <> hydroxymethylglutaryl coa reductase inhibitors,0,1,2,2,4,4,0,0,1,1
+brain ischemia <> ketamine,1,3,4,4,6,15,4,5,7,1
+brain ischemia <> magnesium,1,2,3,5,4,5,4,2,4,1
+brain ischemia <> nerve growth factor,1,2,6,5,7,11,2,5,6,1
+brain ischemia <> nimodipine,1,5,9,5,12,19,8,1,6,1
+brain ischemia <> nxy 059,0,1,1,2,1,1,0,0,0,1
+brain ischemia <> okn 007,0,1,1,2,1,1,0,0,0,1
+brain ischemia <> oxygen,0,1,2,4,2,2,2,1,2,1
+brain ischemia <> pentoxifylline,0,1,1,5,4,4,2,0,1,1
+brain ischemia <> propofol,1,3,6,4,6,19,8,13,16,1
+brain ischemia <> rosuvastatin,0,1,1,3,1,1,0,0,0,1
+brain ischemia <> sevoflurane,1,2,5,5,4,15,6,13,12,1
+brain ischemia <> simvastatin,0,1,1,4,3,5,1,2,2,1
+"brain ischemia <> sulfate, magnesium",1,2,2,4,3,5,3,2,5,1
+brain ischemia <> valproate,0,2,2,4,3,3,2,0,2,1
+brain ischemia <> valsartan,0,1,2,4,1,2,1,1,2,1
+brain ischemia <> xanthine oxidase inhibitor,1,2,2,4,3,5,1,2,4,1
+brain stem glioma <> temozolomide,1,2,1,2,1,2,0,2,2,1
+cannabis dependence <> ethanol,0,1,1,3,1,1,0,0,1,1
+cardiovascular depression <> propofol,0,1,1,2,1,1,0,1,1,1
+catamenial epilepsy <> progesterone,0,1,1,3,2,2,0,0,1,1
+cerebral infarction <> 3-n-butylphthalide,0,1,3,5,2,8,3,4,6,1
+cerebral infarction <> abciximab,0,0,0,2,1,1,0,0,0,1
+cerebral infarction <> alteplase,1,5,7,4,5,12,4,4,7,1
+cerebral infarction <> argatroban,0,2,2,4,2,4,2,0,2,1
+cerebral infarction <> aspirin,1,5,5,4,3,6,2,0,4,1
+cerebral infarction <> atorvastatin,0,2,6,4,5,7,2,4,4,1
+cerebral infarction <> calcium antagonists,1,3,3,5,4,5,1,0,0,1
+cerebral infarction <> cilostazol,1,1,0,0,1,1,0,0,0,1
+cerebral infarction <> dipyridamole,0,1,1,1,1,1,0,0,0,1
+cerebral infarction <> edaravone,0,1,2,3,1,2,0,0,0,1
+cerebral infarction <> endothelins,1,2,2,4,3,3,2,2,3,1
+cerebral infarction <> erythropoietin,1,4,5,5,5,11,7,6,9,1
+cerebral infarction <> glandular kallikrein-1,1,1,1,4,1,1,0,0,1,1
+cerebral infarction <> heparin,1,3,5,5,5,9,2,3,7,1
+cerebral infarction <> hydroxymethylglutaryl coa reductase inhibitors,0,3,5,4,4,8,2,3,5,1
+cerebral infarction <> insulin,1,1,2,4,3,5,1,1,2,1
+cerebral infarction <> irl-1620,1,1,2,5,1,6,6,6,6,1
+cerebral infarction <> kininogenase,0,1,1,3,1,1,1,1,0,1
+cerebral infarction <> levodopa,0,1,2,4,1,1,1,1,1,1
+cerebral infarction <> mexidol,1,1,0,1,1,1,0,0,0,1
+cerebral infarction <> minocycline,1,2,11,5,12,35,14,14,28,1
+cerebral infarction <> naloxone,1,3,6,4,7,11,4,2,6,1
+cerebral infarction <> nerve growth factor,1,4,5,5,4,7,0,2,4,1
+cerebral infarction <> nimodipine,1,5,7,5,12,31,8,12,14,1
+cerebral infarction <> peoniflorin,0,1,1,3,1,2,1,0,2,1
+cerebral infarction <> piracetam,1,3,4,3,1,2,0,0,0,1
+cerebral infarction <> rosuvastatin,0,1,3,3,2,3,0,1,2,1
+cerebral infarction <> rtpa,0,2,3,5,3,4,2,3,2,1
+cerebral infarction <> serotonin,0,2,4,5,1,2,0,0,1,1
+cerebral infarction <> sodium ozagrel,0,2,2,4,1,3,0,0,3,1
+cerebral infarction <> sovateltide,1,1,1,4,1,1,1,1,1,1
+cerebral infarction <> tenecteplase,0,1,1,2,1,1,0,0,1,1
+cerebral infarction <> tetracycline,0,2,4,5,4,4,1,1,4,1
+cerebral infarction <> thromboxane a2 synthase inhibitor,0,0,0,1,1,1,1,0,1,1
+cerebral infarction <> tirofiban,0,1,1,4,1,1,1,1,1,1
+cerebral infarction <> tnk,0,1,1,2,1,1,0,0,1,1
+cerebral infarction <> warfarin,0,2,0,1,1,1,0,0,0,1
+cerebral infarction <> xenon,0,2,2,5,3,4,3,3,4,1
+cerebral palsy <> dexamethasone,1,2,2,2,1,3,1,1,3,1
+cerebral palsy <> epinephrine,0,1,0,2,1,1,1,0,1,1
+"cerebral palsy <> sulfate, magnesium",1,1,0,3,1,1,1,1,1,1
+chemotherapy-induced peripheral neuropathy <> acetylcarnitine,0,2,2,2,1,1,0,0,1,1
+chemotherapy-induced peripheral neuropathy <> naloxone,0,1,2,1,1,1,0,0,1,1
+chemotherapy-induced peripheral neuropathy <> niacinamide,1,2,1,4,1,1,1,1,1,1
+chemotherapy-induced peripheral neuropathy <> thioctic acid,1,2,4,4,2,3,2,3,3,1
+childhood absence epilepsy <> brivaracetam,0,1,0,3,1,1,1,1,1,1
+childhood absence epilepsy <> clobazam,0,1,0,1,1,1,0,0,0,1
+childhood absence epilepsy <> lamotrigine,1,2,7,4,2,2,1,0,2,1
+childhood absence epilepsy <> valproate,0,1,1,1,0,1,0,0,0,1
+childhood absence epilepsy <> valproate sodium,0,2,3,4,3,5,0,1,0,1
+childhood oligodendroglioma <> chemotherapy,1,2,2,3,1,1,0,0,0,1
+childhood oligodendroglioma <> temozolomide,1,2,3,4,3,3,0,1,2,1
+childhood-onset idiopathic generalized epilepsy syndrome <> brivaracetam,0,1,0,3,1,1,1,1,1,1
+childhood-onset idiopathic generalized epilepsy syndrome <> clobazam,0,1,0,1,1,1,0,0,0,1
+childhood-onset idiopathic generalized epilepsy syndrome <> ethosuximide,1,4,22,5,15,36,8,7,18,1
+childhood-onset idiopathic generalized epilepsy syndrome <> lamotrigine,1,2,7,4,2,2,1,0,2,1
+childhood-onset idiopathic generalized epilepsy syndrome <> valproate,1,2,12,4,8,16,4,6,6,1
+childhood-onset idiopathic generalized epilepsy syndrome <> valproic acid,0,2,3,4,5,5,0,2,3,1
+chronic progressive multiple sclerosis <> adrenal cortex hormone,0,0,0,2,1,1,0,0,1,1
+"chronic progressive multiple sclerosis <> antibodies, bispecific",0,2,1,3,3,3,2,1,2,1
+chronic progressive multiple sclerosis <> baf312,1,3,4,4,4,4,1,2,3,1
+chronic progressive multiple sclerosis <> cannabinoid,1,1,1,2,1,1,0,0,0,1
+chronic progressive multiple sclerosis <> cd20bi antibody,0,2,1,3,3,3,2,1,2,1
+chronic progressive multiple sclerosis <> methylprednisolone,0,0,0,2,1,1,0,0,1,1
+chronic progressive multiple sclerosis <> prednisone,0,1,0,0,0,1,0,0,0,1
+chronic progressive multiple sclerosis <> simvastatin,1,1,1,2,1,1,0,0,1,1
+chronic progressive multiple sclerosis <> siponimod,1,3,4,4,4,4,1,2,3,1
+cocaine dependence <> acetylcysteine,0,1,1,3,1,1,0,0,1,1
+cocaine dependence <> amphetamine,0,1,1,2,1,1,0,1,1,1
+cocaine dependence <> cannabidiol,0,2,5,2,3,4,2,2,4,1
+cocaine dependence <> cholinergic antagonist,0,1,1,2,1,1,0,0,1,1
+cocaine dependence <> citicoline,0,1,1,2,1,1,0,0,1,1
+cocaine dependence <> cocaine,0,1,1,0,1,1,0,0,0,1
+cocaine dependence <> dextroamphetamine,0,3,2,4,2,10,1,2,8,1
+cocaine dependence <> disulfiram,1,2,5,2,2,4,0,3,4,1
+cocaine dependence <> dronabinol,0,1,2,0,1,1,0,0,1,1
+cocaine dependence <> modafinil,0,2,2,3,2,2,1,1,2,1
+cocaine dependence <> naltrexone,0,1,1,1,1,1,0,1,1,1
+cocaine dependence <> oxytocin,1,1,1,1,1,1,0,0,1,1
+"cocaine dependence <> sulfate, dextroamphetamine",0,1,1,2,1,1,0,1,1,1
+cocaine dependence <> topiramate,0,1,0,2,1,1,0,0,1,1
+cocaine dependence <> vigabatrin,1,1,4,5,2,4,1,2,3,1
+complex partial epilepsy <> aeds,0,1,1,2,1,1,0,1,1,1
+complex partial epilepsy <> antiepileptic,0,1,1,3,3,3,0,3,3,1
+complex partial epilepsy <> carbamazepine,1,3,5,4,7,8,1,2,5,1
+complex partial epilepsy <> diazepam,1,2,4,4,3,5,2,0,2,1
+complex partial epilepsy <> gabapentin,0,1,1,2,2,2,0,1,1,1
+complex partial epilepsy <> vigabatrin,1,1,2,3,3,3,0,0,2,1
+demyelinating polyneuropathy <> intravenous immunoglobulins,0,1,1,3,1,1,0,1,1,1
+diabetic neuropathy <> acetylcarnitine,0,1,3,3,3,4,1,0,2,1
+diabetic neuropathy <> acetylcysteine,0,3,3,4,8,12,2,4,7,1
+"diabetic neuropathy <> acid, gamma-linolenic",0,1,2,3,2,5,0,0,4,1
+diabetic neuropathy <> aldose reductase inhibitor,1,4,11,5,6,28,1,11,4,1
+diabetic neuropathy <> alpha-linolenic acid,0,2,1,3,1,3,1,2,3,1
+diabetic neuropathy <> botulinum toxin type a,0,1,1,4,2,2,0,1,1,1
+diabetic neuropathy <> capsaicin,0,2,1,3,1,1,1,0,1,1
+diabetic neuropathy <> carbamazepine,1,2,4,4,5,5,2,0,4,1
+diabetic neuropathy <> celecoxib,0,2,3,3,3,4,0,1,4,1
+diabetic neuropathy <> cilostazol,0,1,6,3,3,5,0,1,1,1
+diabetic neuropathy <> fentanyl,0,1,1,2,1,1,0,0,1,1
+diabetic neuropathy <> gabapentin,0,1,1,2,2,2,0,0,1,1
+diabetic neuropathy <> gamma-linolenate,0,1,2,3,2,5,0,0,4,1
+diabetic neuropathy <> glucagon-like peptide 1 receptor agonist,1,2,4,5,4,7,1,3,5,1
+diabetic neuropathy <> hydroxymethylglutaryl coa reductase inhibitors,0,1,1,2,1,1,1,0,1,1
+diabetic neuropathy <> ly 353381,0,1,1,0,1,1,0,0,1,1
+diabetic neuropathy <> metformin,0,1,1,3,2,2,0,2,1,1
+diabetic neuropathy <> mirogabalin,0,1,6,2,1,1,1,1,0,1
+diabetic neuropathy <> morphine,1,2,9,4,8,17,4,5,12,1
+diabetic neuropathy <> opioid,0,2,3,3,3,3,0,0,3,1
+diabetic neuropathy <> pyridoxal,0,1,1,1,1,1,0,1,0,1
+diabetic neuropathy <> thiamine,0,1,0,2,1,1,0,0,1,1
+diabetic neuropathy <> thioctic acid,0,3,2,3,3,11,0,4,4,1
+diabetic neuropathy <> tocotrienols,0,1,1,1,1,1,0,1,1,1
+diabetic neuropathy <> topiramate,0,1,2,3,1,1,0,0,1,1
+diabetic neuropathy <> vitamin d,0,1,1,4,1,2,1,1,1,1
+diffuse intrinsic pontine glioma <> dordaviprone,0,1,2,2,2,2,0,1,2,1
+drug dependence <> acetylcysteine,0,2,2,4,2,2,1,0,2,1
+drug dependence <> amphetamine,0,1,1,2,1,1,0,1,1,1
+drug dependence <> antibiotic,0,1,1,2,1,2,0,0,2,1
+drug dependence <> antipsychotics,0,1,1,2,1,1,0,1,0,1
+drug dependence <> baclofen,1,2,3,4,7,14,1,4,10,1
+drug dependence <> buspirone,0,1,1,0,1,1,0,0,0,1
+drug dependence <> cannabidiol,0,2,6,3,3,6,3,3,6,1
+drug dependence <> cholinergic antagonist,0,1,1,2,1,1,0,0,1,1
+drug dependence <> citicoline,0,1,1,2,1,1,0,0,1,1
+drug dependence <> clonidine,0,2,5,2,4,4,2,1,2,1
+drug dependence <> cocaine,0,1,1,0,1,1,0,0,0,1
+drug dependence <> dextroamphetamine,0,3,2,4,3,12,1,3,10,1
+drug dependence <> disulfiram,1,2,5,2,2,4,0,3,4,1
+drug dependence <> dronabinol,0,2,4,2,3,3,1,1,3,1
+drug dependence <> estradiol,1,2,2,4,1,2,1,2,2,1
+drug dependence <> ethanol,0,2,2,5,2,4,1,1,4,1
+drug dependence <> fluoxetine,0,1,1,1,1,1,0,0,1,1
+drug dependence <> gabapentin,0,1,2,3,4,4,1,2,4,1
+drug dependence <> haloperidol,0,2,4,3,5,5,1,2,3,1
+drug dependence <> lidocaine,1,1,2,4,1,3,1,0,3,1
+drug dependence <> memantine,1,2,4,3,3,5,1,2,4,1
+drug dependence <> metformin,1,1,2,4,3,3,0,1,2,1
+drug dependence <> mifepristone,0,3,2,4,1,3,0,2,3,1
+drug dependence <> mirtazapine,0,1,1,3,2,4,1,3,3,1
+drug dependence <> modafinil,0,1,2,2,2,2,1,0,2,1
+drug dependence <> morphine,1,4,6,4,7,17,4,5,13,1
+drug dependence <> naloxone,0,1,1,3,2,2,0,1,0,1
+drug dependence <> nlx,1,1,0,0,1,1,0,1,1,1
+drug dependence <> ondansetron,0,2,6,4,3,10,4,4,6,1
+drug dependence <> opioid,1,4,6,4,3,6,0,1,5,1
+drug dependence <> opioid antagonist,1,2,1,1,2,2,0,1,2,1
+drug dependence <> partial agonist,1,2,0,1,1,2,1,0,1,1
+drug dependence <> prazosin,0,1,2,1,3,5,1,2,5,1
+drug dependence <> propranolol,0,3,3,1,1,2,1,0,0,1
+drug dependence <> r-38486,0,3,2,4,1,3,0,2,3,1
+drug dependence <> sufentanil,0,1,1,1,1,1,0,0,1,1
+"drug dependence <> sulfate, dextroamphetamine",0,1,1,2,1,1,0,1,1,1
+"drug dependence <> sulfate, morphine",0,2,1,1,1,1,0,0,1,1
+drug dependence <> suvorexant,0,2,1,0,1,1,0,0,1,1
+drug dependence <> vigabatrin,1,1,4,5,2,5,1,3,4,1
+endogenous depression <> agomelatine,1,1,1,1,1,1,0,1,1,1
+endogenous depression <> ssris,0,0,0,1,1,1,0,0,0,1
+epilepsy <> 3-n-butylphthalide,0,2,3,4,1,3,0,3,3,1
+"epilepsy <> acid, docosahexaenoic",1,2,7,4,8,12,3,4,9,1
+epilepsy <> adrenal cortex hormone,1,3,4,4,2,4,2,0,4,1
+epilepsy <> aed,0,1,1,1,1,1,0,0,0,1
+epilepsy <> aeds,1,2,10,5,8,25,7,5,11,1
+epilepsy <> anti-epilepsy drugs,0,0,0,1,1,1,0,0,0,1
+epilepsy <> anti-epileptic,0,2,3,4,4,5,2,1,3,1
+epilepsy <> anti-epileptic drugs,0,1,1,2,1,1,0,0,1,1
+epilepsy <> anticonvulsant,1,4,14,3,8,16,2,3,2,1
+epilepsy <> antiepileptic,1,2,6,4,8,11,1,3,1,1
+epilepsy <> antiepileptic drug,1,1,2,4,4,6,1,4,2,1
+epilepsy <> antiepileptic drugs,1,3,13,5,11,39,7,8,10,1
+epilepsy <> antiseizure drugs,1,2,7,3,2,5,2,1,5,1
+epilepsy <> antiseizure medications,0,1,1,0,1,1,1,0,1,1
+epilepsy <> baclofen,1,2,11,5,22,51,4,7,18,1
+epilepsy <> benzodiazepine,1,7,46,5,22,154,21,32,92,1
+epilepsy <> bia 2-093,0,1,1,3,1,2,0,0,2,1
+epilepsy <> botulinum toxin type a,0,2,2,4,4,6,3,3,6,1
+epilepsy <> brv,0,1,0,3,1,1,0,0,1,1
+epilepsy <> bumetanide,1,3,12,5,13,35,10,4,30,1
+epilepsy <> bupropion,0,1,2,1,2,2,0,1,1,1
+epilepsy <> bupropion hydrochloride,0,1,2,1,2,2,0,1,1,1
+epilepsy <> cannabidiol,1,2,8,5,4,10,3,1,7,1
+epilepsy <> cannabinoid,1,5,18,5,16,60,18,17,55,1
+epilepsy <> cannabinor,0,1,1,4,1,1,1,0,1,1
+epilepsy <> carisbamate,1,1,2,3,2,5,1,1,3,1
+epilepsy <> cenobamate,1,1,1,2,1,1,0,0,1,1
+epilepsy <> cholecalciferol,0,1,1,2,1,1,0,1,1,1
+epilepsy <> clobazam,1,3,6,5,7,9,1,2,2,1
+epilepsy <> corticotropin,1,1,2,4,3,7,2,1,4,1
+epilepsy <> dexmedetomidine,0,1,4,3,2,3,0,0,3,1
+epilepsy <> dextromethorphan,1,2,12,5,11,27,3,4,14,1
+epilepsy <> diazepam,1,8,27,5,23,123,6,15,10,1
+epilepsy <> docosahexaenoate,1,2,7,4,8,13,4,5,10,1
+epilepsy <> dronabinol,1,2,10,4,7,14,6,5,11,1
+epilepsy <> eicosapentaenoate,0,2,2,2,2,2,1,1,1,1
+epilepsy <> eicosapentaenoic acid,0,2,2,2,2,2,1,1,1,1
+epilepsy <> esketamine,0,2,3,4,2,2,1,0,1,1
+epilepsy <> eslicarbazepine,0,1,1,3,1,2,0,0,2,1
+epilepsy <> eslicarbazepine acetate,0,1,1,3,1,2,0,0,2,1
+epilepsy <> ethosuximide,1,6,37,5,21,110,17,34,55,1
+epilepsy <> etomidate,0,2,5,4,5,5,1,2,5,1
+epilepsy <> ezogabine,1,3,7,5,4,14,0,1,6,1
+"epilepsy <> fatty acids, omega-3",0,2,3,4,4,10,1,6,9,1
+epilepsy <> felbamate,0,0,1,0,1,1,0,0,1,1
+epilepsy <> fenfluramine,1,2,11,5,7,10,3,1,8,1
+epilepsy <> fentanyl,1,2,3,3,2,3,0,2,1,1
+epilepsy <> fluoxetine,1,2,17,5,17,32,9,7,22,1
+epilepsy <> folic acid,1,2,2,2,2,2,0,0,1,1
+epilepsy <> gamma-aminobutyrate,1,6,27,5,20,61,2,9,25,1
+epilepsy <> gamma-aminobutyric acid,1,6,27,5,16,51,3,8,24,1
+epilepsy <> ganaxolone,1,2,4,4,3,7,0,2,3,1
+epilepsy <> glucose,1,4,4,5,4,6,0,1,4,1
+"epilepsy <> hydrochloride, fenfluramine",0,1,1,3,1,1,0,0,1,1
+epilepsy <> idebenone,0,2,2,5,2,2,0,1,2,1
+epilepsy <> ivermectin,0,2,3,4,2,3,0,2,2,1
+epilepsy <> ketamine,1,5,18,5,18,46,6,7,19,1
+epilepsy <> lacosamide,1,2,3,4,3,5,2,2,1,1
+epilepsy <> lamotrigine,0,2,2,2,3,4,0,0,0,1
+epilepsy <> levetiracetam,1,2,3,5,3,5,0,2,0,1
+epilepsy <> lidocaine,1,6,18,5,9,24,4,4,18,1
+epilepsy <> lincomycin,0,1,2,2,2,2,0,1,2,1
+epilepsy <> lorazepam,0,3,5,4,1,4,1,0,0,1
+epilepsy <> ltg,1,2,3,3,3,7,0,3,7,1
+epilepsy <> melatonin,1,4,9,5,14,28,5,5,19,1
+epilepsy <> metformin,1,2,5,5,8,15,2,8,13,1
+epilepsy <> methylphenidate,0,1,1,0,0,1,0,0,0,1
+epilepsy <> midazolam,1,5,17,5,11,34,4,9,17,1
+epilepsy <> morphine,1,2,15,3,9,37,1,5,19,1
+epilepsy <> naloxone,1,6,20,4,19,70,3,21,42,1
+epilepsy <> naltrexone,1,2,4,2,3,9,0,1,7,1
+epilepsy <> opioid antagonist,0,1,1,2,1,1,0,0,1,1
+epilepsy <> oxcarbazepine,0,1,2,1,2,3,1,1,2,1
+epilepsy <> perampanel,1,4,8,4,2,4,1,1,1,1
+epilepsy <> phenobarbital,1,7,37,5,28,236,26,80,98,1
+epilepsy <> phenytoin,1,6,30,5,17,103,6,27,13,1
+epilepsy <> phenytoin sodium,1,2,0,2,0,1,0,0,0,1
+epilepsy <> phosphatidylserine,0,1,2,4,3,5,0,2,1,1
+epilepsy <> polyunsaturated fatty acids,0,2,1,4,1,1,1,1,1,1
+epilepsy <> prednisolone,0,1,1,0,1,1,0,0,1,1
+epilepsy <> pregabalin,1,1,2,3,2,2,0,0,1,1
+epilepsy <> pregnanolone,1,4,10,4,8,18,1,4,6,1
+epilepsy <> probenecid,1,2,3,4,5,8,0,0,3,1
+epilepsy <> progesterone,1,4,15,4,7,25,3,6,13,1
+epilepsy <> propofol,1,3,12,4,9,19,1,4,15,1
+epilepsy <> pyridoxine,1,5,6,4,7,11,1,1,2,1
+epilepsy <> rwj-333369,0,1,2,2,1,1,0,0,1,1
+epilepsy <> sertraline,0,1,0,1,1,1,0,0,0,1
+epilepsy <> soticlestat,1,3,5,3,2,3,1,1,3,1
+epilepsy <> ssris,0,2,7,3,5,8,3,2,6,1
+epilepsy <> steroid,1,2,6,4,4,6,1,0,2,1
+epilepsy <> stiripentol,1,2,4,4,3,7,3,5,5,1
+"epilepsy <> sulfate, magnesium",1,2,2,2,2,2,0,0,0,1
+epilepsy <> topiramate,1,2,4,2,2,3,0,1,1,1
+epilepsy <> tranexamic acid,1,2,3,4,4,5,3,1,4,1
+epilepsy <> ucb l059,1,2,3,3,1,2,0,1,0,1
+epilepsy <> valproate,1,5,11,4,6,20,2,2,0,1
+epilepsy <> valproate sodium,1,3,12,4,13,26,3,3,7,1
+epilepsy <> valproic acid,1,6,11,5,6,21,2,1,3,1
+epilepsy <> vigabatrin,1,5,25,4,20,82,16,18,39,1
+epilepsy <> vimpat,0,2,2,3,1,1,1,0,1,1
+epilepsy <> vitamin d,0,3,4,3,3,3,1,2,3,1
+epilepsy <> vitamin d3,0,1,1,2,1,1,0,1,1,1
+epilepsy <> zonisamide,1,3,4,3,2,10,0,1,2,1
+epilepsy with generalized tonic-clonic seizures <> aeds,1,2,5,4,6,13,1,5,8,1
+epilepsy with generalized tonic-clonic seizures <> carbamazepine,1,6,16,5,9,29,2,7,9,1
+epilepsy with generalized tonic-clonic seizures <> clonazepam,1,2,13,5,8,22,0,11,9,1
+epilepsy with generalized tonic-clonic seizures <> fluoxetine,1,1,0,2,1,1,0,0,1,1
+epilepsy with generalized tonic-clonic seizures <> lacosamide,0,1,0,0,1,1,0,0,0,1
+epilepsy with generalized tonic-clonic seizures <> lamotrigine,1,2,7,4,5,8,0,0,1,1
+epilepsy with generalized tonic-clonic seizures <> levetiracetam,1,2,3,3,2,2,0,1,0,1
+epilepsy with generalized tonic-clonic seizures <> melatonin,0,2,6,3,4,7,2,0,3,1
+epilepsy with generalized tonic-clonic seizures <> naloxone,1,5,10,4,7,18,0,1,12,1
+epilepsy with generalized tonic-clonic seizures <> naltrexone,1,2,6,4,3,15,1,3,14,1
+epilepsy with generalized tonic-clonic seizures <> phenytoin sodium,1,2,0,2,0,1,0,0,0,1
+epilepsy with generalized tonic-clonic seizures <> pregabalin,0,1,2,2,1,4,1,3,4,1
+epilepsy with generalized tonic-clonic seizures <> ssris,0,1,1,0,1,1,0,0,1,1
+epilepsy with generalized tonic-clonic seizures <> topiramate,1,2,3,3,1,2,0,0,0,1
+epilepsy with generalized tonic-clonic seizures <> valproate,1,4,28,5,16,69,5,23,45,1
+epilepsy with generalized tonic-clonic seizures <> zonisamide,1,2,4,3,3,5,0,1,3,1
+"familial amyloid neuropathy <> acid, taurochenodeoxycholic",0,1,0,2,1,3,0,0,2,1
+familial amyloid neuropathy <> acoramidis,1,1,1,2,1,2,0,0,2,1
+familial amyloid neuropathy <> diflunisal,0,0,0,2,2,2,0,0,0,1
+familial amyloid neuropathy <> doxycycline,0,2,0,2,2,3,0,0,3,1
+familial amyloid neuropathy <> taurursodiol,0,1,0,2,1,3,0,0,2,1
+"febrile seizures, familial <> diazepam",1,2,3,4,3,4,3,0,4,1
+"febrile seizures, familial <> melatonin",0,1,1,2,1,1,0,1,0,1
+focal epilepsy <> aeds,0,2,4,4,3,4,2,2,2,1
+focal epilepsy <> anti-epileptic,0,2,2,3,1,1,1,0,1,1
+focal epilepsy <> anticonvulsant,1,0,1,1,1,1,0,0,0,1
+focal epilepsy <> antiepileptic,1,1,2,3,2,3,0,1,1,1
+focal epilepsy <> antiepileptic drug,1,1,1,2,1,1,0,1,0,1
+focal epilepsy <> antiepileptic drugs,1,2,5,4,6,9,2,5,5,1
+focal epilepsy <> bia 2-093,0,1,1,3,1,1,0,0,1,1
+focal epilepsy <> carbamazepine,1,5,6,4,9,17,2,5,8,1
+focal epilepsy <> carisbamate,1,1,1,1,1,1,0,0,1,1
+focal epilepsy <> cenobamate,1,1,2,2,2,3,0,0,2,1
+focal epilepsy <> clobazam,0,1,1,2,1,1,0,0,0,1
+focal epilepsy <> diazepam,1,2,7,4,6,12,5,2,3,1
+focal epilepsy <> eslicarbazepine,0,1,1,3,1,1,0,0,1,1
+focal epilepsy <> eslicarbazepine acetate,0,1,1,3,1,1,0,0,1,1
+focal epilepsy <> ezogabine,0,1,1,2,1,1,0,0,0,1
+focal epilepsy <> felbamate,1,2,3,3,4,4,1,1,3,1
+focal epilepsy <> lamotrigine,0,1,1,2,1,1,0,0,0,1
+focal epilepsy <> levetiracetam,1,2,3,4,1,3,0,3,1,1
+focal epilepsy <> naloxone,0,1,1,1,1,3,0,0,3,1
+focal epilepsy <> perampanel,0,4,5,2,1,1,0,0,0,1
+focal epilepsy <> phenobarbital,1,5,7,4,7,16,2,3,9,1
+focal epilepsy <> phenytoin,1,5,17,4,12,30,3,3,19,1
+focal epilepsy <> steroid,0,1,1,1,1,1,0,0,1,1
+focal epilepsy <> ucb l059,1,2,3,1,1,1,0,1,0,1
+focal epilepsy <> valproate,1,5,11,4,13,23,3,7,15,1
+focal epilepsy <> valproic acid,1,2,9,4,7,12,2,4,8,1
+focal epilepsy <> ykp3089,1,1,1,2,1,1,0,0,1,1
+glioblastoma <> angiotensin-ii inhibitor,0,0,0,1,1,1,0,0,1,1
+glioblastoma <> anti-vegf humanized monoclonal antibody,1,2,4,4,7,11,2,3,10,1
+glioblastoma <> avastin,0,2,1,1,1,1,0,1,1,1
+glioblastoma <> bevacizumab,1,2,9,4,8,16,1,2,14,1
+glioblastoma <> chemotherapy,1,1,7,5,1,4,1,1,4,1
+glioblastoma <> cilengitide,1,2,3,2,3,3,0,1,2,1
+"glioblastoma <> colony-stimulating factor, granulocyte-macrophage",1,2,4,3,3,3,0,1,1,1
+"glioblastoma <> compounds, nitrosourea",1,2,2,1,2,2,0,1,0,1
+glioblastoma <> disulfiram,0,2,3,3,4,5,0,2,4,1
+glioblastoma <> immunoconjugate,1,1,1,0,1,1,0,1,0,1
+"glioblastoma <> inhibitor, angiogenesis",0,2,5,3,4,5,0,1,3,1
+glioblastoma <> ipilimumab,1,1,3,4,2,3,0,1,3,1
+glioblastoma <> marizomib,1,1,0,2,2,2,0,1,2,1
+glioblastoma <> nimotuzumab,1,1,0,2,1,1,0,0,1,1
+glioblastoma <> nivolumab,0,1,0,1,1,1,0,0,1,1
+glioblastoma <> o(6)-benzylguanine,1,1,1,0,1,1,0,1,0,1
+glioblastoma <> snake venom,1,2,4,3,4,4,0,1,3,1
+glioblastoma <> steroid,0,0,0,2,1,1,0,0,0,1
+glioblastoma <> trametinib,0,1,2,1,2,2,1,1,2,1
+glioblastoma <> vb-111,0,2,0,3,1,1,0,1,0,1
+"glioma <> acid, aminolevulinic",1,1,5,5,7,12,0,2,6,1
+glioma <> bevacizumab,1,2,13,5,16,41,4,15,33,1
+glioma <> carboplatin,1,3,5,3,5,12,1,5,6,1
+glioma <> carmustine,1,3,10,5,8,24,2,10,8,1
+glioma <> copper,1,2,2,3,2,2,0,1,1,1
+glioma <> dexmedetomidine,0,1,1,2,1,1,1,1,1,1
+glioma <> dextromethorphan,1,2,4,4,4,7,1,0,4,1
+glioma <> disulfiram,0,2,2,3,1,2,0,1,1,1
+glioma <> etoposide,1,2,1,3,3,3,0,0,0,1
+glioma <> fluorescein,1,2,1,3,2,3,0,2,2,1
+glioma <> monoclonal antibody,1,1,1,4,2,2,0,1,2,1
+glioma <> temozolomide,1,2,31,5,21,105,9,37,64,1
+glioma <> valproate,1,2,7,4,6,10,1,5,6,1
+glioma <> valproic acid,1,1,6,4,5,8,1,5,5,1
+glioma <> vorinostat,1,2,7,5,6,9,1,2,7,1
+grade iii glioma <> carmustine,0,1,0,1,1,1,0,1,1,1
+grade iii glioma <> temozolomide,0,1,0,1,1,1,0,1,1,1
+heroin dependence <> naltrexone,1,1,1,1,1,1,1,0,1,1
+heroin dependence <> opioid,0,1,0,1,1,1,0,0,1,1
+heroin dependence <> opioid antagonist,0,1,0,1,1,1,0,0,1,1
+huntington disease <> erythropoietin,1,1,3,2,1,1,1,1,1,1
+huntington disease <> ethyl-epa,1,1,1,3,1,1,0,0,1,1
+huntington disease <> iron,1,2,5,3,1,5,2,3,3,1
+huntington disease <> metformin,0,2,1,5,4,7,3,2,5,1
+huntington disease <> minocycline,1,2,8,3,5,7,2,3,7,1
+huntington disease <> neuroleptics,0,1,1,1,1,1,0,0,1,1
+huntington disease <> pridopidine,0,2,2,2,1,1,0,0,1,1
+huntington disease <> riluzole,0,1,1,3,3,3,0,0,1,1
+huntington disease <> tetrabenazine,1,1,1,2,1,1,0,0,0,1
+idiopathic generalized epilepsy <> aeds,1,3,7,5,9,18,3,5,11,1
+idiopathic generalized epilepsy <> anticonvulsant,0,1,4,1,1,1,1,0,0,1
+idiopathic generalized epilepsy <> antiepileptic,1,3,9,5,9,19,2,6,11,1
+idiopathic generalized epilepsy <> cannabidiol,1,3,6,4,6,9,1,4,8,1
+idiopathic generalized epilepsy <> carbamazepine,1,6,17,5,11,38,3,10,13,1
+idiopathic generalized epilepsy <> clobazam,0,2,4,4,4,6,1,2,1,1
+idiopathic generalized epilepsy <> clonazepam,1,2,13,5,8,19,0,8,5,1
+idiopathic generalized epilepsy <> diazepam,1,5,25,5,21,79,7,13,41,1
+idiopathic generalized epilepsy <> felbamate,0,2,6,3,6,9,1,2,5,1
+idiopathic generalized epilepsy <> fluoxetine,1,1,0,2,1,1,0,0,1,1
+idiopathic generalized epilepsy <> lacosamide,0,2,1,1,2,2,0,1,1,1
+idiopathic generalized epilepsy <> lamotrigine,1,2,7,4,6,9,0,1,2,1
+idiopathic generalized epilepsy <> levetiracetam,1,2,5,4,5,7,1,3,2,1
+idiopathic generalized epilepsy <> melatonin,0,2,6,3,4,7,2,0,3,1
+idiopathic generalized epilepsy <> naloxone,1,6,11,4,7,23,0,1,14,1
+idiopathic generalized epilepsy <> naltrexone,1,2,6,4,3,15,1,3,14,1
+idiopathic generalized epilepsy <> perampanel,1,1,1,1,1,1,0,0,1,1
+idiopathic generalized epilepsy <> phenytoin,1,6,22,5,15,64,7,15,22,1
+idiopathic generalized epilepsy <> phenytoin sodium,1,2,0,2,0,1,0,0,0,1
+idiopathic generalized epilepsy <> pregabalin,0,1,2,2,1,4,1,3,4,1
+idiopathic generalized epilepsy <> ssris,0,1,1,0,1,1,0,0,1,1
+idiopathic generalized epilepsy <> topiramate,1,2,3,3,1,2,0,0,0,1
+idiopathic generalized epilepsy <> valproate,1,3,26,5,16,61,7,17,31,1
+idiopathic generalized epilepsy <> zonisamide,1,2,4,3,4,7,0,2,5,1
+low grade glioma <> temozolomide,1,2,3,4,2,2,0,1,0,1
+low grade glioma <> vincristine,1,1,1,1,1,1,0,1,0,1
+ma addiction <> methamphetamine,0,1,6,1,1,2,0,0,2,1
+major depressive disorder <> (-)-pramipexole,0,1,1,1,1,1,0,0,1,1
+major depressive disorder <> 5 hydroxytryptophan,1,1,1,2,2,2,0,0,1,1
+major depressive disorder <> ads,0,0,0,1,1,1,0,0,0,1
+major depressive disorder <> agomelatine,0,1,1,4,2,2,2,1,2,1
+major depressive disorder <> amitriptyline,0,1,1,1,0,1,0,0,0,1
+major depressive disorder <> antidepressants,0,0,0,1,1,1,0,0,0,1
+major depressive disorder <> antipsychotic,1,2,1,2,1,1,0,0,1,1
+major depressive disorder <> antipsychotics,1,2,2,2,2,2,0,0,1,1
+major depressive disorder <> aspirin,0,1,1,1,1,1,0,0,1,1
+major depressive disorder <> aticaprant,0,1,1,2,1,1,1,0,1,1
+major depressive disorder <> atypical antipsychotic,0,3,2,2,4,4,0,2,2,1
+major depressive disorder <> benzodiazepine,0,1,1,1,1,1,0,0,0,1
+major depressive disorder <> bupivacaine,0,1,1,3,1,2,1,0,2,1
+major depressive disorder <> buspirone,0,2,2,1,3,3,0,1,2,1
+major depressive disorder <> cannabidiol,1,1,3,5,3,4,2,1,3,1
+major depressive disorder <> celecoxib,0,1,1,1,2,2,1,1,2,1
+major depressive disorder <> citalopram,0,1,0,1,1,1,0,1,0,1
+major depressive disorder <> clomipramine,1,2,5,5,9,13,5,6,8,1
+major depressive disorder <> clonidine,0,2,2,3,2,3,1,1,2,1
+major depressive disorder <> clozapine,1,3,4,5,6,11,3,5,9,1
+major depressive disorder <> dexmedetomidine,0,0,0,2,1,1,0,0,0,1
+major depressive disorder <> dextromethadone,1,1,1,1,1,1,0,1,1,1
+major depressive disorder <> dextromethorphan,0,1,1,2,2,4,1,2,3,1
+major depressive disorder <> eb-1010,0,1,2,1,1,1,1,1,1,1
+major depressive disorder <> eicosapentaenoate,0,1,1,0,1,1,1,1,1,1
+major depressive disorder <> eicosapentaenoic acid,0,1,1,0,1,1,1,1,1,1
+major depressive disorder <> esketamine,1,2,4,5,4,5,3,3,5,1
+major depressive disorder <> estradiol,1,2,4,4,6,9,3,2,8,1
+"major depressive disorder <> factor, brain-derived neurotrophic",0,2,1,3,1,1,1,0,1,1
+major depressive disorder <> fluvoxamine,1,2,1,1,3,3,0,2,1,1
+major depressive disorder <> glucocorticoids,1,2,3,4,8,13,2,1,8,1
+major depressive disorder <> glyx-13 peptide,1,1,1,2,1,1,0,0,0,1
+major depressive disorder <> guanfacine,0,1,3,1,1,2,0,1,2,1
+major depressive disorder <> haloperidol,1,2,3,3,4,4,0,0,3,1
+major depressive disorder <> hydrocortisone,0,1,1,1,1,1,0,0,1,1
+major depressive disorder <> hydroxymethylglutaryl coa reductase inhibitors,0,1,1,2,1,1,1,1,1,1
+"major depressive disorder <> inhibitor, monoamine oxidase",0,2,3,1,1,2,0,0,2,1
+major depressive disorder <> ketamine,0,1,1,2,1,1,1,0,1,1
+major depressive disorder <> ketamine hydrochloride,1,0,0,2,1,1,0,0,1,1
+major depressive disorder <> levothyroxine,0,1,1,0,1,1,0,0,1,1
+major depressive disorder <> lithium,1,1,1,2,2,2,0,0,0,1
+major depressive disorder <> lurasidone,1,2,4,2,2,3,1,1,3,1
+major depressive disorder <> mecamylamine,1,1,3,2,1,2,0,0,2,1
+major depressive disorder <> mifepristone,0,1,1,2,1,1,0,0,1,1
+major depressive disorder <> minocycline,0,2,3,3,1,1,0,1,1,1
+major depressive disorder <> nicotine,1,2,7,4,4,7,1,1,6,1
+major depressive disorder <> nmda antagonist,0,1,1,2,1,1,1,0,1,1
+major depressive disorder <> ondansetron,1,2,1,3,2,2,0,1,2,1
+major depressive disorder <> phenelzine,1,2,3,3,2,3,1,0,1,1
+major depressive disorder <> pindolol,0,1,2,4,4,5,1,0,2,1
+major depressive disorder <> progesterone,1,1,2,2,2,2,0,0,2,1
+major depressive disorder <> reboxetine,0,1,1,3,2,2,0,0,2,1
+major depressive disorder <> risperidone,1,2,1,2,1,1,0,0,1,1
+major depressive disorder <> rivastigmine,1,1,1,1,1,1,1,1,1,1
+major depressive disorder <> sage-217,0,2,3,3,1,1,1,1,1,1
+major depressive disorder <> scopolamine,0,1,1,0,0,1,0,0,0,1
+major depressive disorder <> selective serotonin,0,1,2,1,1,1,0,0,1,1
+major depressive disorder <> selective serotonin reuptake inhibitors,0,1,0,1,1,1,0,1,0,1
+major depressive disorder <> selenium,0,1,1,2,1,1,0,1,1,1
+major depressive disorder <> serotonin,0,2,6,4,4,5,1,1,3,1
+major depressive disorder <> serotonin reuptake inhibitors,1,2,2,4,3,3,1,1,2,1
+major depressive disorder <> serotonin-noradrenaline reuptake inhibitor,0,1,1,2,1,1,0,0,1,1
+major depressive disorder <> simvastatin,0,2,2,3,2,2,2,2,2,1
+major depressive disorder <> snris,0,2,7,4,2,2,1,0,1,1
+major depressive disorder <> tetrabenazine,0,1,1,0,1,1,0,0,1,1
+major depressive disorder <> tianeptine,0,2,2,2,2,2,0,0,2,1
+major depressive disorder <> tricyclic antidepressant,0,1,1,1,1,2,0,0,0,1
+major depressive disorder <> tricyclic antidepressants,1,3,4,5,5,13,3,1,10,1
+"malignant glioma <> acid, aminolevulinic",0,1,1,2,2,2,1,0,1,1
+malignant glioma <> bevacizumab,1,2,8,5,6,11,2,5,10,1
+malignant glioma <> carmustine,1,2,2,5,2,3,0,2,2,1
+malignant glioma <> dabrafenib,0,1,2,3,1,1,0,1,1,1
+malignant glioma <> monoclonal antibody,0,1,1,1,1,1,1,0,1,1
+malignant glioma <> temozolomide,1,2,22,5,19,60,3,21,39,1
+malignant glioma <> trametinib,0,1,2,3,1,1,0,1,1,1
+malignant glioma <> vorinostat,0,2,3,5,5,5,0,1,3,1
+methamphetamine dependence <> bupropion,0,2,1,0,2,3,0,1,2,1
+methamphetamine dependence <> bupropion hydrochloride,0,2,1,0,2,3,0,1,2,1
+methamphetamine dependence <> mirtazapine,0,1,1,1,1,2,1,1,1,1
+methamphetamine dependence <> modafinil,0,1,1,1,1,1,0,0,1,1
+methamphetamine-induced psychosis <> haloperidol,0,2,2,3,2,2,1,0,1,1
+mononeuropathy <> pregabalin,1,2,5,3,4,4,2,2,4,1
+morphine dependence <> clonidine,0,3,5,3,6,9,0,2,2,1
+morphine dependence <> naloxone,1,3,5,4,11,20,4,5,7,1
+multiple sclerosis <> acetaminophen,0,1,1,1,1,1,0,0,1,1
+multiple sclerosis <> adrenal cortex hormone,1,2,8,5,5,8,4,1,5,1
+multiple sclerosis <> alemtuzumab,1,1,1,2,1,1,0,0,1,1
+multiple sclerosis <> amantadine,1,1,1,4,1,3,0,0,3,1
+multiple sclerosis <> aminopyridine,0,1,1,2,3,4,0,0,0,1
+multiple sclerosis <> aspirin,0,1,0,2,1,1,0,0,1,1
+multiple sclerosis <> beta interferon,1,2,11,5,6,14,2,1,7,1
+multiple sclerosis <> brimonidine,1,1,1,4,1,1,0,0,1,1
+multiple sclerosis <> cannabinoid,1,2,17,5,7,33,6,5,21,1
+multiple sclerosis <> carbamazepine,0,1,2,3,2,2,0,1,1,1
+multiple sclerosis <> cholecalciferol,1,1,3,2,1,2,1,0,2,1
+multiple sclerosis <> corticotropin,0,0,0,1,1,1,0,0,0,1
+multiple sclerosis <> cyclophosphamide,0,2,7,4,2,2,1,0,2,1
+multiple sclerosis <> daclizumab,1,1,5,2,1,1,0,0,0,1
+multiple sclerosis <> dalfampridine,1,2,2,4,2,4,0,0,1,1
+multiple sclerosis <> diclofenac,1,1,1,2,1,1,0,0,1,1
+multiple sclerosis <> diphenhydramine,1,1,2,4,1,1,1,0,1,1
+multiple sclerosis <> dronabinol,0,2,1,3,1,1,0,0,0,1
+multiple sclerosis <> estriol,1,2,6,4,3,9,2,1,6,1
+"multiple sclerosis <> fatty acids, omega-3",0,0,0,2,1,1,0,0,0,1
+multiple sclerosis <> fingolimod,1,1,6,4,4,7,2,2,6,1
+multiple sclerosis <> fingolimod hydrochloride,1,1,7,5,4,5,2,1,5,1
+multiple sclerosis <> fty,1,1,2,4,2,2,0,0,2,1
+multiple sclerosis <> fty-720,1,3,10,5,9,15,5,3,10,1
+multiple sclerosis <> fumarate,1,1,6,5,4,6,4,2,2,1
+"multiple sclerosis <> fumarate, dimethyl",1,2,2,4,2,6,3,1,1,1
+multiple sclerosis <> gilenya,0,1,1,2,1,1,0,0,1,1
+multiple sclerosis <> glatiramer,0,0,2,1,1,2,0,0,0,1
+multiple sclerosis <> hydroxymethylglutaryl coa reductase inhibitors,1,3,7,5,4,13,8,1,11,1
+multiple sclerosis <> incobotulinumtoxina,0,1,1,1,1,1,1,0,1,1
+multiple sclerosis <> interferon,1,2,3,1,2,2,0,0,0,1
+multiple sclerosis <> laquinimod,1,2,4,4,1,3,2,0,2,1
+multiple sclerosis <> memantine,0,1,1,3,1,1,1,0,1,1
+multiple sclerosis <> methylprednisolone,1,2,3,4,4,4,2,1,3,1
+multiple sclerosis <> mitoxantrone,1,1,3,4,2,2,2,1,2,1
+multiple sclerosis <> monomethyl fumarate,1,2,3,5,5,7,1,1,5,1
+multiple sclerosis <> montelukast,1,1,1,4,1,1,1,0,1,1
+multiple sclerosis <> natalizumab,1,1,3,3,2,2,0,0,0,1
+multiple sclerosis <> ofatumumab,0,1,0,2,1,1,0,0,1,1
+multiple sclerosis <> peginterferon beta-1a,1,1,0,3,1,1,1,1,1,1
+multiple sclerosis <> phenylephrine,0,1,0,1,1,1,0,0,0,1
+multiple sclerosis <> prednisone,1,2,2,4,3,4,3,2,2,1
+multiple sclerosis <> propionic acid,1,1,1,3,1,1,1,0,1,1
+multiple sclerosis <> rituximab,1,2,3,4,3,4,0,1,4,1
+multiple sclerosis <> siponimod,1,2,4,5,7,12,5,2,6,1
+multiple sclerosis <> steroid,1,2,3,5,3,5,2,1,3,1
+multiple sclerosis <> testosterone,1,2,1,5,3,5,1,2,4,1
+multiple sclerosis <> thioctic acid,1,2,5,5,5,12,3,4,7,1
+multiple sclerosis <> trimethoprim,1,1,1,1,1,1,1,1,0,1
+multiple sclerosis <> vitamin d,1,2,10,4,3,9,2,1,7,1
+multiple sclerosis <> vitamin d3,0,1,1,2,1,1,1,0,1,1
+multiple sclerosis <> vitamin k,1,2,1,2,1,1,0,1,1,1
+neonatal epilepsy syndrome <> bumetanide,1,2,9,5,5,11,3,3,8,1
+neonatal epilepsy syndrome <> levetiracetam,1,1,2,4,3,6,1,0,4,1
+neonatal epilepsy syndrome <> phenobarbital,1,2,2,4,1,3,1,1,3,1
+neonatal epilepsy syndrome <> topiramate,0,1,2,4,1,6,3,0,5,1
+neuralgia <> acetaminophen,0,1,1,1,1,1,0,0,0,1
+neuralgia <> acetylcysteine,1,2,6,4,7,13,5,2,11,1
+neuralgia <> alpha tocopherol,0,1,3,3,3,4,2,0,4,1
+neuralgia <> amitriptyline,0,3,2,4,7,13,5,2,10,1
+neuralgia <> anti-epileptic drugs,0,1,1,1,1,1,0,1,0,1
+neuralgia <> anticonvulsant,0,2,4,4,3,3,0,0,2,1
+neuralgia <> antidepressants,0,2,5,5,9,17,5,4,17,1
+neuralgia <> apomorphine,1,1,1,3,2,3,1,1,3,1
+neuralgia <> b vitamins,1,1,2,3,2,3,0,0,3,1
+neuralgia <> baclofen,1,3,4,5,17,28,7,3,25,1
+neuralgia <> botulinum toxin,0,1,1,3,1,1,1,0,1,1
+neuralgia <> botulinum toxin type a,0,2,3,4,4,5,2,1,5,1
+neuralgia <> brivaracetam,0,1,1,2,1,1,1,1,1,1
+neuralgia <> bupivacaine,0,2,3,4,5,13,7,5,11,1
+neuralgia <> buprenorphine,1,2,3,3,4,4,3,2,4,1
+neuralgia <> cannabinoid,1,2,7,5,12,36,15,9,31,1
+neuralgia <> capsaicin,1,3,7,4,9,16,6,2,12,1
+neuralgia <> carbamazepine,1,6,7,5,14,24,3,4,15,1
+neuralgia <> celecoxib,1,2,5,5,8,12,2,2,9,1
+neuralgia <> clodronate,1,1,1,2,1,1,1,0,1,1
+neuralgia <> clonidine,1,3,21,4,20,80,35,34,74,1
+neuralgia <> dexamethasone,1,2,2,3,5,9,4,5,9,1
+neuralgia <> dexmedetomidine,1,2,10,5,7,16,10,8,16,1
+neuralgia <> diclofenac,0,2,3,4,4,5,0,0,3,1
+neuralgia <> donepezil,0,2,1,4,3,5,4,2,5,1
+neuralgia <> dronabinol,0,1,1,2,2,2,1,1,2,1
+neuralgia <> duloxetine,0,2,3,3,3,5,2,1,4,1
+neuralgia <> eslicarbazepine,0,1,2,3,1,1,1,0,1,1
+neuralgia <> fentanyl,0,2,6,5,7,9,2,2,8,1
+neuralgia <> gabapentin,1,5,13,4,11,34,10,10,25,1
+neuralgia <> incobotulinumtoxina,0,2,3,4,3,4,2,1,4,1
+neuralgia <> ketamine,0,2,3,3,7,8,2,1,7,1
+neuralgia <> ketoprofen,0,2,2,3,3,5,1,0,5,1
+neuralgia <> lacosamide,1,2,4,4,5,9,5,4,7,1
+neuralgia <> lamotrigine,1,5,13,5,10,24,6,2,17,1
+neuralgia <> levetiracetam,0,1,1,2,1,1,1,0,0,1
+neuralgia <> levodopa,0,1,1,4,2,3,0,1,3,1
+neuralgia <> lidocaine,0,2,5,4,5,22,5,3,20,1
+neuralgia <> local anesthetic,1,1,1,3,3,6,3,1,5,1
+neuralgia <> magnesium,0,1,1,3,3,3,2,2,2,1
+neuralgia <> memantine,1,3,7,4,7,9,2,3,9,1
+neuralgia <> methadone,0,1,3,3,6,7,4,1,7,1
+neuralgia <> minocycline,0,2,8,5,12,29,16,8,26,1
+neuralgia <> mirogabalin,1,2,9,2,1,3,2,3,1,1
+neuralgia <> morphine,1,3,33,5,27,186,60,38,157,1
+neuralgia <> n methylaspartate,1,2,3,4,5,7,4,3,6,1
+neuralgia <> naloxone,1,3,13,5,28,112,42,32,98,1
+neuralgia <> naltrexone,1,2,9,5,10,39,17,12,35,1
+neuralgia <> non-steroidal anti-inflammatory drugs,1,1,2,3,2,3,2,1,3,1
+neuralgia <> nsaids,1,1,2,4,4,6,5,1,6,1
+neuralgia <> oct,0,1,1,2,1,1,0,0,0,1
+neuralgia <> omega-conotoxins,1,3,6,5,6,13,4,2,11,1
+neuralgia <> opioid,1,2,9,4,19,51,15,9,47,1
+neuralgia <> oxaliplatin,1,2,3,4,5,5,4,3,5,1
+neuralgia <> oxcarbazepine,0,5,5,4,4,5,0,1,3,1
+neuralgia <> oxycodone,0,2,2,2,2,2,0,1,2,1
+neuralgia <> paroxetine,0,2,4,4,3,8,3,4,7,1
+neuralgia <> pentoxifylline,0,2,3,3,3,5,1,1,5,1
+neuralgia <> phenytoin,1,2,5,4,7,15,2,1,7,1
+neuralgia <> pregabalin,0,1,2,3,3,6,2,1,4,1
+neuralgia <> quercetin,0,2,3,4,5,7,4,3,7,1
+neuralgia <> ranolazine,0,1,1,1,1,1,1,1,0,1
+neuralgia <> ropivacaine,1,2,2,4,3,4,2,1,4,1
+neuralgia <> sodium channel blocker,1,2,5,5,4,7,5,3,6,1
+neuralgia <> steroid,0,1,1,2,2,3,3,3,3,1
+"neuralgia <> sulfate, magnesium",0,1,2,3,4,6,3,3,4,1
+neuralgia <> sumatriptan,0,1,1,2,1,1,1,0,1,1
+neuralgia <> tapentadol,0,1,1,2,2,3,2,2,3,1
+neuralgia <> tramadol,0,2,3,2,3,4,0,1,3,1
+neuralgia <> triamcinolone,0,1,1,2,3,3,3,3,3,1
+neuralgia <> tumor necrosis factor alpha inhibitor,1,2,7,5,7,10,5,4,8,1
+neuralgia <> venlafaxine,0,2,6,3,9,17,8,3,16,1
+neuralgia <> vitamin e,0,2,3,3,6,7,4,2,6,1
+neuralgia <> ziconotide,0,2,4,5,5,10,2,2,8,1
+"neuropathy, painful <> carbamazepine",0,1,1,1,1,1,1,0,1,1
+"neuropathy, painful <> gabapentin",0,2,6,3,5,5,2,2,5,1
+"neuropathy, painful <> omega-conotoxins",0,1,1,2,1,1,1,1,1,1
+"neuropathy, painful <> oxaliplatin",1,2,4,5,2,5,4,3,5,1
+"neuropathy, painful <> ziconotide",0,1,1,2,1,1,1,1,1,1
+obsolete absence epilepsy <> lamotrigine,0,1,3,3,3,3,0,0,3,1
+obsolete absence epilepsy <> valproate,1,2,11,4,3,5,1,1,0,1
+obsolete absence epilepsy <> valproic acid,1,2,6,4,3,5,0,1,2,1
+obsolete early-onset parkinson disease <> levodopa,0,1,1,2,1,1,0,0,1,1
+obsolete schizophrenia <> clozapine,0,1,1,1,1,1,0,1,1,1
+obsolete schizophrenia <> haloperidol,0,1,1,2,1,1,0,0,1,1
+"obsolete susceptibility to ischemic stroke <> 2 inhibitor, cyclooxygenase",0,1,1,3,1,1,0,0,1,1
+obsolete susceptibility to ischemic stroke <> 3-n-butylphthalide,1,2,7,5,2,19,10,17,16,1
+obsolete susceptibility to ischemic stroke <> abciximab,0,1,0,1,1,1,1,1,1,1
+"obsolete susceptibility to ischemic stroke <> acid, docosahexaenoic",1,4,3,5,5,19,16,13,15,1
+obsolete susceptibility to ischemic stroke <> agomelatine,0,1,1,2,1,3,0,3,3,1
+obsolete susceptibility to ischemic stroke <> altep,0,1,1,2,2,2,0,0,1,1
+obsolete susceptibility to ischemic stroke <> alteplase,1,2,3,3,2,2,1,0,0,1
+obsolete susceptibility to ischemic stroke <> angiotensin receptor blocker,0,0,0,1,1,1,0,0,1,1
+obsolete susceptibility to ischemic stroke <> angiotensin receptor blockers,0,1,2,2,2,2,0,0,2,1
+obsolete susceptibility to ischemic stroke <> argatroban,0,1,1,5,2,2,0,0,1,1
+obsolete susceptibility to ischemic stroke <> aspirin,0,1,0,1,1,1,1,1,0,1
+obsolete susceptibility to ischemic stroke <> atorvastatin,0,2,5,4,4,6,1,3,6,1
+obsolete susceptibility to ischemic stroke <> capsaicin,1,2,4,4,5,6,3,5,6,1
+obsolete susceptibility to ischemic stroke <> cilostazol,1,2,1,2,2,2,0,0,1,1
+obsolete susceptibility to ischemic stroke <> circulating anticoagulants,0,0,0,1,1,1,0,1,0,1
+obsolete susceptibility to ischemic stroke <> citicoline,1,1,3,4,2,3,0,2,3,1
+obsolete susceptibility to ischemic stroke <> dabigatran,0,2,3,5,3,4,2,3,3,1
+obsolete susceptibility to ischemic stroke <> dehydroascorbic acid,0,4,1,3,2,2,1,1,1,1
+obsolete susceptibility to ischemic stroke <> dexmedetomidine,0,2,3,5,2,8,4,3,5,1
+obsolete susceptibility to ischemic stroke <> docosahexaenoate,1,4,3,5,5,19,16,13,15,1
+obsolete susceptibility to ischemic stroke <> endothelins,1,1,1,4,1,1,1,1,1,1
+"obsolete susceptibility to ischemic stroke <> etexilate, dabigatran",0,2,2,5,2,3,2,2,2,1
+obsolete susceptibility to ischemic stroke <> ezetimibe,0,1,1,2,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> fluoxetine,0,2,4,5,5,7,4,5,6,1
+obsolete susceptibility to ischemic stroke <> folic acid,0,2,1,3,2,3,0,2,3,1
+obsolete susceptibility to ischemic stroke <> ganglioside m1b,0,1,1,3,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> glenzocimab,1,0,0,1,1,1,1,1,0,1
+obsolete susceptibility to ischemic stroke <> glyburide,1,3,4,5,5,14,6,7,8,1
+obsolete susceptibility to ischemic stroke <> gm1-ganglioside,0,1,1,3,2,2,1,2,1,1
+obsolete susceptibility to ischemic stroke <> heparin,1,2,1,2,2,2,1,1,0,1
+obsolete susceptibility to ischemic stroke <> hydroxymethylglutaryl coa reductase inhibitors,1,2,5,4,5,8,3,3,7,1
+obsolete susceptibility to ischemic stroke <> insulin,0,1,1,4,1,1,0,0,1,1
+obsolete susceptibility to ischemic stroke <> irl-1620,1,1,2,4,1,3,3,3,3,1
+obsolete susceptibility to ischemic stroke <> melatonin,1,2,6,5,6,13,4,6,13,1
+obsolete susceptibility to ischemic stroke <> memantine,1,3,5,4,5,8,5,6,8,1
+obsolete susceptibility to ischemic stroke <> mexidol,1,1,0,1,1,1,0,0,0,1
+obsolete susceptibility to ischemic stroke <> minocycline,0,2,5,4,2,6,1,2,6,1
+obsolete susceptibility to ischemic stroke <> nbp,0,1,1,4,1,2,1,2,2,1
+obsolete susceptibility to ischemic stroke <> nerve growth factor,0,1,1,4,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> neuroprotectant,0,1,1,4,1,1,0,1,0,1
+obsolete susceptibility to ischemic stroke <> nimodipine,0,2,1,4,3,3,1,1,0,1
+obsolete susceptibility to ischemic stroke <> nxy 059,0,3,2,4,2,3,2,0,2,1
+obsolete susceptibility to ischemic stroke <> okn 007,0,3,2,4,2,3,2,0,2,1
+obsolete susceptibility to ischemic stroke <> pioglitazone,0,1,1,5,3,5,4,2,5,1
+obsolete susceptibility to ischemic stroke <> plasminogen activator,1,4,7,5,8,15,5,6,12,1
+obsolete susceptibility to ischemic stroke <> propofol,0,2,3,4,1,4,1,2,2,1
+obsolete susceptibility to ischemic stroke <> propranolol,0,1,1,4,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> rivaroxaban,0,1,1,2,1,1,1,0,1,1
+obsolete susceptibility to ischemic stroke <> rosuvastatin,0,1,1,2,1,1,0,1,1,1
+obsolete susceptibility to ischemic stroke <> rtpa,0,1,3,4,3,3,1,2,3,1
+obsolete susceptibility to ischemic stroke <> selenium,0,2,2,4,3,5,3,2,3,1
+obsolete susceptibility to ischemic stroke <> sialogangliosides,0,1,1,1,1,1,0,1,0,1
+obsolete susceptibility to ischemic stroke <> simvastatin,1,2,3,3,3,3,0,2,3,1
+obsolete susceptibility to ischemic stroke <> sodium-glucose transporter 2 inhibitor,0,1,1,4,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> sovateltide,1,1,1,4,1,1,1,1,1,1
+obsolete susceptibility to ischemic stroke <> tenecteplase,0,2,3,2,2,3,0,1,3,1
+obsolete susceptibility to ischemic stroke <> tetracycline,0,1,1,2,1,1,0,1,1,1
+obsolete susceptibility to ischemic stroke <> thrombolytic,1,4,6,5,5,10,4,6,7,1
+obsolete susceptibility to ischemic stroke <> tirofiban,0,2,2,4,2,3,2,2,3,1
+obsolete susceptibility to ischemic stroke <> tnk,0,2,2,2,2,2,0,1,2,1
+obsolete susceptibility to ischemic stroke <> triflusal,0,1,1,2,1,1,1,0,1,1
+obsolete susceptibility to ischemic stroke <> urokinase,0,4,4,5,6,11,5,2,7,1
+obsolete susceptibility to ischemic stroke <> vinca alkaloid,0,1,1,2,3,3,0,1,0,1
+obsolete susceptibility to ischemic stroke <> vinpocetine,0,1,1,2,3,3,0,1,0,1
+obsolete susceptibility to ischemic stroke <> vitamin c,0,2,1,4,2,2,1,1,2,1
+obsolete susceptibility to ischemic stroke <> xanthine oxidase inhibitor,0,1,1,2,1,1,0,1,0,1
+obsolete susceptibility to ischemic stroke <> xenon,1,2,2,5,4,4,2,3,4,1
+oligodendroglioma <> chemotherapy,1,2,2,3,1,1,0,0,0,1
+oligodendroglioma <> temozolomide,1,2,3,4,3,3,0,1,2,1
+"opiate dependence <> 3,3'-di-(n-cyclopropylmethyl-4,5-epoxy-14-hydroxymorphinan-6-one-3-yl)carbonate",0,1,1,2,1,1,0,0,0,1
+opiate dependence <> baclofen,1,2,4,3,4,8,3,7,5,1
+opiate dependence <> clonidine,0,3,8,4,6,12,2,2,4,1
+opiate dependence <> dextroamphetamine,0,1,1,3,1,1,0,1,1,1
+opiate dependence <> dronabinol,0,2,2,2,2,3,1,1,3,1
+opiate dependence <> fentanyl,0,2,3,3,2,3,1,1,3,1
+opiate dependence <> gabapentin,0,1,3,4,4,5,2,3,5,1
+"opiate dependence <> hydrochloride, naloxone",0,2,4,2,1,1,0,0,1,1
+opiate dependence <> ketamine,0,2,3,3,3,3,0,0,2,1
+opiate dependence <> lidocaine,0,2,3,5,3,3,2,0,1,1
+opiate dependence <> memantine,1,3,5,4,5,10,2,3,6,1
+opiate dependence <> morphine,1,3,14,5,16,65,10,15,42,1
+opiate dependence <> naloxone,1,3,5,4,6,16,0,4,4,1
+opiate dependence <> naltrexone,1,4,5,3,4,7,1,2,6,1
+opiate dependence <> nicotine,0,2,2,3,2,2,0,2,2,1
+opiate dependence <> nlx,1,1,0,0,1,1,0,1,1,1
+opiate dependence <> opioid,1,4,6,5,5,8,1,1,6,1
+opiate dependence <> opioid antagonist,1,3,1,2,2,3,0,1,3,1
+opiate dependence <> sufentanil,0,1,1,1,1,1,0,0,1,1
+"opiate dependence <> sulfate, morphine",0,2,1,1,1,1,0,0,1,1
+opiate dependence <> tramadol,0,1,1,2,1,1,0,0,1,1
+opioid-induced respiratory depression <> opioid,1,1,1,1,1,1,0,0,1,1
+osteoporosis-pseudoglioma syndrome <> atropine,0,1,1,5,1,1,0,1,1,1
+oxaliplatin induced neuropathy <> oxaliplatin,0,1,1,3,1,1,1,1,1,1
+painful diabetic neuropathy <> gabapentin,0,1,1,3,1,1,1,0,1,1
+painful diabetic neuropathy <> lidocaine,0,1,1,4,1,1,0,0,1,1
+painful diabetic peripheral neuropathy <> carbamazepine,0,1,1,1,1,1,1,0,1,1
+palsy <> steroid,1,1,1,2,1,1,1,0,1,1
+paranoid schizophrenia <> haloperidol,0,1,1,1,0,1,0,0,0,1
+"parkinson disease 3, autosomal dominant <> levodopa",1,1,0,1,1,1,0,0,0,1
+parkinson disease <> (-)-pramipexole,0,3,2,1,2,4,0,0,1,1
+parkinson disease <> 18f-av-133,0,3,2,4,3,4,0,1,4,1
+"parkinson disease <> 3,4-dihydroxyphenylalanine",1,3,13,5,22,100,42,26,77,1
+parkinson disease <> acp 103,0,2,1,1,1,1,0,0,0,1
+parkinson disease <> adenosine a2a receptor antagonists,1,3,9,4,13,58,9,8,33,1
+"parkinson disease <> agents, iron chelating",1,3,6,3,6,22,3,3,10,1
+parkinson disease <> agomelatine,0,1,2,3,2,2,0,1,2,1
+parkinson disease <> amantadine,1,3,7,4,11,19,6,4,13,1
+parkinson disease <> antidepressants,0,2,3,1,1,1,0,0,1,1
+parkinson disease <> antipsychotics,0,3,4,4,3,5,3,2,4,1
+parkinson disease <> apomorphine,1,3,4,4,7,20,4,4,7,1
+parkinson disease <> armodafinil,0,1,1,1,1,1,0,0,0,1
+parkinson disease <> benserazide,1,3,7,5,17,42,8,6,30,1
+parkinson disease <> bf2.649,0,1,1,2,1,1,0,0,1,1
+parkinson disease <> bromocriptine,1,4,4,3,6,14,3,2,0,1
+parkinson disease <> bupropion,0,2,1,3,2,2,1,0,2,1
+parkinson disease <> bupropion hydrochloride,0,2,1,3,2,2,1,0,2,1
+parkinson disease <> buspirone,1,3,7,4,7,27,15,14,25,1
+parkinson disease <> cabergoline,1,3,1,3,4,8,3,0,4,1
+parkinson disease <> caffeine,1,3,8,4,10,24,5,8,18,1
+parkinson disease <> celecoxib,0,1,3,4,4,6,2,2,4,1
+parkinson disease <> cholinesterase inhibitor,0,2,3,2,3,4,0,0,2,1
+parkinson disease <> clioquinol,1,1,2,2,4,5,1,1,2,1
+parkinson disease <> clozapine,1,3,14,5,10,24,6,6,17,1
+parkinson disease <> comt inhibitors,1,2,3,3,4,5,0,0,4,1
+parkinson disease <> d2 receptor antagonist,1,4,4,3,5,5,1,1,4,1
+parkinson disease <> deferiprone,0,1,2,2,1,1,0,0,1,1
+parkinson disease <> desmopressin,1,1,1,1,1,1,0,0,1,1
+parkinson disease <> dexamethasone,0,2,3,3,3,3,0,0,0,1
+parkinson disease <> dexmedetomidine,0,1,1,3,1,2,0,1,2,1
+parkinson disease <> domperidone,1,3,2,5,6,8,4,2,1,1
+parkinson disease <> dopa decarboxylase inhibitor,1,3,4,4,5,7,2,1,3,1
+parkinson disease <> dopamine,1,4,5,4,6,11,0,0,3,1
+parkinson disease <> dopamine agonist,1,4,4,4,8,13,1,2,7,1
+parkinson disease <> dopamine agonists,0,2,2,3,4,7,0,2,1,1
+parkinson disease <> dopamine receptor agonists,1,3,6,4,11,18,4,2,11,1
+parkinson disease <> dopamine replacement therapy,1,2,1,4,1,2,1,1,2,1
+parkinson disease <> dopamine transporter inhibitor,0,0,0,2,1,1,0,1,0,1
+parkinson disease <> dopaminergic,0,3,0,4,3,4,0,2,2,1
+parkinson disease <> dronabinol,1,3,3,3,5,9,3,2,7,1
+parkinson disease <> droxidopa,0,1,1,0,1,1,0,0,0,1
+parkinson disease <> entacapone,1,2,1,3,1,3,0,1,1,1
+parkinson disease <> epigallocatechin gallate,1,4,7,4,8,13,2,1,6,1
+parkinson disease <> escitalopram,0,2,1,4,2,2,0,0,2,1
+parkinson disease <> fluorodopa,0,2,2,4,2,2,1,0,2,1
+parkinson disease <> fluorodopa f-18,0,2,2,4,1,1,1,0,1,1
+"parkinson disease <> inhibitor, monoamine oxidase",1,4,11,5,16,48,5,4,19,1
+parkinson disease <> inosine,0,1,1,1,1,1,0,0,0,1
+parkinson disease <> insulin,0,1,1,4,2,2,0,0,1,1
+parkinson disease <> isradipine,1,3,3,5,9,12,3,2,7,1
+parkinson disease <> kw 6002,1,3,3,2,3,5,0,1,2,1
+parkinson disease <> levetiracetam,1,1,0,1,2,3,3,0,3,1
+parkinson disease <> levodopa benserazide,1,3,1,3,5,5,3,2,3,1
+parkinson disease <> levodopa/benserazide,1,1,1,3,1,1,0,0,1,1
+parkinson disease <> madopar,1,1,2,4,1,2,0,2,2,1
+parkinson disease <> melatonin,1,5,11,5,17,45,7,14,29,1
+parkinson disease <> memantine,1,2,4,3,3,5,0,0,1,1
+parkinson disease <> methylphenidate,0,2,4,3,3,5,2,0,4,1
+parkinson disease <> minocycline,1,1,2,2,2,3,0,0,2,1
+parkinson disease <> modafinil,1,2,1,2,3,3,1,1,1,1
+parkinson disease <> nabilone,0,1,0,0,1,1,1,1,1,1
+parkinson disease <> neuroleptic,0,2,1,1,2,2,0,0,0,1
+parkinson disease <> nicotine,1,4,8,4,14,41,6,5,29,1
+parkinson disease <> nmda receptor antagonists,1,2,5,4,8,13,3,1,6,1
+parkinson disease <> nortriptyline,0,2,1,3,1,3,3,2,2,1
+parkinson disease <> opicapone,1,2,1,3,1,3,0,1,2,1
+parkinson disease <> oxytocin,1,2,3,3,3,3,0,1,3,1
+parkinson disease <> paclitaxel,0,2,2,4,1,1,0,1,1,1
+parkinson disease <> papillomavirus e7 proteins,0,0,1,0,1,1,0,0,1,1
+parkinson disease <> pimavanserin,0,2,1,1,1,1,0,0,0,1
+parkinson disease <> piribedil,1,3,4,3,3,7,4,0,3,1
+parkinson disease <> prazosin,1,3,3,4,7,12,3,3,9,1
+parkinson disease <> preladenant,0,3,3,3,1,5,2,1,3,1
+parkinson disease <> propofol,0,1,1,2,1,1,0,0,1,1
+parkinson disease <> rasagiline,1,1,2,3,2,2,0,0,1,1
+parkinson disease <> risperidone,0,2,3,2,2,2,0,0,1,1
+parkinson disease <> ropinirole,1,3,4,4,4,8,3,0,6,1
+parkinson disease <> s adenosylmethionine,0,1,1,3,1,7,0,1,1,1
+parkinson disease <> safinamide,0,0,0,1,1,1,0,0,1,1
+parkinson disease <> sarizotan,1,3,2,1,3,3,1,1,1,1
+parkinson disease <> selective serotonin reuptake inhibitor,1,2,3,5,5,9,3,1,6,1
+parkinson disease <> selegiline,1,4,8,5,13,48,6,2,25,1
+parkinson disease <> selegiline hydrochloride,1,2,2,2,2,2,1,0,0,1
+parkinson disease <> sertraline,0,1,0,1,1,1,1,0,1,1
+parkinson disease <> snd-919,0,3,0,1,1,1,0,0,0,1
+parkinson disease <> ssri,0,1,1,1,1,1,1,1,1,1
+parkinson disease <> sumanirole,0,0,0,1,1,1,0,0,0,1
+parkinson disease <> talipexole,1,2,2,2,2,4,0,0,0,1
+parkinson disease <> terazosin,0,2,0,2,3,4,1,0,2,1
+parkinson disease <> testosterone,1,2,5,3,1,7,3,3,4,1
+parkinson disease <> tolcapone,1,3,2,4,3,5,0,1,1,1
+parkinson disease <> trehalose,1,3,5,5,8,15,4,3,14,1
+parkinson disease <> tricyclic antidepressant,0,3,4,4,4,6,4,5,6,1
+parkinson disease <> tvp 1022,1,2,1,3,2,2,1,0,1,1
+parkinson disease <> ubidecarenone,0,1,0,1,2,2,0,0,0,1
+parkinson disease <> varenicline,1,2,1,1,1,2,2,0,2,1
+parkinson disease <> vitamin d,0,2,2,1,1,1,0,0,0,1
+parkinson disease <> zonisamide,1,2,6,3,3,16,3,1,14,1
+parkinsonian disorder <> amantadine,0,2,2,2,2,4,0,0,1,1
+parkinsonian disorder <> carbidopa,0,2,1,1,1,2,0,1,0,1
+parkinsonian disorder <> clozapine,0,2,1,3,2,3,0,0,1,1
+parkinsonian disorder <> dopamine,1,3,2,3,3,4,0,0,3,1
+"parkinsonian disorder <> inhibitor, monoamine oxidase",1,3,3,3,4,7,2,0,3,1
+parkinsonian disorder <> levodopa,1,4,5,4,8,15,1,2,4,1
+parkinsonian disorder <> memantine,0,2,3,2,2,4,0,0,1,1
+parkinsonian disorder <> olanzapine,0,1,1,1,1,1,0,0,0,1
+parkinsonian disorder <> quetiapine,0,1,1,1,1,1,0,0,0,1
+parkinsonian disorder <> selegiline,0,1,0,2,1,1,0,0,0,1
+parkinsonian disorder <> zonisamide,1,1,0,1,1,1,1,0,1,1
+partial motor epilepsy <> carisbamate,0,1,1,1,1,1,1,0,0,1
+"pediatric meningioma <> acid, aminolevulinic",1,0,0,2,1,1,0,0,0,1
+pediatric meningioma <> mifepristone,0,1,1,2,1,1,0,0,1,1
+peripheral neuropathy <> acetylcarnitine,0,2,3,4,3,5,2,0,4,1
+"peripheral neuropathy <> b12, vitamin",0,2,3,3,4,5,2,0,3,1
+peripheral neuropathy <> bortezomib,1,2,6,4,5,10,4,3,8,1
+peripheral neuropathy <> calcium,0,1,1,1,1,1,1,0,1,1
+peripheral neuropathy <> cannabinoid,0,1,2,2,4,4,3,3,4,1
+peripheral neuropathy <> carboplatin,0,1,1,2,1,1,0,1,0,1
+peripheral neuropathy <> celecoxib,0,2,2,3,2,2,0,1,2,1
+peripheral neuropathy <> cholecalciferol,0,1,1,2,1,1,0,0,1,1
+peripheral neuropathy <> cilostazol,0,1,2,3,2,2,0,0,1,1
+"peripheral neuropathy <> dismutase, superoxide",0,1,0,1,1,1,0,0,1,1
+peripheral neuropathy <> eribulin,1,1,1,2,1,1,0,1,0,1
+peripheral neuropathy <> eribulin mesylate,1,1,1,2,1,1,0,1,0,1
+peripheral neuropathy <> gabapentin,0,1,2,4,6,9,1,2,8,1
+peripheral neuropathy <> glutathione,0,2,2,2,3,3,1,2,2,1
+peripheral neuropathy <> ketamine,0,1,1,4,3,3,2,1,3,1
+peripheral neuropathy <> lidocaine,0,1,0,4,1,1,0,0,1,1
+peripheral neuropathy <> ly 353381,0,1,1,1,1,1,0,0,1,1
+peripheral neuropathy <> magnesium,0,1,1,2,2,2,1,0,2,1
+peripheral neuropathy <> morphine,0,2,5,4,7,16,5,3,16,1
+peripheral neuropathy <> niacinamide,1,2,2,4,4,4,3,1,2,1
+peripheral neuropathy <> oxaliplatin,0,2,2,4,2,2,2,2,2,1
+peripheral neuropathy <> paclitaxel,1,1,2,3,2,2,1,0,2,1
+peripheral neuropathy <> pregabalin,1,1,2,3,3,3,1,0,3,1
+peripheral neuropathy <> steroid,1,1,1,1,1,1,0,1,1,1
+peripheral neuropathy <> thiamine,0,1,1,2,1,1,0,0,1,1
+peripheral neuropathy <> thioctic acid,0,2,3,4,5,6,1,2,3,1
+peripheral neuropathy <> vitamin b6,0,1,1,0,0,1,0,0,0,1
+photosensitive epilepsy <> levetiracetam,1,0,0,2,1,1,0,0,1,1
+polyneuropathy <> adrenal cortex hormone,1,0,1,3,1,1,1,0,0,1
+polyneuropathy <> botox,0,1,1,2,1,1,0,0,0,1
+polyneuropathy <> botulinum toxin type a,0,1,1,2,1,1,0,0,0,1
+polyneuropathy <> gabapentin,0,1,2,3,1,1,0,1,1,1
+polyneuropathy <> immunoglobulins,0,1,1,0,1,1,0,1,0,1
+polyneuropathy <> intravenous immunoglobulins,0,1,1,3,1,1,0,1,1,1
+polyneuropathy <> onabotulinumtoxina,0,1,1,2,1,1,0,0,0,1
+polyneuropathy <> oxaliplatin,0,1,1,2,1,1,1,1,1,1
+post-traumatic epilepsy <> lacosamide,0,1,0,3,1,1,1,0,1,1
+post-traumatic epilepsy <> levetiracetam,0,1,2,4,3,5,2,2,5,1
+post-traumatic epilepsy <> phenytoin,1,3,3,4,2,4,1,0,3,1
+postherpetic neuralgia <> bupivacaine,0,1,1,1,1,1,0,0,0,1
+postherpetic neuralgia <> gabapentin,0,1,1,3,1,2,1,1,2,1
+postherpetic neuralgia <> morphine,0,1,1,3,1,1,1,1,1,1
+postpartum depression <> brexanolone,1,2,5,4,1,2,2,2,2,1
+postpartum depression <> esketamine,1,1,1,3,1,1,1,0,1,1
+postpartum depression <> estradiol,1,1,1,2,1,1,1,0,1,1
+postpartum depression <> ketamine,1,1,1,3,1,2,2,2,2,1
+postpartum depression <> pregnanolone,1,2,5,4,1,2,2,2,2,1
+postpartum depression <> zuranolone,0,2,4,4,1,2,1,1,1,1
+progressive supranuclear palsy-parkinsonism syndrome <> quetiapine,0,1,1,1,1,1,0,0,1,1
+recurrent glioblastoma <> bevacizumab,0,1,0,4,2,2,0,0,1,1
+refractory depression <> ketamine,1,1,1,2,1,1,1,1,1,1
+refractory epilepsy <> clobazam,0,1,2,2,2,2,1,0,0,1
+refractory epilepsy <> levetiracetam,0,1,1,1,1,1,1,0,0,1
+refractory pediatric epilepsy <> cannabidiol,0,1,0,0,1,1,0,0,0,1
+relapsing-remitting multiple sclerosis <> acthar,1,1,1,4,1,1,1,0,1,1
+relapsing-remitting multiple sclerosis <> beta interferon,1,2,3,4,2,4,1,0,2,1
+relapsing-remitting multiple sclerosis <> corticotropin,1,1,1,4,1,2,1,0,1,1
+relapsing-remitting multiple sclerosis <> crotonates,0,1,1,4,1,1,1,1,1,1
+relapsing-remitting multiple sclerosis <> fty-720,1,1,1,4,1,1,1,0,1,1
+relapsing-remitting multiple sclerosis <> fumarate,0,1,1,3,2,2,2,0,0,1
+"relapsing-remitting multiple sclerosis <> fumarate, dimethyl",0,1,1,2,1,1,1,0,0,1
+relapsing-remitting multiple sclerosis <> glatiramer,0,0,0,0,1,1,0,0,0,1
+relapsing-remitting multiple sclerosis <> monomethyl fumarate,1,1,1,3,5,5,1,0,2,1
+relapsing-remitting multiple sclerosis <> rituximab,0,1,2,1,1,1,0,0,1,1
+resistant epilepsy <> aeds,0,1,1,1,1,1,0,1,1,1
+resistant epilepsy <> antiepileptic drugs,0,1,1,1,1,1,0,1,1,1
+resistant epilepsy <> lamotrigine,1,1,1,0,1,1,0,1,1,1
+resistant epilepsy <> valproate,0,1,1,1,1,1,0,1,1,1
+respiratory depression <> doxapram,1,2,0,2,1,2,0,1,1,1
+respiratory depression <> ethanol,0,1,1,1,1,1,1,0,1,1
+respiratory depression <> fentanyl,1,2,1,1,1,2,0,0,1,1
+respiratory depression <> ketamine,1,1,2,0,1,1,1,0,1,1
+respiratory depression <> morphine,0,2,1,2,2,2,0,0,2,1
+respiratory depression <> nalmefene,0,1,1,1,1,1,0,0,1,1
+respiratory depression <> naloxone,0,2,0,1,0,1,0,0,0,1
+respiratory depression <> opioid,0,1,1,1,1,1,0,0,1,1
+"schizophrenia <> 3 inhibitor, phosphodiesterase",0,1,1,2,1,1,0,0,1,1
+schizophrenia <> acetylcysteine,1,2,2,3,3,3,0,1,3,1
+"schizophrenia <> acid, docosahexaenoic",0,1,1,1,1,1,0,0,1,1
+schizophrenia <> amantadine,0,1,0,1,1,1,0,1,0,1
+schizophrenia <> amisulpride,0,1,1,2,1,1,0,0,0,1
+schizophrenia <> ampakine,0,1,1,2,1,2,0,0,0,1
+schizophrenia <> anti antibodies,0,1,1,1,1,1,0,0,1,1
+schizophrenia <> anticholinergic,0,1,1,0,1,1,0,0,0,1
+schizophrenia <> antidepressant,0,1,1,2,1,1,0,1,1,1
+schizophrenia <> antidepressants,0,1,1,2,2,2,0,1,1,1
+schizophrenia <> antipsychotic,0,1,1,1,1,1,1,0,0,1
+schizophrenia <> antipsychotic drug,1,1,1,2,1,1,0,1,0,1
+schizophrenia <> antipsychotic drugs,1,2,5,4,7,10,2,2,7,1
+schizophrenia <> antipsychotic treatment,1,1,2,3,1,1,1,0,1,1
+schizophrenia <> antipsychotics,0,2,5,3,6,12,2,6,6,1
+schizophrenia <> apd,0,1,0,2,1,1,0,0,0,1
+schizophrenia <> aspirin,0,2,2,1,1,1,0,0,0,1
+schizophrenia <> atypical,1,2,5,4,7,14,5,3,6,1
+schizophrenia <> atypical antipsychotic,1,1,2,3,3,5,1,0,1,1
+schizophrenia <> atypical antipsychotic drug,0,1,0,2,1,1,0,0,0,1
+schizophrenia <> atypical antipsychotic drugs,0,1,2,3,4,11,2,4,5,1
+schizophrenia <> atypical antipsychotics,0,1,2,3,3,4,0,1,0,1
+schizophrenia <> atypical neuroleptic,0,1,2,1,2,2,0,1,0,1
+schizophrenia <> benzodiazepine,0,1,1,3,1,1,0,0,0,1
+schizophrenia <> benztropine,1,1,0,1,2,2,1,0,2,1
+schizophrenia <> berberine,1,3,4,4,5,8,1,2,6,1
+schizophrenia <> bifeprunox,0,1,1,1,1,2,1,0,1,1
+schizophrenia <> bitopertin,1,1,0,0,1,1,0,1,0,1
+schizophrenia <> brexpiprazole,0,3,6,3,3,3,1,1,3,1
+schizophrenia <> bromocriptine,0,2,4,4,4,7,1,3,3,1
+schizophrenia <> buspirone,0,2,3,1,3,3,0,1,1,1
+schizophrenia <> carbamazepine,1,3,2,3,3,5,1,2,3,1
+schizophrenia <> cariprazine,0,1,0,1,1,1,0,0,1,1
+schizophrenia <> chlorpromazine,1,1,1,1,1,1,1,0,0,1
+schizophrenia <> citalopram,0,1,2,3,2,2,2,2,0,1
+schizophrenia <> citicoline,0,1,1,1,1,1,0,0,1,1
+schizophrenia <> clozapine,0,0,1,0,2,2,0,0,0,1
+schizophrenia <> conventional antipsychotic,0,1,1,2,1,1,0,0,1,1
+schizophrenia <> cx516,0,2,2,2,2,2,0,0,2,1
+schizophrenia <> cycloserine,0,1,1,2,1,2,0,1,2,1
+schizophrenia <> d2 receptor antagonist,1,1,2,3,2,2,1,0,2,1
+schizophrenia <> d2 receptor partial agonist,1,3,2,2,2,3,1,0,2,1
+schizophrenia <> dextromethorphan,0,1,0,1,1,1,0,1,0,1
+schizophrenia <> dibenzothiepins,1,2,2,2,3,4,1,0,1,1
+schizophrenia <> docosahexaenoate,0,1,1,1,1,1,0,0,1,1
+schizophrenia <> donepezil,0,2,2,4,2,3,0,1,1,1
+schizophrenia <> dopamine,1,2,5,4,7,12,1,2,7,1
+schizophrenia <> dopamine agonists,1,2,7,4,3,10,0,0,6,1
+schizophrenia <> dopamine antagonist,0,1,1,2,1,1,0,0,1,1
+schizophrenia <> dopamine receptor antagonist,0,1,1,0,1,1,0,0,1,1
+schizophrenia <> dopamine transporter inhibitor,0,2,2,2,1,1,0,0,1,1
+schizophrenia <> endogenous antioxidants,0,1,2,1,1,1,0,0,0,1
+schizophrenia <> esketamine,0,1,2,2,2,3,0,1,2,1
+schizophrenia <> estradiol,1,2,6,5,5,22,4,6,19,1
+schizophrenia <> estrogens,1,1,2,2,3,5,2,2,2,1
+schizophrenia <> etomidate,0,2,1,3,1,1,0,0,1,1
+schizophrenia <> evp-6124,0,2,2,3,2,2,1,1,1,1
+"schizophrenia <> fatty acids, essential",0,1,1,1,1,1,1,1,0,1
+"schizophrenia <> fatty acids, omega-3",0,1,1,1,1,1,0,0,0,1
+schizophrenia <> fluoxetine,1,2,16,5,8,23,5,8,16,1
+schizophrenia <> flupenthixol,1,2,6,3,2,7,0,1,4,1
+schizophrenia <> fluvoxamine,0,2,3,4,4,6,0,3,4,1
+schizophrenia <> glucagon-like peptide 1 receptor agonist,0,1,1,0,1,1,0,0,1,1
+schizophrenia <> glycine,1,2,3,3,4,7,0,2,3,1
+schizophrenia <> haloperidol,1,2,2,4,4,9,1,2,0,1
+schizophrenia <> iloperidone,0,2,5,4,2,7,1,1,4,1
+schizophrenia <> iti-007,0,0,0,2,1,1,0,0,1,1
+schizophrenia <> ketamine,1,2,3,4,4,13,2,3,7,1
+schizophrenia <> kynurenic acid,1,2,5,5,6,24,4,4,19,1
+schizophrenia <> lamotrigine,1,2,6,4,3,5,1,1,2,1
+schizophrenia <> lithium,0,1,2,2,1,1,0,0,0,1
+schizophrenia <> lurasidone,0,1,1,2,1,1,0,0,1,1
+schizophrenia <> melatonin,1,1,2,2,1,2,1,1,2,1
+schizophrenia <> memantine,0,1,0,1,1,1,0,1,0,1
+schizophrenia <> minocycline,0,2,2,2,2,2,0,0,2,1
+schizophrenia <> n methylaspartate,0,2,3,4,3,7,1,0,6,1
+schizophrenia <> nicotine,1,2,1,3,1,7,1,2,1,1
+schizophrenia <> nmda antagonist,1,2,4,4,7,14,5,5,10,1
+schizophrenia <> olanzapine,1,2,1,2,2,3,0,0,0,1
+schizophrenia <> olz,1,3,4,4,6,7,2,2,7,1
+schizophrenia <> ondansetron,0,2,3,3,3,4,1,1,2,1
+schizophrenia <> opc 14597,0,1,1,3,2,3,0,0,2,1
+schizophrenia <> org 5222,0,2,0,1,1,1,0,0,0,1
+schizophrenia <> oxytocin,1,2,6,4,1,6,3,2,4,1
+schizophrenia <> paliperidone,0,2,0,1,1,2,0,0,0,1
+schizophrenia <> pimavanserin,1,2,4,2,1,7,5,4,7,1
+schizophrenia <> pimozide,0,2,4,1,3,4,0,1,1,1
+schizophrenia <> pregabalin,0,1,0,0,1,1,0,0,0,1
+schizophrenia <> pregnenolone,1,1,1,1,2,2,0,0,1,1
+schizophrenia <> quetiapine,0,2,1,2,2,2,0,0,1,1
+schizophrenia <> quetiapine fumarate,0,2,1,2,2,2,0,0,1,1
+schizophrenia <> raloxifene,1,1,1,2,1,1,0,0,1,1
+schizophrenia <> reboxetine,0,1,2,2,2,2,0,1,2,1
+schizophrenia <> rgh-188,0,2,0,1,2,2,0,0,2,1
+schizophrenia <> riluzole,1,4,3,5,3,4,1,1,3,1
+schizophrenia <> risperidone,0,1,1,1,1,1,0,1,0,1
+schizophrenia <> samidorphan,1,2,1,2,1,1,1,1,1,1
+schizophrenia <> sarcosine,1,3,15,5,12,23,6,6,17,1
+schizophrenia <> second,1,1,1,3,2,2,0,2,1,1
+schizophrenia <> second-generation antipsychotics,1,2,4,3,3,4,2,1,4,1
+schizophrenia <> selective estrogen receptor modulator,1,1,1,2,1,1,0,0,1,1
+schizophrenia <> selective serotonin reuptake inhibitors,0,1,1,1,1,1,0,0,1,1
+schizophrenia <> sep-363856,1,3,5,4,4,5,2,2,4,1
+schizophrenia <> serine,0,1,1,3,1,1,0,0,0,1
+"schizophrenia <> serine, d-",1,2,11,5,10,28,6,9,21,1
+schizophrenia <> seroquel,0,2,1,2,2,2,0,0,1,1
+schizophrenia <> sertindole,0,2,2,1,3,4,0,1,2,1
+schizophrenia <> sm 13496,0,1,1,2,1,1,0,0,1,1
+schizophrenia <> ssri,0,1,1,1,1,1,0,0,0,1
+schizophrenia <> sulpiride,1,3,9,3,11,17,3,6,8,1
+schizophrenia <> tandospirone,1,1,2,2,3,8,2,5,7,1
+schizophrenia <> tetracycline,0,1,1,2,1,1,0,0,1,1
+schizophrenia <> thioctic acid,1,2,4,4,2,7,0,4,5,1
+schizophrenia <> topiramate,1,2,5,4,4,8,1,2,7,1
+schizophrenia <> trihexyphenidyl,1,2,3,2,2,3,0,1,3,1
+schizophrenia <> tropisetron,0,2,3,4,1,3,0,1,3,1
+schizophrenia <> typical,0,1,1,2,1,1,1,1,0,1
+schizophrenia <> typical antipsychotics,0,1,1,2,1,1,0,0,0,1
+schizophrenia <> valproate sodium,0,2,2,2,1,1,0,0,1,1
+schizophrenia <> valproic acid,1,2,3,3,3,7,1,2,4,1
+schizophrenia <> vitamin d,0,0,0,0,1,1,0,0,0,1
+schizophrenia <> vmat2 inhibitor,1,2,3,3,1,1,0,1,0,1
+schizophrenia <> xanomeline,1,3,12,5,5,15,2,2,11,1
+schizophrenia <> ziprasidone,0,2,0,1,1,1,0,0,0,1
+schizophrenia <> zolpidem,0,1,1,4,1,1,0,0,0,1
+schizophrenia <> zonisamide,0,1,1,2,1,2,0,1,2,1
+schizophrenia <> zotepine,1,2,2,2,3,4,1,0,1,1
+sciatic neuropathy <> clonidine,0,1,1,2,1,1,0,0,1,1
+sciatic neuropathy <> diclofenac,0,1,3,1,2,2,1,0,2,1
+sciatic neuropathy <> etanercept,0,2,2,2,3,3,1,1,2,1
+sciatic neuropathy <> morphine,0,1,1,3,1,1,0,0,1,1
+sciatic neuropathy <> steroid,0,1,1,1,1,2,1,0,1,1
+sciatic neuropathy <> tumor necrosis factor alpha,1,2,1,3,3,5,1,2,5,1
+secondarily generalized seizures <> topiramate,0,1,1,0,1,1,0,0,0,1
+"secondary progressive multiple sclerosis <> acetate, glatiramer",1,1,0,4,1,1,0,0,1,1
+secondary progressive multiple sclerosis <> baf312,1,3,4,3,3,3,0,2,2,1
+secondary progressive multiple sclerosis <> glatiramer,1,1,0,4,1,1,0,0,1,1
+secondary progressive multiple sclerosis <> siponimod,1,3,4,3,3,3,0,2,2,1
+sensory peripheral neuropathy <> acetylcarnitine,0,2,5,3,3,4,1,0,4,1
+sensory peripheral neuropathy <> intravenous immunoglobulins,1,1,1,2,1,1,1,1,1,1
+sensory peripheral neuropathy <> oxaliplatin,0,1,0,1,1,1,0,0,0,1
+severe traumatic brain injury <> antisecretory factor,0,0,0,3,1,1,0,0,1,1
+severe traumatic brain injury <> progesterone,0,1,1,3,1,1,1,1,1,1
+"severe traumatic brain injury <> sulfate, magnesium",0,1,1,2,1,1,0,1,1,1
+spinal cord injury <> baclofen,1,3,5,5,7,14,5,5,13,1
+spinal cord injury <> cannabinoid,0,2,3,3,2,4,1,1,4,1
+spinal cord injury <> capsaicin,1,1,2,3,2,2,1,1,2,1
+spinal cord injury <> clonidine,1,1,1,4,1,2,1,0,2,1
+spinal cord injury <> cycloserine,1,1,1,4,1,1,1,1,1,1
+spinal cord injury <> dalfampridine,1,3,4,4,3,7,1,2,3,1
+"spinal cord injury <> fatty acids, omega-3",0,1,0,0,1,1,0,0,0,1
+spinal cord injury <> fenofibrate,1,1,1,1,1,1,1,1,1,1
+spinal cord injury <> gabapentin,1,3,4,4,6,12,7,4,11,1
+spinal cord injury <> lidocaine,0,1,1,1,1,1,0,0,0,1
+spinal cord injury <> mecamylamine,0,1,1,2,1,3,0,0,2,1
+spinal cord injury <> melatonin,1,4,3,4,3,8,5,6,5,1
+spinal cord injury <> naloxone,1,3,4,3,5,10,4,4,6,1
+spinal cord injury <> ng-nitroarginine methyl ester,1,2,3,3,5,10,4,1,8,1
+spinal cord injury <> norepinephrine,0,1,1,2,1,1,1,0,1,1
+spinal cord injury <> omega-conotoxins,0,1,1,2,2,2,0,1,2,1
+spinal cord injury <> opioid,1,2,3,5,4,9,7,2,6,1
+spinal cord injury <> oxcarbazepine,0,1,0,2,1,1,0,0,1,1
+"spinal cord injury <> oxide, nitric",0,2,2,3,2,2,0,0,1,1
+spinal cord injury <> pituitary growth hormone,0,1,1,2,2,2,1,0,2,1
+spinal cord injury <> pro,1,1,0,2,1,1,1,0,1,1
+spinal cord injury <> propofol,0,2,2,1,2,2,2,2,2,1
+spinal cord injury <> testosterone,1,2,2,2,3,6,0,3,4,1
+spinal cord injury <> vitamin c,0,1,1,2,3,3,0,0,1,1
+spinal cord injury <> vitamin d,0,1,1,4,1,1,1,1,1,1
+"stroke disorder <> 2 inhibitor, cyclooxygenase",1,2,7,5,9,13,4,4,11,1
+"stroke disorder <> 3 inhibitor, phosphodiesterase",0,2,2,2,2,2,0,0,0,1
+stroke disorder <> 3-n-butylphthalide,0,2,4,5,3,8,1,4,6,1
+stroke disorder <> aceh,0,0,0,1,1,1,0,0,1,1
+stroke disorder <> acetaminophen,0,1,1,3,1,1,0,1,0,1
+"stroke disorder <> acid, docosahexaenoic",1,4,5,5,5,20,16,12,14,1
+stroke disorder <> adrenal cortex hormone,0,1,1,2,1,1,0,0,1,1
+stroke disorder <> agomelatine,0,2,2,2,2,2,0,1,1,1
+"stroke disorder <> alfa, epoetin",1,2,2,3,2,2,0,2,2,1
+stroke disorder <> allopurinol,0,1,1,2,1,1,1,0,0,1
+stroke disorder <> alprostadil,1,4,5,3,5,7,6,4,4,1
+stroke disorder <> altep,1,1,1,3,1,1,1,1,1,1
+stroke disorder <> alteplase,1,6,10,5,8,43,11,15,27,1
+stroke disorder <> amlodipine,0,1,2,4,3,3,0,0,1,1
+stroke disorder <> amphetamine,0,1,1,1,1,1,1,0,0,1
+stroke disorder <> ampicillin,0,1,1,2,2,2,2,2,2,1
+stroke disorder <> angiotensin converting enzyme inhibitor,0,1,2,1,1,1,0,0,1,1
+stroke disorder <> angiotensin receptor blockers,0,1,0,2,1,1,1,1,1,1
+stroke disorder <> anti antibodies,0,3,4,5,5,6,5,4,6,1
+stroke disorder <> antibiotic,0,1,1,2,1,1,1,0,1,1
+stroke disorder <> antiepileptic drugs,1,1,2,3,1,1,1,1,1,1
+stroke disorder <> antiplatelets,0,0,0,1,1,1,0,1,0,1
+stroke disorder <> antithrombin,0,1,0,2,1,1,1,0,1,1
+stroke disorder <> antithrombotic,0,0,0,1,1,1,0,1,0,1
+stroke disorder <> argatroban,0,1,1,4,1,1,0,0,0,1
+stroke disorder <> aspirin,1,2,4,2,3,4,1,1,2,1
+stroke disorder <> astragaloside iv,0,1,1,3,1,1,0,1,1,1
+stroke disorder <> at1 receptor blockade,0,1,1,3,1,1,1,1,0,1
+stroke disorder <> baclofen,1,2,2,5,4,9,5,2,7,1
+stroke disorder <> bevacizumab,0,1,1,2,1,1,1,1,1,1
+stroke disorder <> bhlh-pas factor hlf,0,1,1,1,1,1,1,1,1,1
+stroke disorder <> botulinum toxin,1,1,1,2,1,1,1,0,1,1
+stroke disorder <> calcium antagonist,0,1,2,4,3,3,0,1,2,1
+stroke disorder <> calcium channel blocker,0,1,1,1,1,1,1,0,0,1
+stroke disorder <> candesartan,0,1,1,2,1,1,1,1,1,1
+stroke disorder <> capsaicin,1,2,4,4,6,7,4,6,7,1
+stroke disorder <> chloroquine,0,2,2,5,2,3,2,0,1,1
+stroke disorder <> cholesterol,0,1,1,3,1,1,0,0,0,1
+stroke disorder <> circulating anticoagulants,0,0,0,1,1,1,0,1,0,1
+stroke disorder <> citicoline,0,1,3,3,4,6,0,1,6,1
+stroke disorder <> clonidine,1,1,1,4,2,4,1,0,3,1
+stroke disorder <> colchicine,0,1,1,4,1,1,1,0,0,1
+stroke disorder <> dabigatran,0,1,2,5,2,2,2,2,2,1
+stroke disorder <> dehydroascorbic acid,0,4,1,4,2,4,3,3,2,1
+stroke disorder <> dextromethorphan,0,1,1,2,1,2,2,2,0,1
+stroke disorder <> diaminohydroxypropanetetraacetic acid,0,2,3,5,2,10,5,6,8,1
+"stroke disorder <> dinitrate, isosorbide",0,1,3,3,2,2,0,1,2,1
+stroke disorder <> direct factor xa inhibitors,0,2,3,4,2,3,1,2,3,1
+stroke disorder <> docosahexaenoate,1,4,5,5,5,20,16,12,14,1
+stroke disorder <> dronedarone,0,1,1,5,1,1,1,0,1,1
+stroke disorder <> edaravone,0,1,1,2,1,1,0,0,0,1
+stroke disorder <> edaravone dexborneol,0,1,1,3,1,1,0,1,1,1
+stroke disorder <> eicosapentaenoic acid,1,1,1,0,1,1,1,0,1,1
+stroke disorder <> enalapril,0,1,3,4,2,7,0,2,3,1
+stroke disorder <> endothelins,1,1,4,5,3,3,2,2,3,1
+stroke disorder <> erythropoietin,1,3,8,5,8,16,7,7,14,1
+stroke disorder <> etomidate,1,1,1,2,1,1,0,1,1,1
+"stroke disorder <> fatty acids, omega-3",1,2,6,5,8,14,11,8,12,1
+stroke disorder <> ferumoxytol,0,1,1,2,1,1,1,0,1,1
+stroke disorder <> fluoxetine,1,2,4,5,6,13,9,7,12,1
+stroke disorder <> glandular kallikrein-1,1,1,1,4,1,1,0,0,1,1
+stroke disorder <> glucagon-like peptides,0,1,1,4,1,1,1,1,1,1
+stroke disorder <> glyburide,1,4,5,5,8,27,11,17,22,1
+stroke disorder <> heparin,1,3,5,3,2,6,1,1,3,1
+stroke disorder <> human,0,1,1,2,1,1,0,1,1,1
+stroke disorder <> hydroxyurea,0,1,1,3,1,1,1,0,1,1
+stroke disorder <> idebenone,0,1,4,2,1,4,0,0,0,1
+stroke disorder <> indapamide,0,1,0,2,1,1,1,0,1,1
+stroke disorder <> insulin,0,2,2,2,2,2,1,0,2,1
+stroke disorder <> irl-1620,1,1,1,4,1,2,1,1,1,1
+stroke disorder <> ketamine,1,3,5,4,5,9,4,5,4,1
+stroke disorder <> levetiracetam,1,2,4,4,5,5,3,2,5,1
+stroke disorder <> lidocaine,1,2,6,5,4,5,1,0,5,1
+stroke disorder <> lithium,0,2,6,5,5,12,5,7,8,1
+stroke disorder <> losartan,0,1,1,3,2,2,1,2,1,1
+stroke disorder <> low molecular weight heparin,0,1,1,1,1,1,1,1,1,1
+stroke disorder <> magnesium,1,2,4,4,5,8,4,7,7,1
+"stroke disorder <> maleate, enalapril",0,1,2,3,1,2,0,0,2,1
+stroke disorder <> melatonin,1,4,8,5,10,24,5,7,20,1
+stroke disorder <> memantine,0,3,3,4,2,3,1,2,2,1
+stroke disorder <> methylprednisolone,1,3,7,4,4,15,10,10,13,1
+stroke disorder <> metoclopramide,0,1,1,2,1,1,0,0,0,1
+stroke disorder <> mineralocorticoid receptor antagonism,0,1,2,3,2,2,1,0,2,1
+stroke disorder <> mineralocorticoid receptor antagonist,0,1,1,2,1,1,0,0,1,1
+stroke disorder <> minocycline,1,2,8,5,2,11,3,4,9,1
+stroke disorder <> na-1,1,2,2,4,2,3,3,3,3,1
+stroke disorder <> naloxone,1,3,2,4,5,9,4,1,7,1
+stroke disorder <> nbp,1,2,2,3,1,3,0,1,2,1
+stroke disorder <> nebivolol,0,3,4,3,3,3,1,1,3,1
+stroke disorder <> nerve growth factor,0,3,3,5,4,10,4,6,4,1
+stroke disorder <> niacinamide,0,2,6,5,4,12,6,3,8,1
+stroke disorder <> nicardipine,1,3,3,3,3,4,0,0,2,1
+stroke disorder <> nimodipine,1,6,9,5,9,17,5,2,7,1
+"stroke disorder <> nitric oxide synthase, type ii",0,1,1,3,2,2,0,0,1,1
+stroke disorder <> norepinephrine,0,2,3,3,2,2,1,1,2,1
+stroke disorder <> nxy 059,0,3,2,4,2,3,1,1,2,1
+stroke disorder <> okn 007,0,3,2,4,2,3,1,1,2,1
+stroke disorder <> olmesartan,0,1,6,3,3,5,2,3,5,1
+stroke disorder <> oxygen,0,2,3,5,3,3,2,2,2,1
+stroke disorder <> pentoxifylline,0,2,2,3,1,1,0,1,1,1
+stroke disorder <> peoniflorin,0,1,1,3,1,2,1,0,2,1
+stroke disorder <> phenylephrine,0,3,2,4,2,4,1,2,4,1
+stroke disorder <> pioglitazone,0,1,1,3,1,1,1,0,1,1
+stroke disorder <> plasminogen activator,1,3,10,5,7,18,7,8,15,1
+stroke disorder <> progesterone,1,3,11,5,15,49,23,35,43,1
+stroke disorder <> propofol,1,2,3,4,4,4,2,3,3,1
+stroke disorder <> propranolol,0,2,3,3,3,3,1,0,2,1
+stroke disorder <> rosuvastatin,0,2,2,3,3,3,1,1,1,1
+stroke disorder <> rtpa,0,1,2,5,2,5,1,1,2,1
+stroke disorder <> selenium,0,1,1,4,2,2,1,1,1,1
+stroke disorder <> semaglutide,0,1,1,4,1,1,1,1,1,1
+stroke disorder <> serotonin,0,1,3,1,1,1,0,0,0,1
+stroke disorder <> sevoflurane,0,2,3,3,2,2,1,1,2,1
+stroke disorder <> simvastatin,0,2,3,4,2,3,2,0,0,1
+stroke disorder <> sodium-glucose transporter 2 inhibitor,0,1,2,4,2,2,0,0,2,1
+stroke disorder <> sovateltide,1,1,1,4,1,1,1,1,1,1
+stroke disorder <> spironolactone,0,2,3,4,3,4,1,0,4,1
+"stroke disorder <> sulfate, magnesium",1,2,5,4,5,9,5,8,7,1
+stroke disorder <> tenecteplase,0,2,3,2,2,4,1,1,4,1
+stroke disorder <> tetracycline,0,1,3,4,2,3,0,2,2,1
+stroke disorder <> tirofiban,0,1,1,4,1,2,2,2,2,1
+stroke disorder <> tnk,0,2,2,2,2,3,1,1,3,1
+stroke disorder <> tnk-tpa,0,2,1,4,1,1,0,0,1,1
+stroke disorder <> tongxinluo,0,1,1,3,1,1,1,1,1,1
+stroke disorder <> triflusal,0,1,2,3,1,1,1,0,1,1
+stroke disorder <> urokinase,0,4,4,5,6,8,3,4,7,1
+stroke disorder <> valsartan,0,1,2,3,2,2,2,2,1,1
+stroke disorder <> vascular endothelial growth factor a,0,2,3,5,4,6,1,0,5,1
+stroke disorder <> vinca alkaloid,0,1,0,2,1,1,0,0,0,1
+stroke disorder <> vinpocetine,0,1,0,2,1,1,0,0,0,1
+stroke disorder <> vitamin c,1,2,5,4,4,4,2,3,3,1
+stroke disorder <> vitamin d,1,1,3,3,2,2,1,0,2,1
+stroke disorder <> vitamin d3,0,2,2,3,3,3,1,2,2,1
+stroke disorder <> vitamin e,0,2,1,4,4,6,1,0,2,1
+stroke disorder <> xenon,0,3,5,5,4,10,7,7,8,1
+stroke disorder <> zinc,1,3,4,5,6,9,2,0,5,1
+stroke disorder <> β-blocker,0,2,3,4,2,2,0,1,2,1
+stroke disorder <> β-blockers,0,3,4,4,4,5,1,2,5,1
+subarachnoid hemorrhage <> acetazolamide,0,1,1,2,1,1,1,1,1,1
+subarachnoid hemorrhage <> glyburide,1,2,1,5,2,4,2,2,3,1
+subarachnoid hemorrhage <> hydroxymethylglutaryl coa reductase inhibitors,0,2,2,4,2,3,1,2,3,1
+subarachnoid hemorrhage <> ketamine,1,4,1,5,3,3,1,2,3,1
+subarachnoid hemorrhage <> lactate,0,1,1,2,1,1,1,1,1,1
+subarachnoid hemorrhage <> levetiracetam,0,1,1,3,1,1,1,0,1,1
+subarachnoid hemorrhage <> metoprolol,0,1,1,2,1,1,0,1,1,1
+subarachnoid hemorrhage <> nebivolol,1,1,1,2,1,1,0,0,1,1
+subarachnoid hemorrhage <> nicardipine,1,3,3,4,4,7,0,1,2,1
+subarachnoid hemorrhage <> nimodipine,1,4,4,5,5,8,3,1,4,1
+subarachnoid hemorrhage <> propofol,0,1,1,0,1,1,0,0,0,1
+subarachnoid hemorrhage <> propranolol,0,1,1,2,1,1,0,1,1,1
+subarachnoid hemorrhage <> simvastatin,1,3,4,4,3,9,8,9,9,1
+"subarachnoid hemorrhage <> sulfate, magnesium",0,1,1,1,1,1,0,0,1,1
+subarachnoid hemorrhage <> thromboxane a2,1,4,4,2,3,4,0,0,2,1
+subarachnoid hemorrhage <> tranexamic acid,0,1,1,2,2,2,0,0,1,1
+substance dependence <> bromocriptine,0,1,0,0,1,1,0,0,0,1
+substance dependence <> clonidine,0,1,2,0,1,1,1,0,0,1
+substance dependence <> dopamine agonist,0,1,1,2,1,1,0,0,1,1
+substance dependence <> methadone,0,1,1,2,1,1,0,0,1,1
+substance dependence <> mirtazapine,0,1,1,2,1,2,1,1,2,1
+substance dependence <> naloxone,1,2,5,4,7,15,0,3,9,1
+substance dependence <> naltrexone,0,4,3,4,4,8,1,1,3,1
+substance dependence <> opioid,1,4,4,2,2,2,0,0,1,1
+substance dependence <> oxycodone,0,1,1,1,1,1,0,0,1,1
+substance dependence <> oxytocin,1,1,1,0,1,1,0,1,1,1
+substance dependence <> pregabalin,0,1,0,2,1,1,0,0,1,1
+substance use disorders <> buprenorphine,0,1,1,2,1,1,0,0,0,1
+substance use disorders <> orexin receptor antagonist-containing product,1,2,1,3,1,2,1,1,2,1
+substance use disorders <> suvorexant,1,2,1,3,1,2,1,1,2,1
+substance use disorders <> varenicline,0,1,1,0,0,1,0,0,0,1
+sympathetic paraganglioma <> phenoxybenzamine,0,1,0,2,1,1,0,0,1,1
+tbi <> valproate,0,1,1,2,1,1,0,1,1,1
+temporal lobe epilepsy <> antiepileptic drugs,1,2,6,4,4,8,1,4,4,1
+traumatic brain injury <> acetaminophen,0,1,1,2,1,2,0,0,1,1
+traumatic brain injury <> antiseizure medication,0,1,1,0,1,1,0,1,1,1
+traumatic brain injury <> beta blockers,0,0,0,0,1,1,0,0,0,1
+traumatic brain injury <> cerebrolysin,0,1,1,2,1,1,1,0,1,1
+traumatic brain injury <> citicoline,0,1,2,4,3,4,1,3,1,1
+traumatic brain injury <> dexmedetomidine,1,4,2,5,3,10,7,8,10,1
+traumatic brain injury <> dextromethorphan,0,2,3,4,2,3,1,0,3,1
+traumatic brain injury <> donepezil,1,2,2,3,1,2,2,2,2,1
+traumatic brain injury <> doxycycline,0,1,1,3,1,1,0,0,1,1
+traumatic brain injury <> epigallocatechin gallate,0,2,2,3,2,4,0,4,4,1
+traumatic brain injury <> erythropoietin,1,2,9,5,8,37,21,26,33,1
+"traumatic brain injury <> erythropoietin (human, recombinant)",1,2,3,5,3,10,5,5,9,1
+traumatic brain injury <> exenatide,0,2,2,5,1,3,0,3,3,1
+traumatic brain injury <> honey preparation,0,1,2,1,2,2,0,2,2,1
+traumatic brain injury <> inosine,1,3,1,3,2,3,1,2,3,1
+traumatic brain injury <> ketamine,1,4,4,5,6,10,4,4,9,1
+traumatic brain injury <> lacosamide,0,2,3,4,4,4,2,1,3,1
+traumatic brain injury <> lactate,1,2,4,5,4,10,4,7,9,1
+"traumatic brain injury <> lactate, sodium",1,1,2,5,2,4,1,3,4,1
+traumatic brain injury <> levetiracetam,0,1,2,4,2,2,1,0,1,1
+traumatic brain injury <> lidocaine,0,1,1,3,1,1,1,1,1,1
+traumatic brain injury <> mannitol,1,2,1,3,2,3,1,2,3,1
+traumatic brain injury <> melatonin,1,2,9,5,7,22,7,11,19,1
+traumatic brain injury <> methylprednisolone,1,3,7,4,5,12,8,9,12,1
+traumatic brain injury <> midazolam,0,1,1,3,1,1,1,0,1,1
+traumatic brain injury <> niacinamide,1,1,2,4,1,8,3,4,7,1
+"traumatic brain injury <> oxide, nitric",1,3,0,5,1,1,1,1,1,1
+traumatic brain injury <> phenytoin,0,1,2,4,3,5,2,1,4,1
+traumatic brain injury <> progesterone,1,2,7,5,9,37,9,21,33,1
+traumatic brain injury <> propofol,1,3,5,4,6,8,3,5,6,1
+traumatic brain injury <> propranolol,0,2,3,5,3,6,2,4,5,1
+traumatic brain injury <> simvastatin,1,2,3,5,4,15,11,11,12,1
+"traumatic brain injury <> sodium succinate, methylprednisolone",1,1,1,2,1,1,1,1,1,1
+traumatic brain injury <> steroid,1,2,3,2,2,2,0,0,2,1
+"traumatic brain injury <> sulfate, magnesium",1,1,2,3,2,4,0,3,4,1
+traumatic brain injury <> topiramate,0,1,2,3,2,2,1,1,1,1
+traumatic optic neuropathy <> erythropoietin,0,1,1,3,2,2,1,0,1,1
+treatment resistant depression <> (-)-pramipexole,1,1,1,1,1,1,1,0,1,1
+treatment resistant depression <> duloxetine,0,1,1,2,1,1,1,1,1,1
+treatment resistant depression <> ssris,0,1,1,2,1,1,0,0,1,1
+treatment-resistant depression <> aripiprazole,0,2,3,1,1,1,1,1,1,1
+treatment-resistant depression <> escitalopram,1,1,2,4,2,2,1,1,2,1
+treatment-resistant depression <> fluoxetine,0,1,3,3,4,8,2,1,7,1
+treatment-resistant depression <> lithium,0,2,1,1,2,2,0,0,0,1
+treatment-resistant depression <> olanzapine,0,1,3,3,3,6,2,1,5,1
+treatment-resistant depression <> olanzapine-fluoxetine hydrochloride combination,0,1,1,1,1,2,0,0,1,1
+"treatment-resistant depression <> oxide, nitrous",0,1,1,3,1,1,1,1,1,1
+treatment-resistant depression <> risperidone,0,1,1,1,1,1,0,0,0,1
+treatment-resistant depression <> sertraline,1,2,2,2,2,3,0,2,2,1
+treatment-resistant depression <> venlafaxine,0,1,6,2,3,3,1,0,3,1
+trigeminal neuralgia <> baclofen,1,1,2,3,4,5,1,2,4,1
+trigeminal neuralgia <> botulinum toxin type a,0,2,3,4,3,5,3,3,5,1
+trigeminal neuralgia <> carbamazepine,1,1,1,1,2,3,0,0,1,1
+trigeminal neuralgia <> dexamethasone,0,1,3,3,2,3,2,1,3,1
+trigeminal neuralgia <> eslicarbazepine,0,1,2,3,1,3,3,0,3,1
+trigeminal neuralgia <> gabapentin,1,2,5,4,7,9,7,5,8,1
+trigeminal neuralgia <> lamotrigine,0,1,1,2,1,1,1,1,1,1
+trigeminal neuralgia <> sumatriptan,0,1,3,4,3,3,1,2,3,1
+wolff-parkinson-white syndrome <> adenosine,0,1,1,3,1,1,1,0,1,1
+young-onset parkinson disease <> levodopa,1,1,0,1,1,1,0,0,0,1
