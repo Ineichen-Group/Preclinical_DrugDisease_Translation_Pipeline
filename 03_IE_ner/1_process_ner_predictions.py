@@ -185,17 +185,6 @@ def main():
     f"{save_dir}/animal_studies_with_drug_disease/{save_file_name}_PMIDs.csv",
     index=False
     )
-    
-    ms_filter=False
-    if ms_filter:
-        # save sclerosis related articles
-        filtered_df_sclerosis= filtered_df_non_empty[filtered_df_non_empty["unique_conditions_linkbert_predictions"].str.contains("sclerosis", case=False, na=False)]
-        filtered_df_sclerosis[["PMID", "unique_conditions_linkbert_predictions", "unique_interventions_linkbert_predictions"]].to_csv(f'{save_dir}/animal_studies_with_drug_disease/filtered_df_non_empty_sclerosis_{len(filtered_df_sclerosis)}.csv')
-        filtered_df_sclerosis[["PMID"]].to_csv(
-            f"{save_dir}/animal_studies_with_drug_disease/filtered_df_non_empty_sclerosis_{len(filtered_df_sclerosis)}_PMIDs.csv",
-            index=False
-        )
-
  
 if __name__ == "__main__":
     main()
