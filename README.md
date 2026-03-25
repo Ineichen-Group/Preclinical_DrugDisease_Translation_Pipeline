@@ -75,23 +75,26 @@ The StudyTypeTeller full dataset is [./02_animal_study_classification/data/full_
 ## Named entity recognition (NER) 
 
 ### Finetuning 
-The datasets for fine-tuning are prepared in [./03_IE_tasks/Prep_NER_data.ipynb](./03_IE_tasks/Prep_NER_data.ipynb). 
+The datasets for fine-tuning are prepared in [./03_IE_tasks/0_Prep_NER_data.ipynb](./03_IE_tasks/0_Prep_NER_data.ipynb). 
 
-The fine-tuning code is in [./03_ner/train_bert_ner.py](./03_ner/train_bert_ner.py) and the script to run in parallel on the server for k-fold cross-validation is in
- [./03_ner/run_k_fold_parallel_experiment.sh](./03_ner/run_k_fold_parallel_experiment.sh).
+The fine-tuning code is in [./03_IE_ner/train_bert_ner.py](./03_IE_ner/train_bert_ner.py) and the script to run in parallel on the server for k-fold cross-validation is in
+ [./03_IE_ner/1_run_k_fold_parallel_experiment.sh](./03_IE_ner/1_run_k_fold_parallel_experiment.sh).
+
+ HuggingFace evaluation results are then compared in [./03_IE_ner/Eval_Models_NER.ipynb](./03_IE_ner/Eval_Models_NER.ipynb). For drug and disease entities a separate detailed evaluation, e.g., allowing partial matches is in [./03_IE_ner/Eval_Drug_Disease_NER.ipynb](./03_IE_ner/Eval_Drug_Disease_NER.ipynb).
+ 
 
 ### Inference 
 The animal studies were prepared for NER inference by splitting them into chunks of PMID and Text.
-The inference code to run on the server over those chunks in parallel is [./03_ner/run_ner_inference_animal.sh](./03_ner/run_ner_inference_animal.sh). This calls [./03_ner/inference_ner_annotations.py](./03_ner/inference_ner_annotations.py), which in turn works with an NERModel from [./03_ner/core/models.py](./03_ner/core/models.py).
+The inference code to run on the server over those chunks in parallel is [./03_IE_ner/2_run_ner_inference_animal.sh](./03_IE_ner/2_run_ner_inference_animal.sh). This calls [./03_IE_ner/inference_ner_annotations.py](./03_IE_ner/inference_ner_annotations.py), which in turn works with an NERModel from [./03_IE_ner/core/models.py](./03_IE_ner/core/models.py).
 
 
 ### Post-processing 
-Post processing of the obtained NER predictions happens in [./03_ner/process_ner_predictions.py](./03_ner/process_ner_predictions.py). This includes:
+Post processing of the obtained NER predictions happens in [./03_IE_ner/3_process_ner_predictions.py](./03_IE_ner/3_process_ner_predictions.py). This includes:
 1. Load NER Predictions  
    Reads NER model outputs (predicted entities) and excludes the articles have no predictions at all.
 
 2. Abbreviation Expansion  
-   For each article, if not already cached, the script extracts abbreviation-definition pairs from the full text to aid in resolving entity meanings. Save in [./03_ner/data/abbreviations_expansion/pmid_abbreviations.csv](./03_ner/data/abbreviations_expansion/pmid_abbreviations.csv).
+   For each article, if not already cached, the script extracts abbreviation-definition pairs from the full text to aid in resolving entity meanings. Save in [./03_IE_ner/data/abbreviations_expansion/pmid_abbreviations.csv](./03_IE_ner/data/abbreviations_expansion/pmid_abbreviations.csv).
 
 3. Merge Predictions with Abbreviations  
    Joins abbreviation data with NER predictions by article (PMID).
@@ -103,14 +106,14 @@ Post processing of the obtained NER predictions happens in [./03_ner/process_ner
    Keeps only those articles that mention at least one condition and one intervention.
 
 6. Save Filtered Data  
-   Saves in [./03_ner/data/animal_studies_with_drug_disease/](./03_ner/data/animal_studies_with_drug_disease/):
+   Saves in [./03_IE_ner/data/animal_studies_with_drug_disease/](./03_IE_ner/data/animal_studies_with_drug_disease/):
    - All qualifying articles with both entity types.
    - The corresponding PMIDs.
    - A subset of articles mentioning “sclerosis”, for focused study.
 
 **Outputs:**
 
-All saved files are written to the `03_ner/data/animal_studies_with_drug_disease/` directory and include:
+All saved files are written to the `03_IE_ner/data/animal_studies_with_drug_disease/` directory and include:
 
 - Filtered articles with both condition and intervention mentions.
 - PMIDs of those articles.
