@@ -34,11 +34,10 @@ def validate_path(path, is_directory=False):
 def run_inference(
     model_name,
     model_path,
-    test_data_csv_path,
+    test_data_path,
     output_dir,
     output_file_suffix,
     train_data_path=None,
-    test_data_path=None,
     use_bio_format=True,
     custom_entity_grouping=False):
     """
@@ -48,8 +47,7 @@ def run_inference(
         model_name (str): Name of the HuggingFace model.
         model_path (str): Path to the model directory.
         train_data_path (str): Path to the training data JSON.
-        test_data_path (str): Path to the test data JSON.
-        test_data_csv_path (str): Path to the test data CSV.
+        test_data_path (str): Path to the test data JSON or CSV.
         output_dir (str): Directory to save output annotations.
         use_bio_format (bool): Whether to save output in BIO format.
         custom_entity_grouping (bool): Whether to use custom entity grouping.
@@ -77,10 +75,12 @@ def run_inference(
         predictions = model.bert_predict_bio_format(
             train_data_path, test_data_path, "tokens", "ner_tags"
         )
+        #predictions = predictions.to_pandas()
     else:
         print(f"Running inference in tuple format for {model_name}...")
-        predictions = model.annotate(test_data_csv_path, "Text")
-    predictions = predictions.drop(columns=['Text'])
+        predictions = model.annotate(test_data_path, "Text")
+    if "Text" in predictions.columns:
+        predictions = predictions.drop(columns=['Text'])
     predictions.to_csv(output_path, index=False, sep=",")
     print(f"Annotations saved to {output_path}")
 
@@ -132,25 +132,28 @@ if __name__ == "__main__":
 
     try:
         # Validate paths
-        #train_data_path = validate_path(args.train_data)
-        test_data_path = validate_path(args.test_data_csv)
-        #test_data_csv = "/Users/sdoneva/Documents/Work/In Progress/PhD/PhD Projects/In Progress/PreclinicalInfoExtraction/models/model_predictions/bert_ner_full_ds/debug_tokenizer/preds_tokenizer_error_0.csv"# args.test_data_csv
-        #output_dir = "/Users/sdoneva/Documents/Work/In Progress/PhD/PhD Projects/In Progress/PreclinicalInfoExtraction/models/model_predictions/bert_ner_full_ds/debug_tokenizer/"#args.output_dir
-        
-        #test_data_csv_path = validate_path(test_data_csv)
         output_dir = validate_path(args.output_dir, is_directory=True)
         model_path = validate_path(args.model_path, is_directory=True)
+        
+        if args.test_data_csv:
+            test_data_path = validate_path(args.test_data_csv)
+            train_data_path = None
+        else:
+            test_data_path = validate_path(args.test_data)
+            train_data_path = validate_path(args.train_data)
 
         # Run the inference
         run_inference(
             model_name=args.model_name,
             model_path=model_path,
-            test_data_csv_path=test_data_path,
+            test_data_path=test_data_path,
             output_dir=output_dir,
             output_file_suffix=args.output_file_suffix,
+            train_data_path=train_data_path,
             use_bio_format=args.bio_format,
             custom_entity_grouping=True
         )
+        
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)

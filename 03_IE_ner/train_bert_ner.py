@@ -48,15 +48,15 @@ def tokenize_and_align_labels(examples, tokenizer, text_column_name, label_colum
             elif word_idx != previous_word_idx:
                 current_label = label[word_idx]
                 # Test IO annotation schema
-                current_label_to_inside_label = current_label.replace("B-", "I-")
-                label_ids.append(label_to_id[current_label_to_inside_label])
+                #current_label_to_inside_label = current_label.replace("B-", "I-")
+                label_ids.append(label_to_id[current_label])
             # For the other tokens in a word, we set the label to either the current label or -100, depending on
             # the label_all_tokens flag.
             else:
                 current_label = label[word_idx]
                 # Subwords should be annotated as INSIDE the enity, e.g, 'ni' + '##ema' + '##nn - pick type c'
-                current_label_to_inside_label = current_label.replace("B-", "I-")
-                label_ids.append(label_to_id[current_label_to_inside_label] if label_all_tokens else -100)
+                #current_label_to_inside_label = current_label.replace("B-", "I-")
+                label_ids.append(label_to_id[current_label] if label_all_tokens else -100)
             previous_word_idx = word_idx
 
         labels.append(label_ids)
@@ -128,6 +128,54 @@ def setup_logging():
         handlers=[logging.StreamHandler(sys.stdout)],
     )
     logger.setLevel(logging.INFO)
+
+
+def align_predictions(test_results, label_list, dataset):
+    """
+    Align subword-level predictions back to word-level so they match gold tokens.
+
+    Args:
+        test_results: Output of Trainer.predict (has .predictions and .label_ids)
+        label_list: list of str, mapping from label_id → label_name
+        dataset: the tokenized dataset (so we can access word_ids per example)
+
+    Returns:
+        word_preds: list of list of predicted labels (one list per document)
+        word_labels: list of list of gold labels (one list per document)
+    """
+    import numpy as np
+
+    predictions = np.argmax(test_results.predictions, axis=2)
+
+    word_preds = []
+    word_labels = []
+
+    for i, (pred_seq, label_seq) in enumerate(zip(predictions, test_results.label_ids)):
+        # Reconstruct word alignment for this sample
+        word_ids = dataset[i]["word_ids"]
+
+        prev_word_id = None
+        preds_aligned = []
+        labels_aligned = []
+
+        for p, l, w_id in zip(pred_seq, label_seq, word_ids):
+            if w_id is None or w_id == prev_word_id:
+                # skip special tokens or duplicate subwords
+                continue
+
+            # prediction
+            preds_aligned.append(label_list[p])
+
+            # gold label
+            if l != -100:
+                labels_aligned.append(label_list[l])
+
+            prev_word_id = w_id
+
+        word_preds.append(preds_aligned)
+        word_labels.append(labels_aligned)
+
+    return word_preds, word_labels
 
 
 def parse_args():
@@ -250,7 +298,8 @@ def main():
 
     logger.info("Starting training...")
     train_result = trainer.train()
-    trainer.save_model()
+    trainer.save_model(f"{training_args.output_dir}/best_model")
+    tokenizer.save_pretrained(f"{training_args.output_dir}/best_model")
     trainer.log_metrics("train", train_result.metrics)
     trainer.save_metrics("train", train_result.metrics)
 
@@ -267,6 +316,17 @@ def main():
     test_metrics["test_samples"] = len(test_dataset)
     trainer.log_metrics("test", test_metrics)
     trainer.save_metrics("test", test_metrics)
+    
+    # align back to words
+    decoded_preds, decoded_labels = align_predictions(
+        test_results, label_list, tokenizer, test_dataset
+    )
+    with open(f"{training_args.output_dir}/aligned_predictions.json", "w") as f:
+        json.dump(decoded_preds, f, indent=2)
+
+    # also save gold labels (optional, useful for eval)
+    with open(f"{training_args.output_dir}/gold_labels.json", "w") as f:
+        json.dump(decoded_labels, f, indent=2)
     
     predictions = np.argmax(test_results.predictions, axis=2)
     decoded_preds = [
