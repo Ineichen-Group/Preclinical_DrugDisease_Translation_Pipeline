@@ -410,10 +410,6 @@ The output is a single document-level dataset that combines:
 - publication metadata such as year, journal, publication type, and title
 
 ---
-## Detailed docu of the IE modules is provided below.
-
-
----
 ## Trends in animal study characteristics
 
 This step summarizes the prevalence of extracted animal study characteristics and methodological rigor indicators across the corpus. It focuses on the most commonly observed annotations and examines how these characteristics change over time.
@@ -426,7 +422,11 @@ This provides a descriptive overview of reporting patterns in the dataset, inclu
 
 The corresponding visualizations are available in [./09_corpus_analysis/02_Viz_Annotations_Metadata.ipynb](./09_corpus_analysis/02_Viz_Annotations_Metadata.ipynb).
 
+---
+## Animal-to-human translation analysis
 
+---
+## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
 
 This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`,  `assay` and `age`. You can run a specific classifier or all of them in sequence.
