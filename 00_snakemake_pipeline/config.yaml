@@ -67,7 +67,7 @@ predict_age_sent_bert:
 
 extract_age_unsloth:
   # --- script args ---
-  model_dir: "/home/sdonev/data/llms/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
+  model_dir: "/home/sdonev/data/llms/lora_model_unsloth_meta_llama_3.1_8b"   # Unsloth model or HF id
   input_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/sentences_with_bert_age_predictions.csv"
   output_file: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/model_predictions/age/age_unsloth_llama31_8b.csv"
 
@@ -112,10 +112,10 @@ ner_inference:
     - animals_nr
     - strain
   shared:
-    chunk_input_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks"
+    chunk_input_dir: "/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/materials_methods/combined/split_chunks_sent"
     chunk_prefix: "chunk_"
     chunk_suffix: ".jsonl"
-    num_chunks: 10
+    num_chunks: 20
     text_col: "sent_txt"
   models:
     animals_nr:

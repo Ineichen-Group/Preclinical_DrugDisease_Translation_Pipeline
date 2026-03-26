@@ -284,6 +284,149 @@ The sentences extraction from the full text is done in [./07_full_text_retrieval
    
 ## Full-text information extraction
 
+
+### Snakemake pipeline 
+
+This Snakemake workflow performs end-to-end information extraction from the full-text methods sections. It was used on a cluster using Slurm, parallelizing extraction, inference, and post-processing steps to produce structured, document-level variables.
+
+![alt text](./00_snakemake_pipeline/rulegraph_all.svg)
+
+#### Pipeline Steps
+
+1. **Extract methods text**  
+   - From PMC BioC JSON and Cadmus outputs (parallelized per input folder)
+
+2. **Combine and clean methods**  
+   - Merge all extracted texts into a unified JSONL corpus  
+   - Optionally exclude known problematic study types  
+
+3. **Prepare inputs for extraction**  
+   - Extract sentence-level representations  
+   - Split texts into chunks for scalable parallel processing  
+
+4. **Regex-based classification**  
+   - Run category-specific regex classifiers on sentence chunks  
+   - Merge chunk-level outputs into final category and document-level predictions  
+
+5. **NER-based extraction**  
+   - Run transformer-based NER models on text chunks  
+   - Support multiple model types (config-driven)  
+   - Produce structured predictions (e.g., strain, animal numbers)  
+
+6. **Clean and normalize NER outputs**  
+   - Post-process predictions into dataset-specific structured outputs  
+
+7. **Age extraction pipeline**  
+   - Filter candidate sentences  
+   - Classify with BERT  
+   - Extract values using LLM  
+   - Clean and validate predictions  
+   - Map to document-level age variables  
+
+8. **Final normalization and mapping**  
+   - Convert animal numbers to numeric values  
+   - Standardize strain names via synonym mapping  
+   - Map validated age predictions to documents  
+   - Fetch and map author affiliations to geolocations  
+
+**Outputs:**  
+Structured, document-level variables including regex predictions, animal numbers, strain labels, age estimates, and affiliation geolocation.
+
+
+#### Execution (Slurm Profile)
+
+This workflow is designed to run on a Slurm cluster using a Snakemake profile.
+
+**Example profile config** (`~/.config/snakemake/slurm/config.yaml`)
+```yaml
+executor: slurm
+jobs: 200
+
+# Enable environments
+use-conda: true
+conda-frontend: mamba          # or "micromamba" / "conda"
+conda-prefix: /data/$USER/smk-conda
+envvars: [CONDA_PKGS_DIRS]
+
+default-resources:
+  slurm_account: animalwelfare.crs.uzh
+  cpus_per_task: 2
+  mem_mb: 3700
+  runtime: 1h
+
+set-resources:
+  extract_age_llm_unsloth:
+    slurm_extra: "'--gpus=H100:1'"
+  predict_age_sent_bert:
+    slurm_extra: "'--gpus=V100:1'"
+```
+**Running the workflow** 
+```bash
+sbatch --cpus-per-task=1 --mem=8000 --time=125:00:00 -o log/main_%j --wrap="\
+  export CONDA_PKGS_DIRS=/data/$USER/conda_pkgs; \
+  snakemake --profile slurm --use-conda -j 50 -p \
+  --rerun-incomplete"
+```
+
+#### Annotation and metadata aggregation
+
+After the individual information-extraction outputs are generated, this step consolidates them into a single analysis-ready table. See [./09_corpus_analysis/01_Prep_Annotations.ipynb](./09_corpus_analysis/01_Prep_Annotations.ipynb).
+
+1. **Load study metadata and disease/drug annotations**  
+   - Reads the preclinical study metadata table (PubMed details)
+   - Reads normalized disease/drug annotations (NER step on the abstracts)
+   - Merges them into a metadata-enriched reference table
+
+2. **Load document-level full-text annotations**  
+   - Collects the outputs from the IE pipeline, including:
+     - animal sex
+     - animal species
+     - blinding
+     - randomization
+     - welfare
+     - assay type
+     - animal strain
+     - animal number
+     - sample size
+     - first-author country
+
+3. **Merge annotation sources into one table**  
+   - All document-level annotation files are merged on `PMID`
+   - Missing values are filled with `"not reported"` so downstream analyses have consistent labels
+
+4. **Join annotations with metadata**  
+   - The merged annotation table is then joined with the metadata/disease/intervention table
+   - This creates one row per publication with both extracted full-text variables and article-level metadata
+
+5. **Write final combined dataset**  
+   - The final output is saved as:
+```text
+full_text_combined_all_annotations_metadata.csv
+```
+
+The output is a single document-level dataset that combines:
+- extracted reporting variables from full text
+- normalized disease and intervention labels
+- publication metadata such as year, journal, publication type, and title
+
+---
+## Detailed docu of the IE modules is provided below.
+
+
+---
+## Trends in animal study characteristics
+
+This step summarizes the prevalence of extracted animal study characteristics and methodological rigor indicators across the corpus. It focuses on the most commonly observed annotations and examines how these characteristics change over time.
+
+The analysis reports both:
+- the **absolute number of articles** with a given characteristic, and
+- the **proportion of articles** in which that characteristic is observed.
+
+This provides a descriptive overview of reporting patterns in the dataset, including changes in study design and rigor-related variables across publication years.
+
+The corresponding visualizations are available in [./09_corpus_analysis/02_Viz_Annotations_Metadata.ipynb](./09_corpus_analysis/02_Viz_Annotations_Metadata.ipynb).
+
+
 ### Regex-based extraction
 
 This script ([./08_IE_full_text/regex_runner.py](./08_IE_full_text/regex_runner.py)) applies one or more regex-based classifiers to a CSV file containing text data. It supports the following classification categories: `sex`, `species`, `welfare`, `blinding`, `randomization`,  `assay` and `age`. You can run a specific classifier or all of them in sequence.
@@ -482,6 +625,4 @@ Each output includes:
 - `PMID`
 - Final label (`prediction_encoded_label` or `species`)
 - Supporting sentence IDs
-
-## Joining preclinical and clincal data
 

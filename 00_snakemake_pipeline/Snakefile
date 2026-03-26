@@ -350,7 +350,7 @@ rule run_regex_classification_chunk:
     conda:
         "envs/papermage.yaml"
     resources:
-        runtime = "72h",   # much smaller than 120h since we split
+        runtime = "10h",   
         mem_mb  = 32000    # per-job memory; tune as needed
     threads: 1
     shell:
@@ -423,7 +423,7 @@ rule process_doc_level_predictions:
     params:
         input_dir = shlex.quote(cfg["regex_classification"]["output_dir"])
     resources:
-        runtime = "10h",
+        runtime = "5h",
         mem_mb  = 32000
     log:
         out = "logs/process_doc_level_predictions.out",
@@ -446,6 +446,9 @@ rule filter_age_sentences:
     log:
         out = "logs/filter_age_sentences.out",
         err = "logs/filter_age_sentences.err"
+    resources:
+        runtime = "1h",
+        mem_mb  = 32000
     conda:
         "envs/papermage.yaml"
     shell:
@@ -471,12 +474,11 @@ rule predict_age_sent_bert:
         model_path = cfg["predict_age_sent_bert"]["model_path"]
     resources:
         mem_mb=32000,
-        runtime="24h"
+        runtime="12h"
     conda:
         "envs/bert_models.yaml"
     shell:
         r"""
-        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
         python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/age_sent_classifier_bert.py \
             {params.model_path} \
             {input} \
@@ -506,12 +508,11 @@ rule extract_age_llm_unsloth:
     resources:
         cpus_per_task=16,
         mem_mb=32000,
-        runtime="48h"
+        runtime="24h"
     conda:
         "envs/unsloth.yaml"
     shell:
         r"""
-        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
         # put Triton / Torch-Inductor caches on node-local or per-job dirs
         export TRITON_CACHE_DIR="${{SLURM_TMPDIR:-/scratch/$USER/triton_cache}}/${{SLURM_JOB_ID:-$$}}"
         export TORCHINDUCTOR_CACHE_DIR="${{SLURM_TMPDIR:-/scratch/$USER/torchinductor_cache}}/${{SLURM_JOB_ID:-$$}}"
@@ -652,7 +653,7 @@ rule run_ner_inference:
         cpus_per_task=16,
         gpus_per_task=1,
         mem_mb=32000,
-        runtime="72h"
+        runtime="15h"
     conda:
         "envs/bert_models.yaml"
     shell:
@@ -694,8 +695,9 @@ rule clean_ner:
         done   = CLEAN_DONE_PATTERN,
     params:
         ner_column=cfg["clean_ner"].get("ner_column", "ner_prediction_BioLinkBERT-base_normalized"),
-        # this is what your script actually reads from
-        ner_chunks_dir=lambda wc: cfg["clean_ner"][wc.dataset]["input_prediction"]
+        # directory that contains ALL chunk files
+        ner_chunks_dir=lambda wc, input: os.path.dirname(input.ner_chunks[0]),
+        nr_chunks_to_process = cfg["ner_inference"]["shared"]["num_chunks"]
     log:
         out="logs/clean_ner_{dataset}.out",
         err="logs/clean_ner_{dataset}.err"
@@ -707,6 +709,7 @@ rule clean_ner:
             --input_dir {params.ner_chunks_dir} \
             --output_dir {output.outdir} \
             --ner_column {params.ner_column} \
+            --num_chunks {params.nr_chunks_to_process} \
             > {log.out} 2> {log.err}
         touch {output.done}
         """
@@ -765,6 +768,7 @@ STRAIN_DIR  = clean_outdir("strain")
 rule map_strain_values:
     input: 
         ner_done = os.path.join(STRAIN_CLEAN_DIR, ".clean_done"),
+        input_dir = STRAIN_CLEAN_DIR
     output:
         cfg["map_strain_values"]["output_file"]
     log:
@@ -782,7 +786,7 @@ rule map_strain_values:
         r"""
         mkdir -p logs
         python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/map_strain_values.py \
-            --input_dir {input} \
+            --input_dir {input.input_dir} \
             --output_csv {output} \
             --synonyms_file {params.syn_file} \
             --column {params.column} \
@@ -836,7 +840,6 @@ rule map_author_affiliation:
     shell:
         r"""
         mkdir -p logs
-        export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
         python -u /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/08_IE_full_text/map_affiliation_to_geolocation.py \
             --input {input} \
             --output {output} \
