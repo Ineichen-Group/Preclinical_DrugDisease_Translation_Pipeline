@@ -127,6 +127,25 @@ To normalize the extracted entities we use:
    1. The DrugBank database was downloaded from [https://go.drugbank.com/releases/latest](https://go.drugbank.com/releases/latest) (requires free registration). The terminology from drugbank_full_database.xml is prepared for mapping in [./04_normalization/Prep_Drugbank_for_Synonyms.ipynb](./04_normalization/Prep_Drugbank_for_Synonyms.ipynb).
    2. Further external IDs obtained directly from the website and not included in the xml.
 
+### Pre-computed resources
+
+While the below explanations give details about the process of embedding terminology and the linking process, you can download the named entity linking resources from [https://zenodo.org/records/19287944](https://zenodo.org/records/19287944). These files contain precomputed ontology embeddings and mappings required for drug and disease normalization.
+
+After downloading, place them in the repository as follows:
+
+```
+./04_normalization/data/
+                  ├── mondo/
+                  │   ├── embeddings/
+                  │   ├── mondo_term_id_pairs.json
+                  │   └── mondo_id_to_term_map.json
+                  └── umls/
+                      ├── embeddings/
+                      ├── umls_term_id_pairs_combined.json
+                      └── umls_id_to_term_map.json 
+```
+
+The path to the data (DATA_DIR) has to be adjusted in [./04_normalization/run_normalize_parallel_drug.sh](././04_normalization/run_normalize_parallel_drug.sh), and [./04_normalization/run_normalize_parallel_disease.sh](././04_normalization/run_normalize_parallel_disease.sh).
 
 ### Overview of the flow
 The overall flow for the normalization is as follows:
