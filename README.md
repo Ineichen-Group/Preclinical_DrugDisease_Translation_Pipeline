@@ -259,9 +259,9 @@ This results in three files from the courpus filtered for the PMIDs of each syst
 #### PMC
 [./07_full_text_retrieval/fetch_pmc_fulltext.py](./07_full_text_retrieval/fetch_pmc_fulltext.py)
 
-This module automates the retrieval of full-text scientific articles from PubMed Central (PMC) using lists of PubMed IDs (PMIDs). It is designed for batch processing in preclinical/clinical data pipelines, enabling reproducible and resumable downloads of Open Access articles.
+This module automates the retrieval of full-text scientific articles from PubMed Central (PMC) using lists of PubMed IDs (PMIDs). It is designed for batch processing, enabling reproducible and resumable downloads of Open Access articles.
 
-For each PMID, the pipeline:
+For each PMID, the code:
 - Converts the PMID to a PMCID using the NCBI ID conversion API  
 - Checks whether the article is available as Open Access  
 - Attempts to download the full text in **BioC JSON** format  
@@ -269,10 +269,20 @@ For each PMID, the pipeline:
 - Stores results locally and logs progress for restartability   
   
 
-
 #### Cadmus
 
+See https://github.com/biomedicalinformaticsgroup/cadmus.
+
 [./07_full_text_retrieval/cadmus_job.sh](./07_full_text_retrieval/cadmus_job.sh)
+
+This component runs large-scale full-text retrieval using the `cadmus` library on a high-performance computing (HPC) cluster managed by SLURM. It extends beyond PMC Open Access by leveraging publisher APIs (e.g., Wiley, Elsevier) alongside NCBI services to maximize full-text coverage.
+
+The pipeline:
+- Loads a list of PMIDs from a text file  
+- Removes duplicates and prepares a batch for processing  
+- Loads API keys (NCBI, Wiley, Elsevier) from a secure file  
+- Uses `cadmus.bioscraping` to retrieve full-text content from multiple sources  
+- Runs as a scheduled SLURM job with logging and resource control  
 
 ### Methods extraction
 #### From PMC BioC fromat
