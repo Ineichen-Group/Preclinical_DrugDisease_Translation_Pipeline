@@ -477,10 +477,10 @@ The corresponding visualizations are available in [./09_corpus_analysis/02_Viz_A
 This notebook quantifies how often drug entities identified in the **preclinical literature** also appear in the **clinical trial landscape**, and how far those translated drugs progress in development. It operates at the **drug level** rather than the drug–disease pair level, meaning a drug is considered translationally relevant if it appears in both preclinical and clinical datasets, regardless of indication.
 
 The workflow:
-- loads normalized **preclinical drug–disease entity data**
-- loads normalized **clinical trial drug–disease entity data**
+- loads normalized preclinical drug–disease entity data
+- loads normalized clinical trial drug–disease entity data
 - explodes multi-valued drug and disease columns into row-level entities
-- aggregates evidence per drug
+- aggregates **evidence per drug**
 - integrates **FDA approval information**
 - computes summary metrics for:
   - any clinical appearance
@@ -527,8 +527,62 @@ The following input files must be provided locally. You will need to **adjust th
 **Download source:**  
 - GitHub: https://github.com/Ineichen-Group/FDA_DrugDisease_Pipeline/blob/main/out/df_ds_drugs_with_FDA_info.csv  
 
+### Drug<>Disease-level translation proportions
+
+[./10_drug_disease_translation_analysis/Translation_02_Drug_Disease.ipynb](./10_drug_disease_translation_analysis/Translation_02_Drug_Disease.ipynb)
+
+This notebook builds a **drug–disease pair–level translation dataset** by linking normalized preclinical literature pairs to normalized clinical trial pairs and then enriching the merged result with **trial timing**, **phase progression**, and **FDA drug–disease approval information**.
+
+Unlike the drug-only translation analysis, this workflow operates on explicit:
+
+- **disease <> drug** pairs in the preclinical literature
+- **disease <> drug** pairs in clinical trials
+- **disease <> drug** pairs in FDA approval data
+
+The goal of this first part is to prepare a harmonized dataset that can later be used to assess whether a specific preclinical drug–disease pair translates into clinical development or approval.
+
+At a high level, the notebook:
+- loads normalized preclinical and clinical entity datasets
+- expands multi-valued disease and drug annotations
+- adds publication year for preclinical studies
+- adds start/completion/submission year information for clinical trials
+- aggregates evidence at the  `disease <> drug` **pair level**
+- merges preclinical and clinical pair evidence
+- derives trial phase summary features
+- integrates FDA drug–disease approval mappings
+- computes translation statistics at the **pair level**
+
+In addition to the preclinical and clinical linking files already listed, this notebook also requires the following extra inputs:
 
 
+#### 1. Preclinical publication metadata  
+**Variable:** `PRECLINICAL_METADATA_PATH`  
+
+**Example path:**  
+`/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/02_animal_study_classification/data/animal_studies/full_pubmed_filtered_animal_6002827_metadata.csv`  
+
+**Download source:**  
+- Zenodo: https://zenodo.org/records/19390481  
+- File location inside archive:  
+  `02_animal_study_classification.zip → data/animal_studies/full_pubmed_filtered_animal_6002827_metadata.csv`  
+
+**Used for:**  
+- adding publication year (`pub_year`) to preclinical studies
+
+#### 2. FDA drug–disease pair mapping  
+**Variable:** `FDA_FILE`  
+
+**Example path:**  
+`/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/10_use_case_disease_focus/out/FDA_drug_disease_pairs_mapped_both.csv`  
+
+**Download source:**  
+- GitHub: https://github.com/Ineichen-Group/FDA_DrugDisease_Pipeline/blob/main/out/FDA_drug_disease_pairs_mapped_both.csv  
+
+**Used for:**  
+- adding FDA-approved disease–drug pairs
+- computing overlap with preclinical and clinical pairs
+
+---
 ---
 ## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
