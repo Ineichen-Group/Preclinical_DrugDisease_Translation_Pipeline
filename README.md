@@ -253,13 +253,26 @@ And identified the expected animal article PMIDs saved in [./04_syst_reviews_val
 We check those target PMIDs are present in our dataset with the same drug and disease mentions. The code for that is in [./04_syst_reviews_validation/sys_review_validation.py](./04_syst_reviews_validation/sys_review_validation.py). 
 This results in three files from the courpus filtered for the PMIDs of each systematic reviews and showing the unique extracted entities. 
 
-### Validation with MS-SOLES 
-
-
 ## Full-text retrieval and methods extraction
 
 ### Full-text retrieval
-PMC -> Cadmus
+#### PMC
+[./07_full_text_retrieval/fetch_pmc_fulltext.py](./07_full_text_retrieval/fetch_pmc_fulltext.py)
+
+This module automates the retrieval of full-text scientific articles from PubMed Central (PMC) using lists of PubMed IDs (PMIDs). It is designed for batch processing in preclinical/clinical data pipelines, enabling reproducible and resumable downloads of Open Access articles.
+
+For each PMID, the pipeline:
+- Converts the PMID to a PMCID using the NCBI ID conversion API  
+- Checks whether the article is available as Open Access  
+- Attempts to download the full text in **BioC JSON** format  
+- Falls back to **PMC OAI XML** if JSON is unavailable  
+- Stores results locally and logs progress for restartability   
+  
+
+
+#### Cadmus
+
+[./07_full_text_retrieval/cadmus_job.sh](./07_full_text_retrieval/cadmus_job.sh)
 
 ### Methods extraction
 #### From PMC BioC fromat
