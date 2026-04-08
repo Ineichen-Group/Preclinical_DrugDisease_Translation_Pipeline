@@ -1,4 +1,4 @@
-# Preclinical_Pipeline
+# Large-Scale Assessment of Animal-to-Human Drug Translation Using Natural Language Processing
 
 ## PubMed Query
 
@@ -239,6 +239,10 @@ MONDO:
 UMLS:
   - Mapping UMLS terms to parent CUIs in [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py). This script uses the MRREL file to find parent CUIs for each UMLS term, allowing normalization to higher-level concepts.
 
+Finally, see [./04_normalization/Merge_Linked_Entities_for_Translation.ipynb](./04_normalization/Merge_Linked_Entities_for_Translation.ipynb). This notebook prepares a combined preclinical entity dataset by merging normalized **drug** and **disease** annotations at the publication level. 
+
+
+
 ## Validation 
 
 ### Validation with existing systematic reviews 
@@ -466,6 +470,64 @@ The corresponding visualizations are available in [./09_corpus_analysis/02_Viz_A
 
 ---
 ## Animal-to-human translation analysis
+
+### Drug-level translation proportions
+[./10_drug_disease_translation_analysis/Translation_01_Drug.ipynb](./10_drug_disease_translation_analysis/Translation_01_Drug.ipynb)
+
+This notebook quantifies how often drug entities identified in the **preclinical literature** also appear in the **clinical trial landscape**, and how far those translated drugs progress in development. It operates at the **drug level** rather than the drug–disease pair level, meaning a drug is considered translationally relevant if it appears in both preclinical and clinical datasets, regardless of indication.
+
+The workflow:
+- loads normalized **preclinical drug–disease entity data**
+- loads normalized **clinical trial drug–disease entity data**
+- explodes multi-valued drug and disease columns into row-level entities
+- aggregates evidence per drug
+- integrates **FDA approval information**
+- computes summary metrics for:
+  - any clinical appearance
+  - progression to **Phase 3 completed**, **Phase 4**, or **FDA approval**
+
+The following input files must be provided locally. You will need to **adjust the file paths** depending on your environment.
+
+#### 1. Preclinical linked entities  
+**Variable:** `FILE_PRECLINICAL_LINKING`  
+
+**Example path:**  
+`/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/entities_drug_disease_preclin.csv`  
+
+**Download source:**  
+- Zenodo: https://zenodo.org/records/19390481  
+- File location inside archive:  
+  `04_normalization.zip → data/mapped_all/entities_drug_disease_preclin.csv`  
+
+#### 2. Clinical linked entities  
+**Variable:** `FILE_CLINICAL_LINKING`  
+
+**Example path:**  
+`/scratch/sdonev/Clinical_Pipeline/data/linked_to_ontologies/entities_drug_disease_clin.csv`  
+
+**Download source:**  
+- Zenodo: https://zenodo.org/records/19351891  
+
+
+#### 3. Clinical metadata (AACT)  
+**Variable:** `FILE_CLINICAL_METADATA`  
+
+**Example path:**  
+`/scratch/sdonev/Clinical_Pipeline/data/raw_aact/mv_interventional_drug_studies_20260222.csv`  
+
+**Download source:**  
+- Zenodo: https://zenodo.org/records/19351891  
+
+#### 4. FDA drug approval data  
+**Variable:** `FDA_FILE`  
+
+**Example path:**  
+`/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/10_use_case_disease_focus/out/df_ds_drugs_with_FDA_info.csv`  
+
+**Download source:**  
+- GitHub: https://github.com/Ineichen-Group/FDA_DrugDisease_Pipeline/blob/main/out/df_ds_drugs_with_FDA_info.csv  
+
+
 
 ---
 ## Detailed docu of the IE modules is provided below.
