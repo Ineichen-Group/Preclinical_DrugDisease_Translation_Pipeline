@@ -582,7 +582,30 @@ In addition to the preclinical and clinical linking files already listed, this n
 - adding FDA-approved disease–drug pairs
 - computing overlap with preclinical and clinical pairs
 
----
+### Translation Table Preparation and Neuro Subsetting
+
+[./10_drug_disease_translation_analysis/Translation_03_0_Prep_Pairs_for_Associations.ipynb](./10_drug_disease_translation_analysis/Translation_03_0_Prep_Pairs_for_Associations.ipynb)
+
+This notebook builds a unified **drug–disease translation table** using datasets generated in **Translation_02_Drug_Disease**, and extracts **neurological subsets** for downstream analysis.
+
+#### 1. Merge Translation Tables
+- Load full translation table  
+- Add FDA-only pairs (flagged as `fda_only`)  
+- Concatenate into a single dataset  
+
+
+#### 2. Neuro Filtering
+
+A. Keyword-Based (17 Categories)
+- Match disease terms using a curated keyword dictionary  
+- Assign to predefined neurological disease groups  
+- Output: `translation_table_drug_disease_NEURO_17.csv`
+
+B. Ontology-Based
+- Match against a list of neurological diseases  
+- Uses regex-based matching  
+- Output: `translation_table_drug_disease_NEURO.csv`
+
 ---
 ## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
