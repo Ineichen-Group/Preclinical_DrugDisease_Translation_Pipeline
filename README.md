@@ -606,6 +606,108 @@ B. Ontology-Based
 - Uses regex-based matching  
 - Output: `translation_table_drug_disease_NEURO.csv`
 
+### Descriptive Pair-Level Analysis of Animal Study Characteristics
+[./10_drug_disease_translation_analysis/Translation_04_Preclinical_Associations_Drug_Disease.ipynb](./10_drug_disease_translation_analysis/Translation_04_Preclinical_Associations_Drug_Disease.ipynb)
+
+This workflow uses integrated **drug–disease translation tables** to derive preclinical study features for each pair and compares characteristics of **translated** versus **non-translated** pairs.
+
+The resulting datasets support three main goals:
+1. identifying the subset of preclinical studies that occurred before key clinical milestones,
+2. generating pair-level feature tables for donstream descriptive and statistical association analyses,
+3. descriptive pair-level analysis comparing the characteristics of animal studiess proceeding translated or non-translated drug-disease pairs.
+
+A key point is that some downstream analyses in this project use only articles with available **full text**. This can reduce the number of included entities and studies relative to the full translation table.
+
+#### 1. Load translation tables
+The notebook starts from translation tables generated in earlier pipeline steps. Depending on the selected dataset, it loads one of the prepared outputs such as:
+- full dataset,
+- neuro-only subset.
+
+These tables contain integrated preclinical, clinical, and FDA-based translation annotations for each normalized **drug–disease pair**.
+
+#### 2. Define translation outcome
+Each pair is classified into a translation status:
+- **approved / translated** if it reached at least one Phase 4 trial, at least one completed Phase 3 trial, or has FDA approval information,
+- **failed / non-translated** otherwise.
+
+This creates the main comparison groups used throughout the notebook.
+
+#### 3. Identify relevant clinical timing
+For translated pairs, the notebook estimates the earliest relevant clinical milestone year using:
+- first Phase 4 year,
+- first completed Phase 3 year,
+- earliest FDA approval year.
+
+For non-translated pairs, the latest available clinical trial start year is used as a reference point.
+
+These timing variables allow the analysis to distinguish preclinical studies published **before** clinical translation from those published later.
+
+#### 4. Restrict to preclinical studies before clinical milestones
+For each pair, the notebook parses the stored preclinical PMID lists and publication years, then keeps only studies published before the relevant clinical cutoff:
+- **before first relevant clinical milestone** for translated pairs,
+- **before latest trial start year** for failed pairs.
+
+This yields the subset of preclinical studies most relevant for evaluating whether preclinical evidence preceded later translation outcomes.
+
+#### 5. Retrieve annotated preclinical studies
+The selected PMID subsets are joined to the full-text preclinical annotation dataset, which contains study-level metadata and extracted characteristics such as:
+- animal species,
+- sex,
+- strain,
+- assay type,
+- country,
+- reporting of blinding,
+- reporting of randomization,
+- reporting of welfare,
+- sample size annotations.
+
+Separate article-level datasets are created for translated and failed subsets, then merged into a combined preclinical analysis table.
+
+#### 6. Build article-level and pair-level outputs
+The notebook exports:
+- a **flat article-level table** with one row per included preclinical study,
+- an **aggregated pair-level table** summarizing all supporting studies for each drug–disease pair.
+
+These outputs form the basis for descriptive summaries and downstream association analyses.
+
+#### 7. Derive experimental heterogeneity and rigor features
+For each drug–disease pair, the notebook computes summary variables describing the diversity and reporting quality of the preclinical evidence base, including:
+- whether both sexes were tested,
+- number of unique species,
+- number of unique strains,
+- number of unique assays,
+- number of unique countries,
+- number of supporting articles,
+- number of articles reporting blinding,
+- number of articles reporting randomization,
+- number of articles reporting welfare.
+
+Binary indicators are also derived for whether a pair has evidence from at least two species, strains, assays, or countries, and whether at least one supporting study reports each rigor item.
+
+#### 8. Compare translated and non-translated pairs
+The aggregated features are compared between:
+- **approved / translated pairs**,
+- **failed / non-translated pairs**.
+
+This produces summary tables that quantify differences in preclinical heterogeneity and rigor-related reporting across the two outcome groups.
+
+#### 9. Prepare association-analysis input
+A final analysis-ready table is created where each row represents one drug–disease pair and includes:
+- engineered preclinical summary features,
+- a binary target variable indicating translation outcome.
+
+This dataset is intended for downstream statistical analyses and predictive modeling.
+
+#### 10. Validation and visualization
+The notebook also creates:
+- sampled examples for manual validation,
+- outlier subsets,
+- publication-year summaries,
+- exploratory plots of feature–target relationships,
+- visualizations comparing preclinical evidence with clinical counts and translation timing.
+
+Together, these outputs provide a structured basis for analyzing how properties of the preclinical evidence base relate to later clinical translation and approval.
+
 ---
 ## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
