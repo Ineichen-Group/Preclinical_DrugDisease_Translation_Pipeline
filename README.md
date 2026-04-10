@@ -708,6 +708,52 @@ The notebook also creates:
 
 Together, these outputs provide a structured basis for analyzing how properties of the preclinical evidence base relate to later clinical translation and approval.
 
+### Statistical Analysis of Translation-Associated Preclinical Study Features
+
+[./10_drug_disease_translation_analysis/Translation_05_Associations_Analysis_R.ipynb](./10_drug_disease_translation_analysis/Translation_05_Associations_Analysis_R.ipynb)
+
+This notebook analyzes whether selected preclinical study characteristics are associated with successful translation of drug–disease pairs. Using the prepared association dataset, it fits logistic regression models, explores predictive performance, compares translated and non-translated pairs, and generates summary visualizations.
+
+#### Overview
+
+- Loads the prepared association dataset for a selected subset (`FULL`, `NEURO`, or `NEURO_17`)
+- Prepares predictors related to:
+  - species diversity
+  - strain diversity
+  - assay diversity
+  - inclusion of both sexes
+  - study volume
+  - reporting of blinding and randomization
+- Fits multivariable logistic regression models
+- Fits univariate logistic regression models for each predictor separately
+- Exports odds ratios, confidence intervals, and p-values for reporting
+- Explores predictive modeling with cross-validation and random forest
+- Summarizes translated vs non-translated drug–disease pairs by article count
+- Visualizes:
+  - forest plots for multivariable and univariate models
+  - distributions of article counts by translation status
+  - top translated and non-translated drug–disease pairs
+  - exploratory relationships such as species count versus article count
+
+#### Input
+
+- `out/df_translation_associations_<SUFFIX>.csv`
+
+#### Output
+
+- Regression summary tables
+- Forest plots for multivariable and univariate models
+- Prediction experiment outputs
+- Distribution plots of article counts by translation status
+- Ranked plots of top translated and non-translated pairs
+
+#### Notes
+
+- The notebook supports switching between dataset variants through the `suffix` variable.
+- Predictors are scaled before regression analysis.
+- Translation status is represented by the `target` variable.
+- Some sections are exploratory and include alternative modeling ideas or diagnostic checks.
+
 ---
 ## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
