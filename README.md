@@ -754,6 +754,43 @@ This notebook analyzes whether selected preclinical study characteristics are as
 - Translation status is represented by the `target` variable.
 - Some sections are exploratory and include alternative modeling ideas or diagnostic checks.
 
+### Timeline of Preclinical Studies and Clinical Milestones
+
+This notebook prepares and visualizes timelines linking preclinical publication activity to clinical progression for selected drug–disease pairs. It builds year-resolved preclinical study counts, maps each pair to its earliest clinical trial year and clinically relevant milestone year, and generates bubble plots showing how preclinical evidence accumulates over time relative to clinical development.
+
+#### Overview
+
+- Loads the translation timeline dataset generated in `Translation_04_Preclinical_Associations_Drug_Disease`
+- Selects key fields for drug–disease pairs, preclinical study years, clinical trial timing, and translation status
+- Builds lookup dictionaries for:
+  - earliest clinically relevant year
+  - earliest trial start year
+- Converts pair-level preclinical publication histories into a wide year-by-year matrix
+- Loads an auxiliary drug-level timeline table for background study activity across other diseases
+- Defines plotting utilities for:
+  - year-by-year bubble timelines
+  - milestone markers for earliest clinical trial and clinically relevant year
+  - optional highlighting of translated pairs and FDA new molecular entities
+- Filters and samples selected drug–disease pairs for visualization
+- Exports publication-quality timeline plots
+
+#### Input
+
+- `translation_table_for_timeline_NEURO.csv`
+- `out/all_drugs_articles_timeline.csv`
+
+#### Output
+
+- Wide year-by-year preclinical timeline tables
+- Bubble timeline plots for selected drug–disease pairs
+- PDF figures showing preclinical study accumulation and clinical milestones
+
+#### Notes
+
+- The main plotting function compares disease-specific preclinical studies with optional background activity for the same drug in other diseases.
+- Translated pairs can be marked with stars, and selected FDA new molecular entities can be highlighted separately.
+- Timeline plots are configurable for year range, bubble scaling, custom ordering, and normalization of background studies.
+  
 ---
 ## Detailed docu of the IE modules is provided below.
 ### Regex-based extraction
