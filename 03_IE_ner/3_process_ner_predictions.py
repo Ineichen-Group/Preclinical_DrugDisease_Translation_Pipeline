@@ -1,190 +1,635 @@
-import pandas as pd
-import numpy as np
-from collections import Counter, defaultdict
-import matplotlib.pyplot as plt
-import re
-import csv
-import os
+import ast
 import glob
-from plot_ner import plot_drug_disease_distribution
+import os
+import re
+
+import pandas as pd
+
 from abbreviations import schwartz_hearst
 
-# Function to remove spaces around ' and -
+
+NER_PREDICTION_COL = "ner_prediction_BioLinkBERT-base_normalized"
+
+
 def remove_spaces_around_apostrophe_and_dash(text):
-    text = text.replace(" ' ", "'")  # Remove spaces around '
-    text = text.replace("' s", "'s")  # Remove spaces around '
-    text = text.replace(" - ", "-")  # Remove spaces around -
-    text = text.replace("- ", "-")  # Remove spaces around -
-    text = text.replace(" / ", "/")  # Remove spaces around /
-    text = text.replace("( ", "(")  # Remove spaces around (
-    text = text.replace(" )", ")")  # Remove spaces around -
-    text = text.replace("[ ", "[")  # Remove spaces around [
-    text = text.replace(" ]", "]")  # Remove spaces around ]
-    text = re.sub(r'\s+', ' ', text)  # normalize spaces
+    """Normalize spacing around punctuation and repeated whitespace."""
+    text = text.replace(" ' ", "'")
+    text = text.replace("' s", "'s")
+    text = text.replace(" - ", "-")
+    text = text.replace("- ", "-")
+    text = text.replace(" / ", "/")
+    text = text.replace("( ", "(")
+    text = text.replace(" )", ")")
+    text = text.replace("[ ", "[")
+    text = text.replace(" ]", "]")
+    text = re.sub(r"\s+", " ", text)
+
     return text
 
+
 def process_ner_predictions(directory_path):
-    # Initialize an empty list to store DataFrames
+    """Load and combine NER prediction CSV files."""
     dfs = []
-
     count_files = 0
-    # Loop through all files in the directory
+
     for filename in os.listdir(directory_path):
-        if filename.endswith(".csv"):
-            # Construct the full file path
-            file_path = os.path.join(directory_path, filename)
-            # Load the CSV into a DataFrame and select specific columns
-            df = pd.read_csv(file_path)[['PMID', 'ner_prediction_BioLinkBERT-base_normalized']]
-            # Append the DataFrame to the list
-            dfs.append(df)
-            count_files += 1
+        if not filename.endswith(".csv"):
+            continue
 
-    # Concatenate all DataFrames in the list
-    df_pred_full = pd.concat(dfs, ignore_index=True).drop_duplicates()
+        file_path = os.path.join(directory_path, filename)
 
-    # Drop documents with no extracted entities
-    df_empty = df_pred_full[df_pred_full["ner_prediction_BioLinkBERT-base_normalized"].apply(lambda x: len(x) <= 2)]
-    df_pred = df_pred_full[df_pred_full["ner_prediction_BioLinkBERT-base_normalized"].apply(lambda x: len(x) > 2)]
-    df_pred['ner_prediction_BioLinkBERT-base_normalized'] = df_pred['ner_prediction_BioLinkBERT-base_normalized'].apply(remove_spaces_around_apostrophe_and_dash)
-    print(f"Read {count_files} number of files, full df shape {df_pred_full.shape}, df shape without empty NER {df_pred.shape}")
+        df = pd.read_csv(file_path)[
+            ["PMID", NER_PREDICTION_COL]
+        ]
+
+        dfs.append(df)
+        count_files += 1
+
+    if not dfs:
+        raise RuntimeError(
+            f"No CSV files found in NER prediction directory: {directory_path}"
+        )
+
+    df_pred_full = pd.concat(
+        dfs,
+        ignore_index=True,
+    ).drop_duplicates()
+
+    # Separate documents with and without extracted entities
+    df_empty = df_pred_full[
+        df_pred_full[NER_PREDICTION_COL].apply(
+            lambda x: len(x) <= 2
+        )
+    ].copy()
+
+    df_pred = df_pred_full[
+        df_pred_full[NER_PREDICTION_COL].apply(
+            lambda x: len(x) > 2
+        )
+    ].copy()
+
+    df_pred[NER_PREDICTION_COL] = df_pred[
+        NER_PREDICTION_COL
+    ].apply(remove_spaces_around_apostrophe_and_dash)
+
+    print(
+        f"Read {count_files} files, "
+        f"full df shape {df_pred_full.shape}, "
+        f"df shape without empty NER {df_pred.shape}"
+    )
+
     return df_pred, df_empty
 
-def extract_abbreviation_from_full_text(pmid_set, folder_path = "data/animal_studies_for_ner_inference", save_to_path="03_IE_ner/data/abbreviations_expansion/pmid_abbreviations.csv"):
-    # Find all CSV files in the folder
-    csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
-    count_files = 0
-    # Loop through CSV files and filter data
-    for file in csv_files:
-        if count_files in [100, 200, 300, 400, 500, 600]:
-            print(f'processing reached {count_files} with {file}')
-        count_files += 1
-        df = pd.read_csv(file)  # Read the CSV file
-        if "PMID" in df.columns:  # Ensure the column exists
-            filtered_df = df[df["PMID"].isin(pmid_set)]  # Faster lookup using a set
-            filtered_df = filtered_df.copy()
-            filtered_df['abbreviation_definition_pairs'] = filtered_df['Text'].apply(extract_abbreviation_definition_pairs)
-            if not filtered_df.empty:
-                if count_files == 0:
-                    filtered_df[['PMID', 'abbreviation_definition_pairs']].to_csv(save_to_path, index=False)
-                else:
-                    filtered_df[['PMID', 'abbreviation_definition_pairs']].to_csv(save_to_path, mode='a', header=False, index=False)
-    print("Completed reading full text docs.")
-    return f'{save_to_path}/pmid_abbreviations.csv'
 
 def extract_abbreviation_definition_pairs(doc_text):
-    pairs = schwartz_hearst.extract_abbreviation_definition_pairs(doc_text=doc_text)
-    return pairs
+    """Extract abbreviation-definition pairs using Schwartz-Hearst."""
+    return schwartz_hearst.extract_abbreviation_definition_pairs(
+        doc_text=doc_text
+    )
 
-def extract_unique_entities(nct_id, annotation_list, abbreviation_definition_pairs, model="linkbert"):
+
+def extract_abbreviation_from_full_text(
+    pmid_set,
+    folder_path=(
+        "../02_animal_study_classification/"
+        "data/animal_studies_for_ner/update_2025"
+    ),
+    save_to_path=(
+        "./data/abbreviations_expansion/"
+        "pmid_abbreviations.csv"
+    ),
+):
+    """Extract abbreviation definitions for the requested PMIDs."""
+    csv_files = glob.glob(
+        os.path.join(folder_path, "*.csv")
+    )
+
+    print(
+        f"Found {len(csv_files)} full-text CSV files "
+        f"in {folder_path}"
+    )
+
+    if not csv_files:
+        raise RuntimeError(
+            f"No CSV files found in full-text directory: {folder_path}"
+        )
+
+    # Normalize PMID type for matching
+    pmid_set = {
+        str(pmid).strip()
+        for pmid in pmid_set
+    }
+
+    # Ensure destination directory exists
+    save_parent_dir = os.path.dirname(save_to_path)
+
+    if save_parent_dir:
+        os.makedirs(
+            save_parent_dir,
+            exist_ok=True,
+        )
+
+    # Remove an incomplete file from an earlier extraction attempt
+    if os.path.isfile(save_to_path):
+        os.remove(save_to_path)
+
+    count_files = 0
+    count_matching_articles = 0
+
+    for file in csv_files:
+        if count_files in [100, 200, 300, 400, 500, 600]:
+            print(
+                f"Processing reached {count_files} "
+                f"with {file}"
+            )
+
+        df = pd.read_csv(file)
+        count_files += 1
+
+        if "PMID" not in df.columns:
+            continue
+
+        if "Text" not in df.columns:
+            continue
+
+        # Normalize PMID type in full-text data
+        df["PMID"] = (
+            df["PMID"]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\.0$", "", regex=True)
+        )
+
+        filtered_df = df[
+            df["PMID"].isin(pmid_set)
+        ].copy()
+
+        if filtered_df.empty:
+            continue
+
+        count_matching_articles += len(filtered_df)
+
+        filtered_df[
+            "abbreviation_definition_pairs"
+        ] = filtered_df["Text"].apply(
+            extract_abbreviation_definition_pairs
+        )
+
+        columns_to_save = [
+            "PMID",
+            "abbreviation_definition_pairs",
+        ]
+
+        filtered_df[
+            columns_to_save
+        ].to_csv(
+            save_to_path,
+            mode="a",
+            header=not os.path.exists(save_to_path),
+            index=False,
+        )
+
+    print(
+        f"Completed reading {count_files} full-text files."
+    )
+    print(
+        f"Found {count_matching_articles} matching articles."
+    )
+
+    if not os.path.isfile(save_to_path):
+        raise RuntimeError(
+            "No abbreviation file was created. "
+            "No matching PMIDs were found.\n"
+            f"Full-text directory: {folder_path}\n"
+            f"Number of requested PMIDs: {len(pmid_set)}"
+        )
+
+    print(
+        f"Abbreviations saved to {save_to_path}"
+    )
+
+    return save_to_path
+
+
+def parse_abbreviation_dict(value):
+    """Convert stored abbreviation dictionary strings back to dictionaries."""
+    if pd.isna(value):
+        return {}
+
+    if isinstance(value, dict):
+        return value
+
+    try:
+        parsed = ast.literal_eval(value)
+    except (
+        ValueError,
+        SyntaxError,
+        TypeError,
+    ):
+        return {}
+
+    if isinstance(parsed, dict):
+        return parsed
+
+    return {}
+
+
+def load_abbreviations_from_csv(
+    save_abbrev_to_path,
+    pmid_set,
+    full_text_dir=(
+        "../02_animal_study_classification/"
+        "data/animal_studies_for_ner/update_2025"
+    ),
+):
+    """Load abbreviations or extract them if the file does not exist."""
+    if not os.path.isfile(save_abbrev_to_path):
+        print(
+            "Abbreviations file not found at "
+            f"{save_abbrev_to_path}"
+        )
+
+        print(
+            f"Extracting abbreviations for "
+            f"{len(pmid_set)} PMIDs..."
+        )
+
+        extract_abbreviation_from_full_text(
+            pmid_set=pmid_set,
+            folder_path=full_text_dir,
+            save_to_path=save_abbrev_to_path,
+        )
+
+    else:
+        print(
+            "Loading existing abbreviations from "
+            f"{save_abbrev_to_path}"
+        )
+
+    if not os.path.isfile(save_abbrev_to_path):
+        raise FileNotFoundError(
+            "Abbreviation file was not created: "
+            f"{save_abbrev_to_path}"
+        )
+
+    abbrev_df = pd.read_csv(
+        save_abbrev_to_path
+    )
+
+    required_columns = {
+        "PMID",
+        "abbreviation_definition_pairs",
+    }
+
+    missing_columns = (
+        required_columns
+        - set(abbrev_df.columns)
+    )
+
+    if missing_columns:
+        raise RuntimeError(
+            "Abbreviation file is missing "
+            f"columns: {missing_columns}"
+        )
+
+    abbrev_df["PMID"] = (
+        abbrev_df["PMID"]
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\.0$", "", regex=True)
+    )
+
+    abbrev_df[
+        "abbreviation_definition_pairs"
+    ] = abbrev_df[
+        "abbreviation_definition_pairs"
+    ].apply(parse_abbreviation_dict)
+
+    print(
+        f"Loaded abbreviations for "
+        f"{len(abbrev_df)} PMIDs"
+    )
+
+    return abbrev_df
+
+
+def extract_unique_entities(
+    nct_id,
+    annotation_list,
+    abbreviation_definition_pairs,
+    model="linkbert",
+):
+    """Extract unique disease and drug entities from NER predictions."""
     unique_conditions = set()
     unique_interventions = set()
     interventions_type = set()
-   
+
     try:
-        annotation_list = eval(annotation_list)
-    except SyntaxError as e:
-        print(nct_id)
+        annotation_list = ast.literal_eval(
+            annotation_list
+        )
+    except (
+        ValueError,
+        SyntaxError,
+        TypeError,
+    ) as e:
+        print(
+            f"Issue parsing NER predictions "
+            f"for PMID {nct_id}"
+        )
         print(annotation_list)
-        print("Syntax error in eval:", e)
-        return "issues processing line"
-    
+        print("Error:", e)
+
+        return "", "", ""
+
+    if not isinstance(
+        abbreviation_definition_pairs,
+        dict,
+    ):
+        abbreviation_definition_pairs = {}
+
     for annotation in annotation_list:
         _, _, entity_type, entity_name = annotation
+
+        # Skip potentially malformed tokenized entities
         if entity_name.startswith("##"):
-            continue ## NEED TO INVESTIGATE
+            continue
+
+        # Skip empty or single-character entities
         if not entity_name or len(entity_name) == 1:
-            continue ## ASSUME TOKENIZER ERROR 
-            
-        # REPLACE ABBREVIATIONS WITH FULL FORM
+            continue
+
+        # Replace abbreviations with full forms
         if entity_name in abbreviation_definition_pairs:
-            #print("Skipping entity {} as it is an ABBR".format(entity_name))
-            entity_name = abbreviation_definition_pairs[entity_name] 
-            #continue
-        if entity_name.upper() in abbreviation_definition_pairs:
-            #print("Skipping entity {} as it is an ABBR".format(entity_name))
-            entity_name = abbreviation_definition_pairs[entity_name.upper()] 
+            entity_name = abbreviation_definition_pairs[
+                entity_name
+            ]
+
+        elif entity_name.upper() in abbreviation_definition_pairs:
+            entity_name = abbreviation_definition_pairs[
+                entity_name.upper()
+            ]
+
         entity_name = entity_name.lower()
-        if entity_type == 'DISEASE':
+
+        if entity_type == "DISEASE":
             unique_conditions.add(entity_name)
-        elif entity_type == 'DRUG':
+
+        elif entity_type == "DRUG":
             unique_interventions.add(entity_name)
             interventions_type.add(entity_type)
-        
-    return "|".join(list(unique_conditions)), "|".join(list(unique_interventions)), "|".join(list(interventions_type))
 
-def get_emtpy_ner_stats(df_pred):
-    # Count rows where unique_interventions_linkbert_predictions is empty
-    empty_interventions = df_pred["unique_interventions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and x.strip() == "").sum()
+    return (
+        "|".join(list(unique_conditions)),
+        "|".join(list(unique_interventions)),
+        "|".join(list(interventions_type)),
+    )
 
-    # Count rows where unique_conditions_linkbert_predictions is empty
-    empty_conditions = df_pred["unique_conditions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and not x).sum()
 
-    # Count rows where both are empty
-    both_empty = df_pred[(df_pred["unique_conditions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and not x)) &
-                    (df_pred["unique_interventions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and x.strip() == ""))].shape[0]
-    results_empty_entities = pd.DataFrame({
-        "Empty unique_conditions_linkbert_predictions": [empty_conditions],
-        "Empty unique_interventions_linkbert_predictions": [empty_interventions],
-        "Both Empty": [both_empty]
-    })
+def get_empty_ner_stats(df_pred):
+    """Calculate statistics for articles with missing extracted entities."""
+    condition_col = "unique_conditions_linkbert_predictions"
+    intervention_col = "unique_interventions_linkbert_predictions"
+
+    empty_interventions = (
+        df_pred[intervention_col]
+        .apply(
+            lambda x: (
+                isinstance(x, str)
+                and x.strip() == ""
+            )
+        )
+        .sum()
+    )
+
+    empty_conditions = (
+        df_pred[condition_col]
+        .apply(
+            lambda x: (
+                isinstance(x, str)
+                and not x
+            )
+        )
+        .sum()
+    )
+
+    both_empty = df_pred[
+        df_pred[condition_col].apply(
+            lambda x: (
+                isinstance(x, str)
+                and not x
+            )
+        )
+        & df_pred[intervention_col].apply(
+            lambda x: (
+                isinstance(x, str)
+                and x.strip() == ""
+            )
+        )
+    ].shape[0]
+
+    results_empty_entities = pd.DataFrame(
+        {
+            "Empty unique_conditions_linkbert_predictions": [
+                empty_conditions
+            ],
+            "Empty unique_interventions_linkbert_predictions": [
+                empty_interventions
+            ],
+            "Both Empty": [
+                both_empty
+            ],
+        }
+    )
+
     print(results_empty_entities)
-    results_empty_entities.to_csv(f"03_IE_ner/ner_stats/empty_ner_predictions_count_{len(results_empty_entities)}.csv")
-    
-def load_abbreviations_from_csv(save_abbrev_to_path, pmid_set, full_text_dir="02_animal_study_classification/data/animal_studies_for_ner"):
-    if not os.path.isfile(save_abbrev_to_path):
-        print(f"Abbreviations file not found at {save_abbrev_to_path}")
-        print(f"Extracting abbreviations for {len(pmid_set)} PMIDs...")
-        extract_abbreviation_from_full_text(pmid_set, full_text_dir, save_abbrev_to_path)
-        print(f"Abbreviations saved to {save_abbrev_to_path}")
-    else:
-        print(f"Loading existing abbreviations from {save_abbrev_to_path}")
-    
-    abbrev_df = pd.read_csv(save_abbrev_to_path, names=["PMID", "abbreviation_definition_pairs"])
-    abbrev_df["abbreviation_definition_pairs"] = abbrev_df["abbreviation_definition_pairs"].apply(eval)
-    
-    print(f"Loaded abbreviations for {len(abbrev_df)} PMIDs")
-    return abbrev_df
-    
+
+    stats_dir = "./ner_stats"
+
+    os.makedirs(
+        stats_dir,
+        exist_ok=True,
+    )
+
+    results_empty_entities.to_csv(
+        os.path.join(
+            stats_dir,
+            f"empty_ner_predictions_count_"
+            f"{len(results_empty_entities)}.csv",
+        ),
+        index=False,
+    )
+
 
 def main():
-    df_pred, df_empty = process_ner_predictions("03_IE_ner/model_predictions/disease_from_model_regex")
-    #plot_drug_disease_distribution(df_pred, save_drug_disease_counts_to="03_ner/ner_stats")
-    pmid_set = set(df_pred["PMID"])
-    
-    save_abbrev_to_path = f"03_IE_ner/data/abbreviations_expansion/pmid_abbreviations_{len(pmid_set)}.csv"
-    abbrev_df = load_abbreviations_from_csv(save_abbrev_to_path, pmid_set)
-    df_pred_with_abbrev = df_pred.merge(abbrev_df, on="PMID", how="left")  # Left join to keep all df_main rows
-    print(f"abbrev {abbrev_df.shape}, joined {df_pred_with_abbrev.shape}")
-    
-    # Extract unique condition and intervention predictions per article
-    print("Extracting unique entities")
-    model_name_str_biolink = "linkbert"
-    biolinkbert_col = "ner_prediction_BioLinkBERT-base_normalized"
-    df_pred_with_abbrev[f'unique_conditions_{model_name_str_biolink}_predictions'], df_pred_with_abbrev[f'unique_interventions_{model_name_str_biolink}_predictions'], _ = zip(*df_pred_with_abbrev.apply(lambda row: extract_unique_entities(row['PMID'], row[biolinkbert_col], row['abbreviation_definition_pairs']), axis=1))
-
-    get_emtpy_ner_stats(df_pred_with_abbrev)
-    
-    # Keep articles with both conditions and interventions
-    filtered_df_non_empty = df_pred_with_abbrev[
-    df_pred_with_abbrev["unique_conditions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and bool(x)) & 
-    df_pred_with_abbrev["unique_interventions_linkbert_predictions"].apply(lambda x: isinstance(x, str) and x.strip() != "")
-    ]
-    print(f"articles with both conditions and interventions:{filtered_df_non_empty.shape}")
-
-    
-    # save all articles
-    save_dir = "03_IE_ner/data"
-    df_to_save = filtered_df_non_empty[["PMID", "unique_conditions_linkbert_predictions", "unique_interventions_linkbert_predictions"]]
-    df_to_save = df_to_save.drop_duplicates()
-    print(f"df_to_save shape after dropping duplicates: {df_to_save.shape}")
-    save_file_name = f"filtered_df_non_empty_{len(df_to_save)}"
-
-    
-    df_to_save.to_csv(f'{save_dir}/animal_studies_with_drug_disease/{save_file_name}.csv', index=False)
-    df_to_save[["PMID"]].to_csv(
-    f"{save_dir}/animal_studies_with_drug_disease/{save_file_name}_PMIDs.csv",
-    index=False
+    # NER predictions for the 2025 update
+    folder_with_ner_prediction = (
+        "./model_predictions/update_2025/drug_disease"
     )
- 
+
+    df_pred, df_empty = process_ner_predictions(
+        folder_with_ner_prediction
+    )
+
+    # Normalize PMID type
+    df_pred["PMID"] = (
+        df_pred["PMID"]
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\.0$", "", regex=True)
+    )
+
+    pmid_set = set(df_pred["PMID"])
+
+    print(
+        f"Number of PMIDs with NER predictions: "
+        f"{len(pmid_set)}"
+    )
+
+    # Abbreviation extraction/loading
+    save_abbrev_to_path = (
+        "./data/abbreviations_expansion/"
+        f"pmid_abbreviations_{len(pmid_set)}_update_2025.csv"
+    )
+
+    full_text_dir = (
+        "../02_animal_study_classification/"
+        "data/animal_studies_for_ner/update_2025"
+    )
+
+    abbrev_df = load_abbreviations_from_csv(
+        save_abbrev_to_path=save_abbrev_to_path,
+        pmid_set=pmid_set,
+        full_text_dir=full_text_dir,
+    )
+
+    # Join abbreviations to NER predictions
+    df_pred_with_abbrev = df_pred.merge(
+        abbrev_df,
+        on="PMID",
+        how="left",
+    )
+
+    # PMIDs without an abbreviation entry should have an empty dictionary
+    df_pred_with_abbrev[
+        "abbreviation_definition_pairs"
+    ] = df_pred_with_abbrev[
+        "abbreviation_definition_pairs"
+    ].apply(
+        lambda x: x if isinstance(x, dict) else {}
+    )
+
+    print(
+        f"Abbreviations: {abbrev_df.shape}, "
+        f"joined: {df_pred_with_abbrev.shape}"
+    )
+
+    # Extract unique conditions and interventions
+    print("Extracting unique entities...")
+
+    model_name_str_biolink = "linkbert"
+
+    condition_col = (
+        f"unique_conditions_"
+        f"{model_name_str_biolink}_predictions"
+    )
+    intervention_col = (
+        f"unique_interventions_"
+        f"{model_name_str_biolink}_predictions"
+    )
+
+    (
+        df_pred_with_abbrev[condition_col],
+        df_pred_with_abbrev[intervention_col],
+        _,
+    ) = zip(
+        *df_pred_with_abbrev.apply(
+            lambda row: extract_unique_entities(
+                row["PMID"],
+                row[NER_PREDICTION_COL],
+                row["abbreviation_definition_pairs"],
+            ),
+            axis=1,
+        )
+    )
+
+    get_empty_ner_stats(
+        df_pred_with_abbrev
+    )
+
+    # Keep articles containing both a condition and an intervention
+    filtered_df_non_empty = df_pred_with_abbrev[
+        df_pred_with_abbrev[
+            condition_col
+        ].apply(
+            lambda x: (
+                isinstance(x, str)
+                and bool(x)
+            )
+        )
+        & df_pred_with_abbrev[
+            intervention_col
+        ].apply(
+            lambda x: (
+                isinstance(x, str)
+                and x.strip() != ""
+            )
+        )
+    ]
+
+    print(
+        "Articles with both conditions and interventions: "
+        f"{filtered_df_non_empty.shape}"
+    )
+
+    # Save final results
+    save_dir = (
+        "./data/animal_studies_with_drug_disease"
+    )
+
+    os.makedirs(
+        save_dir,
+        exist_ok=True,
+    )
+
+    df_to_save = filtered_df_non_empty[
+        [
+            "PMID",
+            condition_col,
+            intervention_col,
+        ]
+    ].drop_duplicates()
+
+    print(
+        "df_to_save shape after dropping duplicates: "
+        f"{df_to_save.shape}"
+    )
+
+    save_file_name = (
+        f"filtered_df_non_empty_"
+        f"{len(df_to_save)}_update_2025"
+    )
+
+    df_to_save.to_csv(
+        os.path.join(
+            save_dir,
+            f"{save_file_name}.csv",
+        ),
+        index=False,
+    )
+
+    df_to_save[["PMID"]].to_csv(
+        os.path.join(
+            save_dir,
+            f"{save_file_name}_PMIDs.csv",
+        ),
+        index=False,
+    )
+
+    print(
+        f"Saved final results to {save_dir}"
+    )
+
+
 if __name__ == "__main__":
     main()

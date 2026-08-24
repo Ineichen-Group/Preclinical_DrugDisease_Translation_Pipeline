@@ -3,18 +3,21 @@
 #SBATCH --output=logs/%A_%a.out             # %A is the job ID, %a is the array index
 #SBATCH --error=logs/%A_%a.err              # Error log for the job
 #SBATCH --gres=gpu:1                   # Reserve 1 GPU per job
-#SBATCH --array=1-617                   # Job array for 11 tasks (1 to 11)
+#SBATCH --array=1-25                   # Job array for 11 tasks (1 to 11)
 #SBATCH --time=03:00:00                # Set max runtime for each job
 #SBATCH --mem=16GB                     # Memory allocation
 #SBATCH --cpus-per-task=4              # Number of CPUs per task
 
 # Construct the test file path using SLURM_ARRAY_TASK_ID
-TEST_DATA_CSV="./pubmed_animal_docs_large/pubmed_filtered_animal_for_NER_chunk_${SLURM_ARRAY_TASK_ID}.csv" #pubmed_filtered_animal_5524202_for_NER_chunk_${SLURM_ARRAY_TASK_ID}.csv"
+TEST_DATA_CSV="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/02_animal_study_classification/data/animal_studies_for_ner/update_2025/pubmed_filtered_animal_for_NER_chunk_${SLURM_ARRAY_TASK_ID}.csv"
+
+#"./pubmed_animal_docs_large/pubmed_filtered_animal_for_NER_chunk_${SLURM_ARRAY_TASK_ID}.csv" 
+#pubmed_filtered_animal_5524202_for_NER_chunk_${SLURM_ARRAY_TASK_ID}.csv"
 
 # Model configuration
 MODEL_NAME="michiyasunaga/BioLinkBERT-base"
-MODEL_PATH="out_full_ds/results/michiyasunaga_BioLinkBERT-base/epochs_10_data_size_100_iter_1/"
-OUTPUT_DIR="./model_predictions/"
+MODEL_PATH="/shares/animalwelfare.crs.uzh/preclin_ner_models/out_drug_disease_ner/results/michiyasunaga_BioLinkBERT-base/epochs_15_data_size_100_iter_1/"
+OUTPUT_DIR="./model_predictions/update_2025/drug_disease"
 OUTPUT_FILE_SUFFIX="_part_${SLURM_ARRAY_TASK_ID}"
 
 # Create logs directory if it doesn't exist
