@@ -29,7 +29,7 @@ start_time=$(date +%s)
 
 echo "Running fetch_cadmus_fulltext.py..."
 
-python "${SCRIPT}" \
+python -u "${SCRIPT}" \
     --pmids "${PMID_FILE}" \
     --api_keys "${API_KEYS}"
 
