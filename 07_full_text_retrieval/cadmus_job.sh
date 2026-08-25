@@ -1,18 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=preclin_fulltext_cadmus
-#SBATCH --time=20:30:00                 # Set a time limit for each job
-#SBATCH --output=cadmus_output_%A.log  # Save stdout with job and task ID
-#SBATCH --error=cadmus_error_%A.log    # Save stderr with job and task ID
-#SBATCH --mem=16G                      # Memory per node
+#SBATCH --time=10:30:00
+#SBATCH --output=cadmus_output_%A.log
+#SBATCH --error=cadmus_error_%A.log
+#SBATCH --mem=16G
 
 # Add edirect directory to PATH
 export PATH=${PATH}:/data/sdonev/cadmus/output/medline/edirect
+
+PMID_FILE="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/07_full_text_retrieval/pmc_fulltext/logs/update_2025/failed_pmids_update_2025.txt"
+
+PMID_COUNT=$(grep -cve '^[[:space:]]*$' "$PMID_FILE")
+echo "Number of PMIDs: ${PMID_COUNT}"
 
 # Start timer
 start_time=$(date +%s)
 
 echo "Running fetch_cadmus_fulltext.py..."
-python fetch_cadmus_fulltext.py
+echo "PMID file: ${PMID_FILE}"
+
+python fetch_cadmus_fulltext.py \
+    --pmids "${PMID_FILE}"
 
 # Check if the script ran successfully
 if [ $? -ne 0 ]; then
@@ -24,10 +32,9 @@ fi
 
 # End timer
 end_time=$(date +%s)
-elapsed=$(( end_time - start_time ))
+elapsed=$((end_time - start_time))
 
-# Convert to minutes and seconds
-mins=$(( elapsed / 60 ))
-secs=$(( elapsed % 60 ))
+mins=$((elapsed / 60))
+secs=$((elapsed % 60))
 
 echo "Time elapsed: ${mins} minute(s) and ${secs} second(s)."
