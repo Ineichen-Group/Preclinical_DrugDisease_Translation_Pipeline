@@ -198,27 +198,6 @@ def assign_nearest_dataset_parents(
     result["nearest_dataset_parent_umls_label"] = parent_labels
 
     return result, mapped_to_parent
-
-def save_stats(mapped_to_parent_clinical, mapped_to_parent_preclinical, save_folder_path="./data/umls/"):
-    
-    def get_df_from_mapped(mapped_to_parent):
-        return pd.DataFrame([
-            {
-                "drug_mapping": key,
-                "drug": key.split("(")[0],
-                "mapping": key.split("(")[1].rstrip(")"),
-                "children_values": values,
-                "ner_count": len(values)
-            }
-            for key, values in mapped_to_parent.items()
-        ])
-    mapped_to_parent_df = get_df_from_mapped(mapped_to_parent_clinical)
-    mapped_to_parent_df = mapped_to_parent_df.sort_values(by="ner_count", ascending=False).reset_index(drop=True)
-    mapped_to_parent_df.to_csv(f'{save_folder_path}umls_mapped_to_parents_clinical_stats.csv', index=False)
-    
-    mapped_to_parent_preclin_df = get_df_from_mapped(mapped_to_parent_preclinical)
-    mapped_to_parent_preclin_df = mapped_to_parent_preclin_df.sort_values(by="ner_count", ascending=False).reset_index(drop=True)
-    mapped_to_parent_preclin_df.to_csv(f'{save_folder_path}umls_mapped_to_parents_preclinical_stats.csv', index=False)
     
 def get_all_umls_ids_from_df(df: pd.DataFrame, id_column: str = "drug_umls_termid") -> Set[str]:
     all_umls_ids = {
@@ -301,46 +280,132 @@ def merge_original_and_parent(
     return df
 
  
+def save_stats(
+    mapped_to_parent_preclinical,
+    output_path,
+):
+    rows = [
+        {
+            "drug_mapping": key,
+            "drug": key.split("(")[0],
+            "mapping": key.split("(")[1].rstrip(")"),
+            "children_values": values,
+            "ner_count": len(values),
+        }
+        for key, values in mapped_to_parent_preclinical.items()
+    ]
+
+    df = pd.DataFrame(rows)
+
+    if not df.empty:
+        df = df.sort_values(
+            by="ner_count",
+            ascending=False,
+        ).reset_index(drop=True)
+
+    os.makedirs(
+        os.path.dirname(output_path),
+        exist_ok=True,
+    )
+
+    df.to_csv(
+        output_path,
+        index=False,
+    )
+
+
 def main(args):
+    # --------------------------------------------------
+    # Load reference + update datasets
+    # --------------------------------------------------
 
-    mrrel_path = args.mrrel_path
-    id_to_term_map_path = args.id_to_term_map_path
-    
-    df_clinical = pd.read_csv(args.clinical_input, dtype=str)
-    df_preclinical = pd.read_csv(args.preclinical_input, dtype=str)
+    print("Loading clinical reference...")
+    df_clinical_reference = pd.read_csv(
+        args.clinical_reference_input,
+        dtype=str,
+    )
 
-    preclinical_output_path = args.preclinical_output
-    clinical_output_path = args.clinical_output
+    print("Loading historical preclinical reference...")
+    df_preclinical_reference = pd.read_csv(
+        args.preclinical_reference_input,
+        dtype=str,
+    )
 
-    all_umls_ids_clinical = get_all_umls_ids_from_df(df_clinical, id_column="drug_umls_termid")
-    all_umls_ids_preclinical = get_all_umls_ids_from_df(df_preclinical, id_column="drug_umls_termid")
-    all_umls_ids = all_umls_ids_clinical.union(all_umls_ids_preclinical)
-    
-    cui2_to_cui1, cui_to_str, parent_counts = load_mappings(mrrel_path, id_to_term_map_path)
-    
-    df_expanded_clinical, mapped_to_parent_clinical = assign_nearest_dataset_parents(
-        df_clinical,
+    print("Loading new preclinical dataset...")
+    df_preclinical = pd.read_csv(
+        args.preclinical_input,
+        dtype=str,
+    )
+
+    # --------------------------------------------------
+    # Build candidate-parent universe
+    # --------------------------------------------------
+
+    ids_clinical = get_all_umls_ids_from_df(
+        df_clinical_reference,
+        id_column="drug_umls_termid",
+    )
+
+    ids_preclinical_reference = get_all_umls_ids_from_df(
+        df_preclinical_reference,
+        id_column="drug_umls_termid",
+    )
+
+    ids_preclinical_update = get_all_umls_ids_from_df(
+        df_preclinical,
+        id_column="drug_umls_termid",
+    )
+
+    all_umls_ids = (
+        ids_clinical
+        | ids_preclinical_reference
+        | ids_preclinical_update
+    )
+
+    print(f"Clinical reference CUIs: {len(ids_clinical)}")
+    print(
+        "Historical preclinical CUIs:",
+        len(ids_preclinical_reference),
+    )
+    print(
+        "Update preclinical CUIs:",
+        len(ids_preclinical_update),
+    )
+    print(
+        "Combined candidate-parent CUIs:",
+        len(all_umls_ids),
+    )
+
+    # --------------------------------------------------
+    # Load UMLS relationships
+    # --------------------------------------------------
+
+    (
         cui2_to_cui1,
         cui_to_str,
-        all_umls_ids,
         parent_counts,
-        id_column="drug_umls_termid"
+    ) = load_mappings(
+        args.mrrel_path,
+        args.id_to_term_map_path,
     )
-    df_expanded_preclinical, mapped_to_parent_preclinical = assign_nearest_dataset_parents(
+
+    # --------------------------------------------------
+    # Process ONLY the new preclinical dataset
+    # --------------------------------------------------
+
+    (
+        df_expanded_preclinical,
+        mapped_to_parent_preclinical,
+    ) = assign_nearest_dataset_parents(
         df_preclinical,
         cui2_to_cui1,
         cui_to_str,
         all_umls_ids,
         parent_counts,
-        id_column="drug_umls_termid"
+        id_column="drug_umls_termid",
+        tokens_column="drug_umls_term_norm",
     )
-    
-    save_stats(
-        mapped_to_parent_clinical,
-        mapped_to_parent_preclinical,
-        save_folder_path=args.stats_folder
-    )
-    
+
     df_final_preclinical = merge_original_and_parent(
         df_expanded_preclinical,
         id_col="drug_umls_termid",
@@ -348,70 +413,95 @@ def main(args):
         parent_id_col="nearest_dataset_parent_umls",
         parent_label_col="nearest_dataset_parent_umls_label",
         merged_id_col="merged_umls_termid",
-        merged_label_col="merged_umls_label"
-    )
-    
-    df_final_clinical = merge_original_and_parent(
-        df_expanded_clinical,
-        id_col="drug_umls_termid",
-        label_col="drug_umls_term_norm",
-        parent_id_col="nearest_dataset_parent_umls",
-        parent_label_col="nearest_dataset_parent_umls_label",
-        merged_id_col="merged_umls_termid",
-        merged_label_col="merged_umls_label"
+        merged_label_col="merged_umls_label",
     )
 
-    df_final_preclinical.to_csv(preclinical_output_path, index=False)
-    df_final_clinical.to_csv(clinical_output_path, index=False)
+    # --------------------------------------------------
+    # Save ONLY new preclinical output
+    # --------------------------------------------------
+
+    os.makedirs(
+        os.path.dirname(args.preclinical_output),
+        exist_ok=True,
+    )
+
+    df_final_preclinical.to_csv(
+        args.preclinical_output,
+        index=False,
+    )
+
+    print(
+        f"Saved preclinical output to: "
+        f"{args.preclinical_output}"
+    )
+
+    save_stats(
+        mapped_to_parent_preclinical,
+        args.stats_output,
+    )
+
+    print(
+        f"Saved mapping stats to: "
+        f"{args.stats_output}"
+    )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Assign UMLS parents to clinical and preclinical drug data."
+        description=(
+            "Assign UMLS parents to a new preclinical drug dataset "
+            "using clinical, historical preclinical, and update "
+            "preclinical CUIs as candidate parent terms."
+        )
     )
 
-    # UMLS-related inputs
     parser.add_argument(
         "--mrrel_path",
         default="./data/umls/mrrel_all_drug_rela_20251209.csv",
-        help="Path to mrrel CSV file."
     )
+
     parser.add_argument(
         "--id_to_term_map_path",
         default="./data/umls/umls_id_to_term_map.json",
-        help="Path to UMLS id-to-term map JSON file."
     )
 
-    # Input clinical & preclinical CSVs
     parser.add_argument(
-        "--clinical_input",
-        default="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_data_with_mondo_parents_mondo_cleaned.csv",
-        help="Path to clinical input CSV."
+        "--clinical_reference_input",
+        required=True,
+        help="Clinical dataset contributing candidate parent CUIs.",
     )
+
+    parser.add_argument(
+        "--preclinical_reference_input",
+        required=True,
+        help=(
+            "Historical preclinical dataset contributing "
+            "candidate parent CUIs."
+        ),
+    )
+
     parser.add_argument(
         "--preclinical_input",
-        default="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_data_with_mondo_parents_mondo_cleaned.csv",
-        help="Path to preclinical input CSV."
+        required=True,
+        help=(
+            "New preclinical dataset to process. Its CUIs also "
+            "contribute to the candidate-parent universe."
+        ),
     )
 
-    # Output paths
     parser.add_argument(
         "--preclinical_output",
-        default="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_preclinical_drug_data_with_umls_parents.csv",
-        help="Output path for preclinical CSV."
-    )
-    parser.add_argument(
-        "--clinical_output",
-        default="/shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_all/mapped_clinical_drug_data_with_umls_parents.csv",
-        help="Output path for clinical CSV."
+        required=True,
     )
 
-    # Where save_stats writes
     parser.add_argument(
-        "--stats_folder",
-        default="./data/umls/",
-        help="Folder where stats from save_stats() will be written."
+        "--stats_output",
+        default=(
+            "./data/umls/"
+            "umls_mapped_to_parents_preclinical_stats.csv"
+        ),
     )
 
     args = parser.parse_args()
+
     main(args)

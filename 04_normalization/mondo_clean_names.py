@@ -339,38 +339,37 @@ def process_dataset(
 
 
 def main():
-    p = argparse.ArgumentParser(description="Group MONDO disease labels and write cleaned parent columns for clinical + preclinical.")
-    p.add_argument("--clinical_input", required=True)
+    p = argparse.ArgumentParser(
+        description="Group MONDO disease labels for preclinical data."
+    )
+
     p.add_argument("--preclinical_input", required=True)
-    p.add_argument("--clinical_output", required=True)
     p.add_argument("--preclinical_output", required=True)
 
-    p.add_argument("--clinical_key", default="nct_id")
     p.add_argument("--preclinical_key", default="PMID")
 
     p.add_argument("--raw_col", default="merged_mondo_label")
     p.add_argument("--id_col", default="merged_mondo_termid")
 
-    p.add_argument("--grouped_col", default="disease_term_mondo_parent_clean")
-    p.add_argument("--out_id_col", default="disease_termid_mondo_parent_clean")
+    p.add_argument(
+        "--grouped_col",
+        default="disease_term_mondo_parent_clean",
+    )
+    p.add_argument(
+        "--out_id_col",
+        default="disease_termid_mondo_parent_clean",
+    )
 
-    p.add_argument("--save_mismatches", default="", help="Optional folder to save mismatch CSVs.")
+    p.add_argument(
+        "--save_mismatches",
+        default="",
+        help="Optional folder to save mismatch CSV.",
+    )
     p.add_argument("--verbose", action="store_true")
 
     args = p.parse_args()
 
-    df_c = pd.read_csv(args.clinical_input, dtype=str)
     df_p = pd.read_csv(args.preclinical_input, dtype=str)
-
-    grouped_c, stats_c, mism_c = process_dataset(
-        df_c,
-        join_key=args.clinical_key,
-        raw_col=args.raw_col,
-        id_col=args.id_col,
-        grouped_col=args.grouped_col,
-        out_id_col=args.out_id_col,
-        verbose=args.verbose,
-    )
 
     grouped_p, stats_p, mism_p = process_dataset(
         df_p,
@@ -382,25 +381,38 @@ def main():
         verbose=args.verbose,
     )
 
-    # merge back into full dfs
-    df_c_out = df_c.merge(grouped_c[[args.clinical_key, args.grouped_col, args.out_id_col]], on=args.clinical_key, how="left")
-    df_p_out = df_p.merge(grouped_p[[args.preclinical_key, args.grouped_col, args.out_id_col]], on=args.preclinical_key, how="left")
+    df_p_out = df_p.merge(
+        grouped_p[
+            [
+                args.preclinical_key,
+                args.grouped_col,
+                args.out_id_col,
+            ]
+        ],
+        on=args.preclinical_key,
+        how="left",
+    )
 
-    Path(args.clinical_output).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.preclinical_output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.preclinical_output).parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    df_c_out.to_csv(args.clinical_output, index=False)
-    df_p_out.to_csv(args.preclinical_output, index=False)
+    df_p_out.to_csv(
+        args.preclinical_output,
+        index=False,
+    )
 
-    # optional mismatch outputs
     if args.save_mismatches:
         outdir = Path(args.save_mismatches)
         outdir.mkdir(parents=True, exist_ok=True)
-        mism_c.to_csv(outdir / "clinical_mondo_grouping_mismatches.csv", index=False)
-        mism_p.to_csv(outdir / "preclinical_mondo_grouping_mismatches.csv", index=False)
+
+        mism_p.to_csv(
+            outdir / "preclinical_mondo_grouping_mismatches.csv",
+            index=False,
+        )
 
     if args.verbose:
-        print("[clinical] stats:", stats_c)
         print("[preclinical] stats:", stats_p)
 
 

@@ -31,13 +31,13 @@ def plot_metrics_vs_threshold(entity_type, thresholds: np.ndarray, f1_scores: li
 
 
     plt.xlabel('Embeddings distance (cdist) threshold value', fontsize=19)
-    plt.title(f'Entity Linking Performance for {entity_type}', fontsize=19)
+    plt.title(f'Entity Linking Performance for {entity_type.title()}', fontsize=19)
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
     plt.legend(fontsize=18, loc='lower right')
     plt.grid(linestyle='--', alpha=0.6, zorder=0)
     plt.tight_layout()
-    plt.savefig(f"04_normalization/viz/linking_performance_at_cdist_thresholds_{entity_type}.png")
+    plt.savefig(f"04_normalization/viz/linking_performance_at_cdist_thresholds_{entity_type}.pdf")
     
     plt.show()
 
