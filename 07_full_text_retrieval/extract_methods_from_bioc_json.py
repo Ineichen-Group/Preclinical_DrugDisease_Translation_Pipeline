@@ -222,7 +222,6 @@ def process_each_json_or_xml_in_dir(
             saved, unique_subtitles = xml_extract(
                 file_path=file,
                 pmid=pmid,
-                parse_info="",
                 output_dir=output_dir,
                 logs_dir=logs_dir
             )
