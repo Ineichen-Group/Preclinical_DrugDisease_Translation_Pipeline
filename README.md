@@ -18,10 +18,22 @@
   - [Named entity normalization (NEN)](#named-entity-normalization-nen)
     - [Pre-computed resources](#pre-computed-resources)
     - [Overview of the flow](#overview-of-the-flow)
+    - [High-level normalization flow](#high-level-normalization-flow)
+    - [1. Prepare normalization resources](#1-prepare-normalization-resources)
+      - [UMLS / drug resources](#umls--drug-resources)
+      - [MONDO / disease resources](#mondo--disease-resources)
+    - [2. Normalize a preclinical dataset](#2-normalize-a-preclinical-dataset)
+      - [Prepare input](#prepare-input)
+      - [Drug / UMLS normalization](#drug--umls-normalization)
+      - [Disease / MONDO normalization](#disease--mondo-normalization)
+      - [Combine normalized drug and disease entities](#combine-normalized-drug-and-disease-entities)
+    - [DETAILS](#details)
     - [MONDO/UMLS embedding via SapBERT](#mondoumls-embedding-via-sapbert)
     - [Selection of Best cdist Parameter](#selection-of-best-cdist-parameter)
     - [Normalization Script](#normalization-script)
+    - [Combining Normalized Chunks](#combining-normalized-chunks)
     - [Mapping to parent concepts](#mapping-to-parent-concepts)
+    - [Combining normalized drug and disease entities](#combining-normalized-drug-and-disease-entities)
   - [Validation](#validation)
     - [Validation with existing systematic reviews](#validation-with-existing-systematic-reviews)
   - [Full-text retrieval and methods extraction](#full-text-retrieval-and-methods-extraction)
@@ -227,100 +239,328 @@ After downloading, place them in the repository as follows:
 The path to the data (DATA_DIR) has to be adjusted in [./04_normalization/run_normalize_parallel_drug.sh](././04_normalization/run_normalize_parallel_drug.sh), and [./04_normalization/run_normalize_parallel_disease.sh](././04_normalization/run_normalize_parallel_disease.sh).
 
 ### Overview of the flow
-The overall flow for the normalization is as follows:
-- Prepare: split the NER predictions into chunks for parallel processing: [./04_normalization/split_file_to_chunks.py](./04_normalization/split_file_to_chunks.py).
-- **UMLS**: 
-  - Prepare the UMLS synonyms vocabulary, including the final DrugBank mappings: [./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb](./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb).
-  - Embed UMLS terms with SapBERT: [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py)
-  - Combine embeddings and term mappings for base UMLS terminology, UMLS synonyms, and DrugBank terms in [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py).
-  - Link drug entities to UMLS terms using neural NEN: [./04_normalization/run_normalize_parallel_drug.sh](./04_normalization/run_normalize_parallel_drug.sh) which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
-  - Combine linked chunks in [./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb](./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb).
-  - Map UMLS terms to parent CUIs in [./04_normalization/run_umls_map_to_parent.sh](./04_normalization/run_umls_map_to_parent.sh) which calls [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py).
-- **MONDO**:
-  - Embed MONDO terms with SapBERT: [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py)
-  - Link condition entities to MONDO terms using neural NEN: [./04_normalization/run_normalize_parallel_disease.sh](./04_normalization/run_normalize_parallel_disease.sh) which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
-  - Combine linked chunks in [./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb](./04_normalization/Combine_Linked_Preclinical_Chunks.ipynb).
-  - Clean up obsolete MONDO terms in [./04_normalization/run_mondo_clean_names.sh](./04_normalization/run_mondo_clean_names.sh) which calls [./04_normalization/mondo_clean_names.py](./04_normalization/mondo_clean_names.py).
-  - Map MONDO terms to parent MONDOIDs in [./04_normalization/run_mondo_map_to_parent.sh](./04_normalization/run_mondo_map_to_parent.sh) which calls [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py).
+
+The normalization pipeline consists of two main stages:
+
+1. **Prepare normalization resources**  
+   Build the UMLS and MONDO vocabularies and precompute their SapBERT embeddings. These resources are largely dataset-independent and can be reused across multiple normalization runs.
+
+2. **Normalize a preclinical dataset**  
+   Split NER predictions into chunks, link drug and disease mentions to UMLS/MONDO concepts, combine the chunk-level outputs, map linked concepts to dataset-level parent concepts, and merge the final drug and disease annotations.
+
+### High-level normalization flow
+
+```mermaid
+flowchart TD
+
+    subgraph R["1. Prepare normalization resources"]
+        U1[UMLS terminology<br/>+ synonyms + DrugBank]
+        U2[Embed UMLS terms<br/>with SapBERT]
+        U3[Combine UMLS embeddings<br/>and term mappings]
+
+        M1[MONDO ontology]
+        M2[Embed MONDO terms<br/>with SapBERT]
+
+        U1 --> U2 --> U3
+        M1 --> M2
+    end
+
+    subgraph N["2. Normalize preclinical dataset"]
+        A[Preclinical NER predictions]
+        B[Split into chunks]
+
+        A --> B
+
+        B --> C1[Link drug mentions<br/>to UMLS]
+        B --> C2[Link disease mentions<br/>to MONDO]
+
+        U3 --> C1
+        M2 --> C2
+
+        C1 --> D1[Combine normalized<br/>drug chunks]
+        C2 --> D2[Combine normalized<br/>disease chunks]
+
+        D1 --> E1[Map to UMLS<br/>parent CUIs]
+
+        D2 --> F[Clean / harmonize<br/>MONDO terms]
+        F --> E2[Map to MONDO<br/>parent concepts]
+
+        R1[Historical clinical concepts]
+        R2[Historical preclinical concepts]
+        R3[Current preclinical concepts]
+
+        R1 -. candidate parents .-> E1
+        R2 -. candidate parents .-> E1
+        R3 -. candidate parents .-> E1
+
+        R1 -. candidate parents .-> E2
+        R2 -. candidate parents .-> E2
+        R3 -. candidate parents .-> E2
+
+        E1 --> G[Normalized drug entities]
+        E2 --> H[Normalized disease entities]
+
+        G --> I[Merge on PMID]
+        H --> I
+
+        I --> J[Combined preclinical<br/>drug + disease dataset]
+    end
+```
+
+### 1. Prepare normalization resources
+
+#### UMLS / drug resources
+
+- Prepare the UMLS synonym vocabulary, including DrugBank mappings, in [./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb](./04_normalization/Prep_UMLS_Synonyms_for_Embedding.ipynb).
+
+- Embed UMLS terms with SapBERT using [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py).
+
+- Combine embeddings and term mappings for the base UMLS terminology, UMLS synonyms, and DrugBank terms using [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py).
+
+#### MONDO / disease resources
+
+- Embed MONDO ontology terms with SapBERT using [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py).
+
+These normalization resources can be reused for the historical preclinical dataset and later update datasets, provided the underlying terminology resources do not need to be regenerated.
+
+### 2. Normalize a preclinical dataset
+
+#### Prepare input
+
+- Split preclinical NER predictions into chunks for parallel processing using [./04_normalization/split_file_to_chunks.py](./04_normalization/split_file_to_chunks.py).
+
+- Dataset-specific chunk directories can be used for updates, for example `preclinical_chunks/update_2025/`.
+
+#### Drug / UMLS normalization
+
+- Link preclinical drug mentions to UMLS concepts using [./04_normalization/run_normalize_parallel_drug.sh](./04_normalization/run_normalize_parallel_drug.sh), which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
+
+- After all normalization jobs have completed, combine the numbered chunk-level outputs into a single preclinical drug file using [./04_normalization/combine_linked_chunks.py](./04_normalization/combine_linked_chunks.py).
+
+- Map linked UMLS drug terms to dataset-level parent CUIs using [./04_normalization/run_umls_map_to_parent.sh](./04_normalization/run_umls_map_to_parent.sh), which calls [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py).
+
+#### Disease / MONDO normalization
+
+- Link preclinical disease mentions to MONDO concepts using [./04_normalization/run_normalize_parallel_disease.sh](./04_normalization/run_normalize_parallel_disease.sh), which calls [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py).
+
+- After all normalization jobs have completed, combine the numbered chunk-level outputs into a single preclinical disease file using [./04_normalization/combine_linked_chunks.py](./04_normalization/combine_linked_chunks.py).
+
+- Clean and harmonize linked MONDO disease terms using [./04_normalization/run_mondo_clean_names.sh](./04_normalization/run_mondo_clean_names.sh), which calls [./04_normalization/mondo_clean_names.py](./04_normalization/mondo_clean_names.py).
+
+- Map cleaned MONDO concepts to dataset-level parent MONDO IDs using [./04_normalization/run_mondo_map_to_parent.sh](./04_normalization/run_mondo_map_to_parent.sh), which calls [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py).
+
+For both UMLS and MONDO parent mapping, candidate parent concepts are derived from the combined concept universe of:
+
+- historical clinical data,
+
+- historical preclinical data,
+
+- and the current preclinical dataset.
+
+The current preclinical dataset can therefore also contribute candidate parent concepts for other records in the same dataset. Only the target preclinical dataset is written as output.
+
+For a full historical rerun, the historical preclinical reference dataset and the target preclinical dataset can be the same file.
+
+#### Combine normalized drug and disease entities
+
+- Select the relevant raw, normalized, parent, and merged entity columns from the final UMLS and MONDO outputs.
+
+- Merge the drug and disease normalization outputs on `PMID` using [./04_normalization/merge_preclinical_entities.py](./04_normalization/merge_preclinical_entities.py).
+
+- The input and output paths are configurable, allowing the same workflow to be reused for the historical dataset and update datasets such as `update_2025`.
+
+### DETAILS
 
 ### MONDO/UMLS embedding via SapBERT
+
 The script [./04_normalization/embed_ontology.py](./04_normalization/embed_ontology.py) generates vector embeddings for the ontology terms from MONDO and UMLS using the SapBERT model. 
 
 The process involves:
+
 - Loading ontology terms (from MONDO .owl files or UMLS .csv exports)
+
 - Embedding term names using SapBERT
+
 - Saving the resulting embeddings and term metadata for later use in normalization
 
 **Files and Outputs**
-
 MONDO:
+
 - Input: mondo.owl
+
 - Output: 
+
     - JSON file of (term name, MONDO ID) pairs
+
     - .npy files containing embeddings of MONDO terms
 
 UMLS:
+
 - Input: 
+
   - Unique IDs and corresponding canonical term (filtered from MRCONSO): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_474316_drug_chemical_level_0_9.csv)
+
   - UMLS synonyms file (filtered from MRCONSO): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_synonyms.csv)
+
   - DrugBank selected terms (sourced from DrugBank): [./04_normalization/data/umls/mrconso_filtered_db_and_sty_drugbank_external_ids.csv](./04_normalization/data/umls/mrconso_filtered_db_and_sty_drugbank_external_ids.csv)
+
 - Output:
+
     - JSON file of (term name, CUI) pairs
+
     - .npy files containing embeddings of UMLS terms
+
 - Additional processing
+
   - Merging files of different terminologies in [./04_normalization/umls_combine_mappings_for_nen.py](./04_normalization/umls_combine_mappings_for_nen.py). Here we combine the embeddings and term mappings for the base UMLS terminology, UMLS synonyms, and DrugBank terms. Output:
+
     -  ["./data/umls/umls_id_to_term_map.json"](./data/umls/umls_id_to_term_map.json): mapping of canonical/unique UMLS CUIs to term names
+
     -  ["./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy"](./data/umls/embeddings/UMLS_emb_batch_COMBINED.npy): combined UMLS embeddings; all terms incl synonyms
+
     -  ["./data/umls/umls_term_id_pairs_combined.json"](./data/umls/umls_term_id_pairs_combined.json): combined (term name, CUI) pairs; many terms have multiple CUIs due to synonyms
+
     -  shape of the last two objects should match!
 
 ### Selection of Best cdist Parameter
+
 We manually annotated 100 randomly sampled disease and drug NER entities (see folder [./04_normalization/data/ner_samples/](./04_normalization/data/ner_samples/)). Each entity was then mapped to its closest SapBERT embedding from the relevant ontologies, and the embedding distance was recorded.
 
 Using these distances, we estimated precision and recall at various cosine distance (cdist) thresholds. Entities with a distance above the selected threshold were not mapped and instead returned as the original NER text. For implementation details, see [./04_normalization/estimate_cdist_tsh_parameter.py](./04_normalization/estimate_cdist_tsh_parameter.py).
 
 ### Normalization Script
-The script [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py) performs entity normalization by mapping raw condition mentions (from NER output) to standardized MONDO/UMLS ontology terms. It uses the precomputed embeddings (from SapBERT) to match input terms to the closest ontology concept.
+
+The script [./04_normalization/neural_based_nen.py](./04_normalization/neural_based_nen.py) performs entity normalization by mapping raw drug or disease mentions from the NER output to standardized UMLS or MONDO ontology concepts. It uses precomputed SapBERT embeddings to identify the closest ontology concept for each input term.
 
 The normalization process:
-- Loads MONDO/ UMLS embeddings and term metadata
-- Uses a pretrained SapBERT model to embed query terms
-- Computes similarity between query embeddings and ontology embeddings
-- Maps terms to MONDO/UMLS if similarity is above a defined threshold, otherwise keeps the original NER output
-- Logs normalization statistics and saves normalized results
+
+- Loads MONDO/UMLS embeddings and corresponding term metadata.
+
+- Uses a pretrained SapBERT model to embed the input drug or disease mentions.
+
+- Computes similarity between query embeddings and ontology embeddings.
+
+- Maps terms to the closest MONDO/UMLS concept if the similarity passes the defined threshold; otherwise the original NER output is retained.
+
+- Saves normalized results together with mapping statistics and logs of successful and failed mappings.
+
+For scalability, the preclinical NER data is split into chunks and normalization is run in parallel. Separate SLURM scripts are used for drugs and diseases:
+
+- [./04_normalization/run_normalize_parallel_drug.sh](./04_normalization/run_normalize_parallel_drug.sh)
+
+- [./04_normalization/run_normalize_parallel_disease.sh](./04_normalization/run_normalize_parallel_disease.sh)
+
+Each normalization job produces one normalized CSV per input chunk. Once all chunks have been processed, [./04_normalization/combine_linked_chunks.py](./04_normalization/combine_linked_chunks.py) merges the numbered chunk outputs into a single drug file and a single disease file for subsequent parent-concept mapping.
 
 **Files and Outputs**
 Input:
-- A CSV file containing annotated mentions (e.g., from NER)
-- Column with mapped via dictionary condition/ drug strings (e.g. `linkbert_mapped_conditions`)
-- MONDO/ UMLS embeddings (.npy files) and term metadata (.json)
+
+- CSV chunks containing drug or disease mentions extracted by NER.
+
+- Columns containing the mentions to be normalized.
+
+- Precomputed MONDO/UMLS embeddings (`.npy`) and term metadata (`.json`).
 
 Output:
-- A new CSV with normalized MONDO/ UML mappings per row
-- A summary stats log file with mapping performance.
-- Logs of successfully and failed mapping entities.
-- Normalized fields include e.g.:
-    - `linkbert_mondo_conditions`: MONDO concept names
-    - `mondo_termid`: MONDO concept IDs
-    - `mondo_term_norm`: Canonical forms
-    - `mondo_closest_3`: Top 3 closest MONDO concepts
-    - `mondo_cdist`: Embedding distance to closest concept
 
-To run this script on the server with data parallelism for drug/disease see [./04_normalization/run_normalize_parallel.sh](./04_normalization/run_normalize_parallel.sh):
-```
-sbatch run_normalize_parallel.sh disease
+- Normalized UMLS/MONDO mappings for each input chunk.
+
+- Mapping statistics and logs.
+
+- Fields containing the matched concept label, concept ID, closest candidates, and embedding distance.
+
+- After merging the chunks, one dataset-level normalized drug file and one dataset-level normalized disease file.
+
+The chunk input directory is configurable, allowing the same normalization workflow to be reused for the historical preclinical dataset and update datasets such as `update_2025`.
+
+### Combining Normalized Chunks
+
+Normalization is performed independently on multiple input chunks to enable parallel processing. After all drug or disease normalization jobs have completed, the chunk-level outputs are merged into dataset-level files using [./04_normalization/combine_linked_chunks.py](./04_normalization/combine_linked_chunks.py).
+
+The script:
+
+- Scans a configurable chunk directory for normalized drug and disease CSV files.
+
+- Detects numbered chunk files and sorts them numerically.
+
+- Concatenates all drug chunks into one combined drug normalization file.
+
+- Concatenates all disease chunks into one combined disease normalization file.
+
+- Writes the combined files to the shared `mapped_to_embeddings_ontologies` output directory.
+
+- Supports dataset-specific chunk folders, such as `preclinical_chunks/update_2025/`, and optional output suffixes such as `update_2025`.
+
+For example, an update dataset can be combined with:
+
+```bash
+
+python combine_linked_chunks.py \
+
+    --chunks_dir /shares/animalwelfare.crs.uzh/Preclinical_Pipeline/04_normalization/data/mapped_to_embeddings_ontologies/preclinical_chunks/update_2025 \
+
+    --suffix update_2025
 ```
 
 ### Mapping to parent concepts
-MONDO:
-  - Mapping MONDO terms to parent MONDOIDs in [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py).
 
-UMLS:
-  - Mapping UMLS terms to parent CUIs in [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py). This script uses the MRREL file to find parent CUIs for each UMLS term, allowing normalization to higher-level concepts.
+To improve consistency across closely related normalized entities, linked UMLS and MONDO concepts are further mapped to higher-level parent concepts that are also observed in the available datasets.
 
-Finally, see [./04_normalization/Merge_Linked_Entities_for_Translation.ipynb](./04_normalization/Merge_Linked_Entities_for_Translation.ipynb). This notebook prepares a combined preclinical entity dataset by merging normalized **drug** and **disease** annotations at the publication level. 
+- **MONDO**
 
+  - Clean and harmonize linked MONDO disease terms using [./04_normalization/mondo_clean_names.py](./04_normalization/mondo_clean_names.py), called by [./04_normalization/run_mondo_clean_names.sh](./04_normalization/run_mondo_clean_names.sh).
 
+  - Map cleaned MONDO terms to dataset-level parent MONDO IDs using [./04_normalization/mondo_map_to_parent.py](./04_normalization/mondo_map_to_parent.py), called by [./04_normalization/run_mondo_map_to_parent.sh](./04_normalization/run_mondo_map_to_parent.sh).
+
+  - Candidate parent concepts are restricted to MONDO terms observed in the combined reference universe consisting of:
+
+    - historical clinical data,
+
+    - historical preclinical data,
+
+    - and the current preclinical dataset being processed.
+
+  - For each disease term, the script traverses the MONDO hierarchy and selects an eligible ancestor according to ontology distance and structural filtering criteria such as minimum depth and maximum number of descendants.
+
+  - The original MONDO terms are retained and the selected parent terms are added to produce merged MONDO labels and IDs.
+
+  - Only the target preclinical dataset is written as output; the clinical and historical preclinical datasets are used as references for defining candidate parent concepts.
+
+- **UMLS**
+
+  - Map linked UMLS drug terms to dataset-level parent CUIs using [./04_normalization/umls_map_to_parent.py](./04_normalization/umls_map_to_parent.py), called by [./04_normalization/run_umls_map_to_parent.sh](./04_normalization/run_umls_map_to_parent.sh).
+
+  - The script uses the UMLS `MRREL` relationship file to traverse parent relationships between CUIs.
+
+  - Candidate parent CUIs are restricted to concepts observed in the combined reference universe consisting of:
+
+    - historical clinical data,
+
+    - historical preclinical data,
+
+    - and the current preclinical dataset being processed.
+
+  - Broad parent concepts are filtered based on the number of children they have in the UMLS relationship graph.
+
+  - The original UMLS terms are retained and eligible parent CUIs are added to create merged UMLS labels and IDs.
+
+  - Only the target preclinical dataset is written as output.
+
+### Combining normalized drug and disease entities
+
+After UMLS and MONDO normalization and parent mapping, the preclinical drug and disease outputs are combined at the publication level using [./04_normalization/merge_preclinical_entities.py](./04_normalization/merge_preclinical_entities.py).
+
+The script:
+
+- selects the relevant raw, normalized, parent, and merged drug entity columns;
+
+- selects the corresponding disease entity columns;
+
+- merges the two datasets on `PMID`;
+
+- writes one combined preclinical entity file for downstream translation analyses.
+
+The input and output paths are configurable so the same workflow can be reused for the historical dataset and later update datasets such as `update_2025`.
 
 ## Validation 
 
