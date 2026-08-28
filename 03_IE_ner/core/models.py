@@ -39,9 +39,21 @@ class NERModel:
                 aggregation_strategy = "none"
             else:
                 aggregation_strategy = "simple"
-            
-            self.nlp = pipeline("ner", model=self.model, tokenizer=self.tokenizer,
-                                aggregation_strategy=aggregation_strategy)  # grouped entities False to analyze the tokenization of the models
+            device = 0 if torch.cuda.is_available() else -1
+
+            print(f"CUDA available: {torch.cuda.is_available()}")
+            if torch.cuda.is_available():
+                print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+            else:
+                print("Using CPU")
+
+            self.nlp = pipeline(
+                "ner",
+                model=self.model,
+                tokenizer=self.tokenizer,
+                aggregation_strategy=aggregation_strategy,
+                device=device,
+            )
         elif self.model_type == "regex":
             pass
         else:
